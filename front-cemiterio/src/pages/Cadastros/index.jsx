@@ -198,7 +198,6 @@ export default function Cadastros() {
         fetch('https://servicodados.ibge.gov.br/api/v1/localidades/municipios')
             .then(res => res.json())
             .then(data => {
-                console.log('Cidades carregadas:', data.length);
                 setCidades(data);
             })
             .catch(err => console.error('Erro ao carregar cidades', err))
@@ -403,24 +402,21 @@ export default function Cadastros() {
     };
 
     const handleClearSepultamento = () => {
-        setForm(prev => ({
-            ...prev,
-            nome_fal: "",
-            data_obito_sep: "",
-            dh_sep: "",
-            titulo_posse: "",
-            quadra_sep: "",
-            num_sepultura_sep: "",
-            taxa: "",
-            coveiro_sep: "",
-            obs_sep: ""
-        }));
+        setForm({
+            ...sepultamento,
+            falecido_id: "",
+            falecido: "",
+            nome_sep: ""
+        });
         setFieldErrors({});
         setBusca("");
+        setSearchFal("");
+        setShowFalList(false);
+        setAvailableCovas([]);
         clearSavedState();
         setIsIndigente(false);
-
     }
+
 
     const validateFieldOnChange = (fieldName, value) => {
         if (processType === "Cadastro de falecido" && isIndigente && !ALLOWED_FAL_INDI.has(fieldName)) {
@@ -531,7 +527,7 @@ export default function Cadastros() {
         setConfirmOpen(true);
     };
 
-    const handleConfirmSubmit = async (e) => {
+    const handleConfirmSubmit = async () => {
         setConfirmOpen(false);
         setIsSubmitting(true);
         try {
@@ -577,65 +573,67 @@ export default function Cadastros() {
                     const paramsCheck = { params: { quadra_cova: payload.quadra_sep, num_cova: payload.num_sepultura_sep } }
                     const rCheck = await api.get("/covas", paramsCheck).catch(() => null);
                     const foundCheck = rCheck && Array.isArray(rCheck.data) && rCheck.data.length ? rCheck.data[0] : null;
-                    if (foundCheck && foundCheck.id != null) {
-                        const cap = Number(foundCheck.capacidade ?? 0);
-                        if (cap > 0) {
-                            try {
-                                const res = await api.post("/sepultamentos", payload);
-                                const created = res?.data ?? null;
+                    if (foundCheck && foundCheck.id == null) {
+                        alert("Sepultura não encontrada para a quadra selecionada.")
+                        return;
 
-                                try {
-                                    if (created)
-                                        window.dispatchEvent(new CustomEvent("processoCriado", { detail: created }));
-
-                                } catch (e) {
-                                    { e }
-                                }
-                                setRegistros(prev => ([...prev, { processType, data: payload }]));
-                                alert("Sepultamento cadastrado (pendente). Confirme na Dashboard para concluir.");
-                                clearSavedState();
-                                setForm(sepultamento);
-                                setFieldErrors({});
-                                setSearchFal("");
-
-                            } catch (err) {
-                                console.warn("Erro ao salvar sepultamento", err)
-                                alert("Erro ao salvar sepultamento")
-                            }
-
-                        }
-                        else {
-                            alert("Tipo de processo inválido")
-                        }
                     }
 
-                }
-                catch (err) {
-                    console.error(err);
-                    alert(`Erro ao cadastrar processo ${processType}`);
+                    const cap = Number(foundCheck.capacidade ?? 0);
 
+                    if (cap <= 0) {
+                        await api.patch("/covas/" + foundCheck.id, { status: "lotada", capacidade: 0 }).catch(() => { });
+                        alert("A sepultura selecionada está lotada. Escolha outra sepultura. ");
+                        return;
+                    }
+
+                    const res = await api.post("/sepultamentos", payload);
+                    const created = res?.data ?? null;
+
+                    try {
+                        if (created)
+                            window.dispatchEvent(new CustomEvent("processoCriado", { detail: created }));
+
+                    } catch (e) {
+                        { e }
+                    }
+                    setRegistros(prev => ([...prev, { processType, data: payload }]));
+                    alert("Sepultamento cadastrado (pendente). Confirme na Dashboard para concluir.");
+                    clearSavedState();
+                    setForm(sepultamento);
+                    setFieldErrors({});
+                    setSearchFal("");
+
+                } catch (err) {
+                    console.warn(err)
+                    alert("Erro ao cadastrar processo" + processType)
                 }
+
             }
+            else {
+                alert("Tipo de processo inválido")
+            }
+
         }
         catch (err) {
-            console.error("Erro ao cadastrar:", err);
-            alert("Erro ao cadastrar processo");
-        }
-        finally {
-            setIsSubmitting(false);
+            console.error(err);
+            alert(`Erro ao cadastrar processo ${processType}`);
+
         }
     }
 
 
     const handleFileChange = (e, fieldName) => {
         const file = e.target.files && e.target.files[0];
+        const previewKey = fieldName === "residencia" ? "residencia_preview":fieldName === "dec_obito" ? "dec_obito_preview" : fieldName + "_preview";
+
         if (!file) {
-            setForm(prev => ({ ...prev, [fieldName]: null, [`${fieldName}residencia_preview`]: "" }))
+            setForm(prev => ({ ...prev, [fieldName]: null, [previewKey]: "" }))
             return;
         }
         const reader = new FileReader();
         reader.onload = () => {
-            setForm(prev => ({ ...prev, [fieldName]: file, [`${fieldName}residencia_preview`]: reader.result }))
+            setForm(prev => ({ ...prev, [fieldName]: file, [previewKey]: reader.result }))
         };
         reader.readAsDataURL(file);
 
@@ -722,7 +720,7 @@ export default function Cadastros() {
     /* const returnCPF = useMemo(() => {
         if (!form.nome_fal) return "";
         const target = String(form.nome_fal);
-    
+     
     }) */
 
     const ALLOWED_FAL_INDI = new Set([
@@ -1330,8 +1328,8 @@ export default function Cadastros() {
                                         <Field>
                                             <label>Declaração de óbito</label>
                                             <input name="dec_obito" type="file" accept="image/*" onChange={e => handleFileChange(e, "dec_obito")} />
-                                            {form.dec_obito && (
-                                                <img src={form.dec_obito} alt="preview comprovante" style={{ width: 160, height: 120, objectFit: "cover", marginTop: 8, borderRadius: 6 }} />
+                                            {form.dec_obito_preview && (
+                                                <img src={form.dec_obito_preview} alt="preview declaração de óbito" style={{ width: 160, height: 120, objectFit: "cover", marginTop: 8, borderRadius: 6 }} />
                                             )}
                                         </Field>
 

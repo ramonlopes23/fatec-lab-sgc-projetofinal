@@ -131,6 +131,39 @@ export const BtnPrimarySave = styled.button`
   &:hover { opacity: 0.7; }
 `;
 
+export const BtnEdit = styled.button`
+  background: #e6e6f1ff;
+  color: #fff;
+  background-color:#191970;
+  border: 2px;
+  margin-right:2px;
+  margin-top:10px;
+  padding: 12px 28px;
+  border-radius: 24px;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgba(15,13,58,0.18);
+
+  &:hover { opacity: 0.7; }
+`;
+
+export const BtnDelete = styled.button`
+  background: #e6e6f1ff;
+  color: #fff;
+  background-color:#e6e6f1ff;
+  border: 2px;
+  margin-left:5px;
+  margin-right:2px;
+  margin-top:10px;
+  padding: 12px 28px;
+  border-radius: 24px;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgba(15,13,58,0.18);
+
+  &:hover { opacity: 0.7; }
+`;
+
 export const TwoCols = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;

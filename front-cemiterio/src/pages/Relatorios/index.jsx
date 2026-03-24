@@ -449,7 +449,7 @@ As exumações têm como objetivo garantir a adequada gestão dos espaços do ce
                                             {formatCurrency((filters.data_inicio || filters.data_fim) ? taxaSomaPeriodo : taxaSomaTotal)}
                                         </div>
                                         <div style={{ fontSize: 25, fontWeight: 600, color: "#191970", marginTop: 6 }}>
-                                            <div style={{ fontSize: 14, color: "#666", fontWeight: 400 }}>Número de sepultados</div>
+                                            <div style={{ fontSize: 14, color: "#666", fontWeight: 400 }}>Número de sepultado(s)</div>
                                             {((filters.data_inicio || filters.data_fim) ? sepCountPeriodo : sepCountTotal)} sepultados
                                         </div>
                                     </div>

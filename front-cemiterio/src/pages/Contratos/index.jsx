@@ -1,6 +1,6 @@
 import Footer from "../../components/Footer";
 import MainLayout from "../../layout/MainLayout";
-import { BtnPrimaryClose, BtnPrimarySave, Container, FormStyled, SearchBar, SearchIcon, SearchWrapper, TableWrapper, Title, Card, TableScroller, TBody, THead, Table, Td, Th, Tr, ModalOverlay, ModalContent, ModalGrid, Input } from "./styles";
+import { BtnPrimaryClose, BtnPrimarySave, Container, FormStyled, SearchBar, SearchIcon, SearchWrapper, TableWrapper, Title, Card, TableScroller, TBody, THead, Table, Td, Th, Tr, ModalOverlay, ModalContent, ModalGrid, Input, BtnEdit, BtnDelete } from "./styles";
 import TextField from "@mui/material/TextField";
 import { MenuItem } from "@mui/material";
 import { FaSearch } from "react-icons/fa";
@@ -44,6 +44,8 @@ export default function Contratos() {
     const [form, setForm] = useState(INITIAL_FORM);
     const [errors, setErrors] = useState({});
     const [editingId, setEditingId] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const filteredTitulos = useMemo(() => {
         const q = String(query || "").trim().toLowerCase();
@@ -59,6 +61,24 @@ export default function Contratos() {
     const updateField = (key, value) => {
         setForm((prev) => ({ ...prev, [key]: value }));
         setErrors((prev) => ({ ...prev, [key]: "" }));
+    };
+
+    useEffect(() => {
+        loadContratos();
+    }, []);
+
+    const loadContratos = async () => {
+        setIsLoading(true)
+        try {
+            const { data } = await api.get("/contratos");
+            setTitulos(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error("Erro ao carregar contratos", error);
+            setTitulos([]);
+            alert("Erro ao carregar contratos");
+        } finally {
+            setIsLoading(false)
+        }
     };
 
     const openModal = () => {
@@ -108,6 +128,7 @@ export default function Contratos() {
         e.preventDefault();
         if (!validateForm()) return;
 
+        setIsSubmitting(true);
         try {
             const now = new Date().toISOString();
 
@@ -131,6 +152,7 @@ export default function Contratos() {
                     ...payload,
                     created_at: now,
                 });
+                alert("Título cadastrado com sucesso.")
             }
 
             await loadContratos();
@@ -139,10 +161,12 @@ export default function Contratos() {
         } catch (error) {
             console.error("Erro ao salvar contrato/titulo", error);
             alert("Não foi possivel salvar o título")
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
-    const handleEditTitulo = (item) =>{
+    const handleEditTitulo = (item) => {
         setEditingId(item.id);
         setForm({
             nome_titular: item.nome_titular || "",
@@ -156,42 +180,22 @@ export default function Contratos() {
         setModalOpen(true);
     }
 
-    const handleDeleteTitulo = async (id) =>{
+    const handleDeleteTitulo = async (id) => {
         const ok = window.confirm("Deseja realmente excluir este título?");
-        if(!ok) return;
+        if (!ok) return;
 
-        try{
+        setIsSubmitting(true);
+        try {
             await api.delete(`/contratos/${id}`);
+            alert("Título excluído com sucesso")
             await loadContratos();
-        } catch(error){
+        } catch (error) {
             console.error("Error ao excluir título", error);
             alert("Não foi possível excluiro título");
+        } finally {
+            setIsSubmitting(false);
         }
     }
-
-
-    useEffect(() => {
-        const loadContratos = async () => {
-            try {
-                const { data } = await api.get("/contratos");
-                setTitulos(Array.isArray(data) ? data : []);
-            } catch (error) {
-                console.error("Erro ao carregar contratos", error);
-                setTitulos([]);
-            }
-        };
-    }, []);
-
-
-    const loadContratos = async () => {
-        try {
-            const { data } = await api.get("/contratos");
-            setTitulos(Array.isArray(data) ? data : []);
-        } catch (error) {
-            console.error("Erro ao carregar contratos", error);
-            setTitulos([]);
-        }
-    };
 
     return (
         <>
@@ -235,44 +239,49 @@ export default function Contratos() {
 
                     <Card>
                         <h3 style={{ marginTop: 0, color: "#191970" }}>Títulos cadastrados</h3>
-                        <TableWrapper>
-                            <TableScroller>
-                                <Table>
-                                    <THead>
-                                        <tr>
-                                            <Th>Nº do Título</Th>
-                                            <Th>Titular</Th>
-                                            <Th>Status</Th>
-                                            <Th>Validade</Th>
-                                            <Th>Sepultura</Th>
-                                            <Th>Quadra</Th>
-                                        </tr>
-                                    </THead>
-                                    <TBody>
-                                        {filteredTitulos.length > 0 ? (
-                                            filteredTitulos.map((item, index) => (
-                                                <Tr key={item.id} index={index}>
-                                                    <Td>{item.numero_titulo}</Td>
-                                                    <Td>{item.nome_titular}</Td>
-                                                    <Td>{statusLabel(item.status)}</Td>
-                                                    <Td>{formatDateBR(item.validade_titulo)}</Td>
-                                                    <Td>{item.sepultura}</Td>
-                                                    <Td>{item.quadra}</Td>
-                                                    <Td>
-                                                        <button type="button" onClick={()=>handleEditTitulo(item)}>Editar</button>
-                                                        <button type="button" onClick={()=>handleDeleteTitulo(item.id)}>Excluir</button>
-                                                    </Td>
-                                                </Tr>
-                                            ))
-                                        ) : (
+                        {isLoading ? (
+                            <p style={{ textAlign: "center", color: "#666" }}>Carregando...</p>
+                        ) : (
+                            <TableWrapper>
+                                <TableScroller>
+                                    <Table>
+                                        <THead>
                                             <tr>
-                                                <Td colSpan={6}>Nenhum título encontrado.</Td>
+                                                <Th>Nº do Título</Th>
+                                                <Th>Titular</Th>                                               
+                                                <Th>Validade</Th>
+                                                <Th>Sepultura</Th>
+                                                <Th>Quadra</Th>
+                                                <Th>Status</Th>
+                                                <Th>Ações</Th>
                                             </tr>
-                                        )}
-                                    </TBody>
-                                </Table>
-                            </TableScroller>
-                        </TableWrapper>
+                                        </THead>
+                                        <TBody>
+                                            {filteredTitulos.length > 0 ? (
+                                                filteredTitulos.map((item, index) => (
+                                                    <Tr key={item.id} index={index}>
+                                                        <Td>{item.numero_titulo}</Td>
+                                                        <Td>{item.nome_titular}</Td>                                                        
+                                                        <Td>{formatDateBR(item.validade_titulo)}</Td>
+                                                        <Td>{item.sepultura}</Td>
+                                                        <Td>{item.quadra}</Td>
+                                                        <Td>{statusLabel(item.status)}</Td>
+                                                        <Td>
+                                                            <BtnEdit type="button" onClick={() => handleEditTitulo(item)}>Editar</BtnEdit>
+                                                            <BtnDelete type="button" onClick={() => handleDeleteTitulo(item.id)}>Excluir</BtnDelete>
+                                                        </Td>
+                                                    </Tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <Td colSpan={7}>Nenhum título encontrado.</Td>
+                                                </tr>
+                                            )}
+                                        </TBody>
+                                    </Table>
+                                </TableScroller>
+                            </TableWrapper>
+                        )}
                     </Card>
                 </Container>
             </MainLayout>
@@ -281,7 +290,7 @@ export default function Contratos() {
                 <ModalOverlay>
                     <ModalContent>
                         <h3 style={{ marginTop: 0, marginBottom: 16, color: "#191970" }}>
-                            Novo título de posse
+                            {editingId ? "Editar título de posse" : "Novo título de posse"}
                         </h3>
 
                         <form onSubmit={handleSaveTitulo}>
@@ -292,6 +301,7 @@ export default function Contratos() {
                                         value={form.nome_titular}
                                         onChange={(e) => updateField("nome_titular", e.target.value)}
                                         placeholder="Nome completo do titular"
+                                        disabled={isSubmitting}
                                     />
                                     {errors.nome_titular ? <p style={errorStyle}>{errors.nome_titular}</p> : null}
                                 </div>
@@ -302,6 +312,7 @@ export default function Contratos() {
                                         value={form.numero_titulo}
                                         onChange={(e) => updateField("numero_titulo", e.target.value)}
                                         placeholder="Ex: 000145"
+                                        disabled={isSubmitting}
                                     />
                                     {errors.numero_titulo ? <p style={errorStyle}>{errors.numero_titulo}</p> : null}
                                 </div>
@@ -314,6 +325,7 @@ export default function Contratos() {
                                         size="small"
                                         value={form.status}
                                         onChange={(e) => updateField("status", e.target.value)}
+                                        disabled={isSubmitting}
                                         sx={{
                                             "& .MuiOutlinedInput-root": {
                                                 borderRadius: "18px",
@@ -338,6 +350,7 @@ export default function Contratos() {
                                         value={form.sepultura}
                                         onChange={(e) => updateField("sepultura", e.target.value)}
                                         placeholder="Exemplo: 05"
+                                        disabled={isSubmitting}
                                     />
                                     {errors.sepultura ? <p style={errorStyle}>{errors.sepultura}</p> : null}
                                 </div>
@@ -348,6 +361,7 @@ export default function Contratos() {
                                         value={form.quadra}
                                         onChange={(e) => updateField("quadra", e.target.value)}
                                         placeholder="Exemplo: 12"
+                                        disabled={isSubmitting}
                                     />
                                     {errors.quadra ? <p style={errorStyle}>{errors.quadra}</p> : null}
                                 </div>
@@ -358,16 +372,17 @@ export default function Contratos() {
                                         type="date"
                                         value={form.validade_titulo}
                                         onChange={(e) => updateField("validade_titulo", e.target.value)}
+                                        disabled={isSubmitting}
                                     />
                                     {errors.validade_titulo ? <p style={errorStyle}>{errors.validade_titulo}</p> : null}
                                 </div>
                             </ModalGrid>
 
                             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                                <BtnPrimaryClose type="button" onClick={closeModal}>
+                                <BtnPrimaryClose type="submit" onClick={closeModal}>
                                     Cancelar
                                 </BtnPrimaryClose>
-                                <BtnPrimarySave type="button">Salvar título</BtnPrimarySave>
+                                <BtnPrimarySave type="submit" disabled={isSubmitting}>{isSubmitting ? "Salvando..." : "Salvar título"}</BtnPrimarySave>
                             </div>
                         </form>
                     </ModalContent>
