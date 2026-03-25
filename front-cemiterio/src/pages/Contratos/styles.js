@@ -18,8 +18,7 @@ export const FormStyled = styled.form`
   background: #fff;
   padding: 18px;
   border-radius: 8px;
-  box-shadow: 0 6px 18px rgba(22,28,70,0.06);
-  border: 1px solid rgba(25,25,112,0.2);
+  box-shadow: 0 10px 26px rgba(22,28,70,0.06);
 `;
 
 export const SearchBar = styled.div`
@@ -79,7 +78,7 @@ export const SmallSelect = styled.select`
 export const SmallInput = styled.input`
   padding: 8px 12px;
   border-radius: 18px;
-  border: 1px solid #d6d9e6;
+  border: 1px solid #0022bc;
   background: #fff;
   font-size: 14px;
   margin-bottom:10px;
@@ -131,38 +130,6 @@ export const BtnPrimarySave = styled.button`
   &:hover { opacity: 0.7; }
 `;
 
-export const BtnEdit = styled.button`
-  background: #e6e6f1ff;
-  color: #fff;
-  background-color:#191970;
-  border: 2px;
-  margin-right:2px;
-  margin-top:10px;
-  padding: 12px 28px;
-  border-radius: 24px;
-  cursor: pointer;
-  font-weight: 600;
-  box-shadow: 0 6px 16px rgba(15,13,58,0.18);
-
-  &:hover { opacity: 0.7; }
-`;
-
-export const BtnDelete = styled.button`
-  background: #e6e6f1ff;
-  color: #fff;
-  background-color:#e6e6f1ff;
-  border: 2px;
-  margin-left:5px;
-  margin-right:2px;
-  margin-top:10px;
-  padding: 12px 28px;
-  border-radius: 24px;
-  cursor: pointer;
-  font-weight: 600;
-  box-shadow: 0 6px 16px rgba(15,13,58,0.18);
-
-  &:hover { opacity: 0.7; }
-`;
 
 export const TwoCols = styled.div`
   display: grid;
@@ -240,6 +207,7 @@ export const Th = styled.th`
   font-size: 15px;
 `;
 
+
 export const TBody = styled.tbody`
   background: #fff;
 `;
@@ -257,15 +225,37 @@ export const Td = styled.td`
   vertical-align: middle;
   color: #3b3b3b;
   border-bottom: 1px solid rgba(15,13,58,0.04);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
+  white-space: normal;
+  text-overflow: clip;
+  overflow: visible;
+  font-size:15px;
+`;
+
+export const TdStatus = styled.td`
+  padding: 14px 16px;   
+  vertical-align: middle;   
+  border-bottom: 1px solid rgba(15, 13, 58, 0.04);   
+  white-space: nowrap;   
+  text-align: center;
+`;
+
+export const TdNumContrato = styled.td`
+  padding: 14px 16px;
+  font-size:20px; 
+  font-weight:900;  
+  vertical-align: middle;   
+  border-bottom: 1px solid rgba(15, 13, 58, 0.04);   
+  white-space: nowrap;   
+  text-align: center;
 `;
 
 export const Actions = styled.div`
   display: flex;
   gap: 8px;
   align-items: center;
+  justify-content:flex-start;
+  flex-wrap:nowrap;
+  white-space:nowrap;
 `;
 
 export const IconBtn = styled.button`
@@ -346,3 +336,37 @@ export const ModalGrid = styled.div`
   margin-bottom:20px;
 `;
 
+export const StatusBadge = styled.span`
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:96px;
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  line-height:1.2;
+  text-transform:uppercase;
+  letter-spacing:0.35px;
+  border:1px solid
+  ${({$status})=>{
+    const s = String($status || "").trim().toLowerCase();
+    if(s=== "ativo") return "#12833c"
+    if(s=== "inativo") return "#b91c1c"
+    if(s=== "vencido") return "#d4a100"
+    return "#6b7280";
+  }};
+  color: ${({ $status})=>{
+    const s = String($status || "").trim().toLowerCase();
+    if(s === "vencido") return "#3d3200";
+    return "#fff"
+  }};
+  background: ${({$status})=>{
+    const s = String($status || "").trim().toLowerCase();
+    if(s==="ativo") return "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)";
+    if(s==="inativo") return "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+    if(s==="vencido") return "linear-gradient(135deg, #fde047 0%, #facc15 100%)";
+    return "#6b7280"
+  }};
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 1px 2px rgba(15, 23, 42, 0.15);
+`;

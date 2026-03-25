@@ -5,7 +5,6 @@ export const Card = styled.div`
   border-radius: 8px;
   box-shadow: 0 6px 18px rgba(15,13,58,0.06);
   overflow: hidden;
-  border: 1px solid rgba(25,25,112,0.2);
 `;
 
 export const CardHeader = styled.div`

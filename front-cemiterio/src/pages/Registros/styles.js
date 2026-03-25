@@ -19,7 +19,6 @@ export const FormStyled = styled.form`
   padding: 18px;
   border-radius: 8px;
   box-shadow: 0 6px 18px rgba(22,28,70,0.06);
-  border: 1px solid rgba(25,25,112,0.2);
 `;
 
 export const SearchBar = styled.div`
@@ -254,6 +253,7 @@ export const Td = styled.td`
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+  font-size:15px;
 `;
 
 export const Actions = styled.div`

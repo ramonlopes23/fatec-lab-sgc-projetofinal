@@ -1,11 +1,14 @@
 import Footer from "../../components/Footer";
 import MainLayout from "../../layout/MainLayout";
-import { BtnPrimaryClose, BtnPrimarySave, Container, FormStyled, SearchBar, SearchIcon, SearchWrapper, TableWrapper, Title, Card, TableScroller, TBody, THead, Table, Td, Th, Tr, ModalOverlay, ModalContent, ModalGrid, Input, BtnEdit, BtnDelete } from "./styles";
+import { IconBtn, StatusBadge, Actions, BtnPrimaryClose, BtnPrimarySave, Container, FormStyled, SearchBar, SearchIcon, SearchWrapper, TableWrapper, Title, Card, TableScroller, TBody, THead, Table, Td, TdStatus, Th, Tr, ModalOverlay, ModalContent, ModalGrid, Input, TdNumContrato } from "./styles";
 import TextField from "@mui/material/TextField";
 import { MenuItem } from "@mui/material";
 import { FaSearch } from "react-icons/fa";
 import { ImProfile } from "react-icons/im";
+import { FaRegEdit } from "react-icons/fa";
 import { AiOutlineUserSwitch } from "react-icons/ai";
+import { FaTrash } from "react-icons/fa"
+import { RiDeleteBin2Line } from "react-icons/ri";
 import api from "../../services/api";
 import React, { useEffect, useMemo, useState } from "react"
 
@@ -32,8 +35,9 @@ function formatDateBR(value) {
 }
 
 function statusLabel(status) {
-    const found = STATUS_OPTIONS.find((s) => s.value === status);
-    return found ? found.label : status;
+    const normalized = String(status || "").trim().toLowerCase();
+    const found = STATUS_OPTIONS.find((s) => s.value === normalized);
+    return found ? found.label : (status || "-");
 }
 
 
@@ -248,7 +252,7 @@ export default function Contratos() {
                                         <THead>
                                             <tr>
                                                 <Th>Nº do Título</Th>
-                                                <Th>Titular</Th>                                               
+                                                <Th>Titular</Th>
                                                 <Th>Validade</Th>
                                                 <Th>Sepultura</Th>
                                                 <Th>Quadra</Th>
@@ -260,15 +264,17 @@ export default function Contratos() {
                                             {filteredTitulos.length > 0 ? (
                                                 filteredTitulos.map((item, index) => (
                                                     <Tr key={item.id} index={index}>
-                                                        <Td>{item.numero_titulo}</Td>
-                                                        <Td>{item.nome_titular}</Td>                                                        
+                                                        <TdNumContrato>{item.numero_titulo}</TdNumContrato>
+                                                        <Td>{item.nome_titular}</Td>
                                                         <Td>{formatDateBR(item.validade_titulo)}</Td>
                                                         <Td>{item.sepultura}</Td>
                                                         <Td>{item.quadra}</Td>
-                                                        <Td>{statusLabel(item.status)}</Td>
+                                                        <TdStatus><StatusBadge $status={item.status}>{statusLabel(item.status)}</StatusBadge></TdStatus>
                                                         <Td>
-                                                            <BtnEdit type="button" onClick={() => handleEditTitulo(item)}>Editar</BtnEdit>
-                                                            <BtnDelete type="button" onClick={() => handleDeleteTitulo(item.id)}>Excluir</BtnDelete>
+                                                            <Actions>
+                                                                <IconBtn type="button" onClick={() => handleEditTitulo(item)}><FaRegEdit /></IconBtn>
+                                                                <IconBtn type="button" onClick={() => handleDeleteTitulo(item.id)}><FaTrash /></IconBtn>
+                                                            </Actions>
                                                         </Td>
                                                     </Tr>
                                                 ))
@@ -288,6 +294,9 @@ export default function Contratos() {
 
             {modalOpen && (
                 <ModalOverlay>
+                    {/* <div style={{
+                        position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999
+                    }} onMouseDown={(e) => { if (e.target === e.currentTarget) closeModal(); }}></div> */}
                     <ModalContent>
                         <h3 style={{ marginTop: 0, marginBottom: 16, color: "#191970" }}>
                             {editingId ? "Editar título de posse" : "Novo título de posse"}
@@ -379,7 +388,7 @@ export default function Contratos() {
                             </ModalGrid>
 
                             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                                <BtnPrimaryClose type="submit" onClick={closeModal}>
+                                <BtnPrimaryClose type="button" onClick={closeModal}>
                                     Cancelar
                                 </BtnPrimaryClose>
                                 <BtnPrimarySave type="submit" disabled={isSubmitting}>{isSubmitting ? "Salvando..." : "Salvar título"}</BtnPrimarySave>
