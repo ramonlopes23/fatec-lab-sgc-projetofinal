@@ -212,7 +212,7 @@ export const Tr = styled.tr`
   background: ${({ index }) => (index % 2 === 0 ? "#fafafa" : "#ffffff")};
   transition: background 0.12s ease;
   &:hover {
-    background: #f3f5fb;
+    background: #ecf0fb;
   }
 `;
 

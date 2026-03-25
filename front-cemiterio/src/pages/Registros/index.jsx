@@ -390,17 +390,17 @@ export default function Registros() {
               <TableScroller>
                 <Table>
                   <THead>
-                    <tr>
+                    <>
                       <Th>Falecido</Th>
                       <Th>Data do sepultamento</Th>
                       <Th>Data de vencimento</Th>
                       <Th style={{ width: 160 }}>Ações</Th>
-                    </tr>
+                    </>
                   </THead>
                   <TBody>
                     {paginatedRegistros.map((registro, index) => (
 
-                      <Tr key={`${registro.id}-${(currentPage - 1) * PAGE_SIZE + index}`}>
+                      <Tr key={`${registro.id}-${(currentPage - 1) * PAGE_SIZE + index}`} index={index}>
                         <Td style={{ maxWidth: 320 }}>{registro.nome_sep || "-"}</Td>
                         <Td>{registro.dh_sep ? formatarData(registro.dh_sep) : "-"}</Td>
                         <Td>{registro.dh_sep ? calcularVencimento(registro.dh_sep) : "-"}</Td>

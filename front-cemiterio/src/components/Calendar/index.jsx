@@ -216,67 +216,67 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                                                     <div style={{ fontWeight: 600 }}>{dia.getDate()}</div>
                                                 </div>
                                                 <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>
-                                                {eventos.slice(0, 2).map(e => {
-                                                    const tipoCor = e.tipo === "Exumação" ? "#d97706" : "#191970";
-                                                    const labelTipo = e.tipo || "Sepult.";
-                                                    return (
-                                                        <div key={e.id} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                            {e.nomeFalecido} <span style={{ color: tipoCor, marginLeft: 6, fontSize: 11 }}>⦿ {labelTipo}</span>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
+                                                    {eventos.slice(0, 2).map(e => {
+                                                        const tipoCor = e.tipo === "Exumação" ? "#d97706" : "#191970";
+                                                        const labelTipo = e.tipo || "Sepult.";
+                                                        return (
+                                                            <div key={e.id} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                {e.nomeFalecido} <span style={{ color: tipoCor, marginLeft: 6, fontSize: 11 }}>⦿ {labelTipo}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
                                             </DayButton>
-                                ) : null}
-                        </DayCell>
-                    );
-                            })}
-                </React.Fragment>
-                    ))}
-            </CalendarGrid>
-
-            {open && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200 }}>
-                    <div style={{ width: 560, maxHeight: '80vh', overflowY: 'auto', background: '#fff', borderRadius: 8, padding: 16 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Title style={{ margin: 0 }}>Sepultamentos e exumações em {dataSelecionada}</Title>
-                            <Btn onClick={() => setOpen(false)}>Fechar</Btn>
-                        </div>
-                        <div style={{ marginTop: 12 }}>
-                            {sepultamentosDia.length === 0 ? (
-                                <div style={{ color: '#666' }}>Nenhum sepultamento ou exumação registrado neste dia.</div>
-                            ) : sepultamentosDia.map(s => (
-                                <div style={{ marginTop: 8, padding: 8, background: "#f8f9fb", borderRadius: 6 }}>
-
-                                    <div key={s.id ?? s._id ?? `${dataSelecionada}-${s.quadra}-${s.cova}`} style={{ marginBottom: 12 }}>
-                                        <div style={{ fontWeight: 700 }}>{s.nomeFalecido}</div>
-                                        {(s.data || s.horario) ? (
-                                            <div style={{ color: '#555' }}>
-                                                {s.tipo === "Exumação"
-                                                    ? `Data/Hora da exumação:${s.data ?? ''}${s.horario ? ' ' + s.horario : ''}`
-                                                    : (s.horario ? `Horario do sepultamento: ${s.horario}` : null)}
-                                            </div>
                                         ) : null}
-                                    </div>
+                                    </DayCell>
+                                );
+                            })}
+                        </React.Fragment>
+                    ))}
+                </CalendarGrid>
 
+                {open && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200 }}>
+                        <div style={{ width: 560, maxHeight: '80vh', overflowY: 'auto', background: '#fff', borderRadius: 8, padding: 16 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Title style={{ margin: 0 }}>Sepultamentos e exumações em {dataSelecionada}</Title>
+                                <Btn onClick={() => setOpen(false)}>Fechar</Btn>
+                            </div>
+                            <div style={{ marginTop: 12 }}>
+                                {sepultamentosDia.length === 0 ? (
+                                    <div style={{ color: '#666' }}>Nenhum sepultamento ou exumação registrado neste dia.</div>
+                                ) : sepultamentosDia.map(s => (
+                                    <div style={{ marginTop: 8, padding: 8, background: "#f8f9fb", borderRadius: 6 }}>
 
-                                    <div style={{ color: '#555' }}>Quadra: {s.quadra} • Cova: {s.cova}</div>
-                                    <div style={{ marginTop: 6, fontSize: 12, color: '#333' }}>{String(s.status)}{s.reservada ? ' • Particular' : ''}</div>
-
-                                    {s.tipo === "Exumação" && (
-                                        <div style={{ marginTop: 8, padding: 8, background: "#fff", borderRadius: 6 }}>
-                                            {s.motivo ? <div><strong>Motivo: </strong>{s.motivo}</div> : null}
-                                            {s.destino ? <div><strong>Destino: </strong>{s.destino}</div> : null}
-                                            {s.coveiro ? <div><strong>Coveiro: </strong>{s.coveiro}</div> : null}
+                                        <div key={s.id ?? s._id ?? `${dataSelecionada}-${s.quadra}-${s.cova}`} style={{ marginBottom: 12 }}>
+                                            <div style={{ fontWeight: 700 }}>{s.nomeFalecido}</div>
+                                            {(s.data || s.horario) ? (
+                                                <div style={{ color: '#555' }}>
+                                                    {s.tipo === "Exumação"
+                                                        ? `Data/Hora da exumação:${s.data ?? ''}${s.horario ? ' ' + s.horario : ''}`
+                                                        : (s.horario ? `Horario do sepultamento: ${s.horario}` : null)}
+                                                </div>
+                                            ) : null}
                                         </div>
-                                    )}
-                                </div>
-                            ))}
+
+
+                                        <div style={{ color: '#555' }}>Quadra: {s.quadra} • Cova: {s.cova}</div>
+                                        <div style={{ marginTop: 6, fontSize: 12, color: '#333' }}>{String(s.status)}{s.reservada ? ' • Particular' : ''}</div>
+
+                                        {s.tipo === "Exumação" && (
+                                            <div style={{ marginTop: 8, padding: 8, background: "#fff", borderRadius: 6 }}>
+                                                {s.motivo ? <div><strong>Motivo: </strong>{s.motivo}</div> : null}
+                                                {s.destino ? <div><strong>Destino: </strong>{s.destino}</div> : null}
+                                                {s.coveiro ? <div><strong>Coveiro: </strong>{s.coveiro}</div> : null}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </CardBody>
+                )}
+            </CardBody>
         </Card >
     );
 }

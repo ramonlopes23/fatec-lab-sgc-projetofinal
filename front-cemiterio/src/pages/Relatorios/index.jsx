@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import MainLayout from "../../layout/MainLayout";
 import Footer from "../../components/Footer";
-import { BtnPrimary, BtnPrimaryClose, BtnPrimarySave, ColumnLeft, ColumnRight, Container, Field, FormStyled, Label, ModalContent, ModalGrid, ModalOverlay, SearchBar, SearchIcon, SearchInput, SearchWrapper, SmallInput, SmallSelect, Title, TwoCols, IconBtn, TableWrapper, Table } from "./styles"
+import { BtnPrimary, BtnPrimaryClose, BtnPrimarySave, ColumnLeft, ColumnRight, Container, Field, FormStyled, Label, ModalContent, ModalGrid, ModalOverlay, SearchBar, SearchIcon, SearchInput, SearchWrapper, SmallInput, SmallSelect, Title, TwoCols, IconBtn, TableWrapper, Table, Tr, THead, Td, TBody, Th } from "./styles"
 import { FaFileCsv, FaFileExcel, FaFilePdf, FaSearch, FaEye } from "react-icons/fa";
 import api from "../../services/api";
 import FormControl from "@mui/material/FormControl";
@@ -464,65 +464,65 @@ As exumações têm como objetivo garantir a adequada gestão dos espaços do ce
 
 
                         <TableWrapper>
-                            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                                <thead style={{ background: "#191970", color: "#fff" }}>
+                            <Table>
+                                <THead>
                                     {tipoLista === "exumacoes" ? (
-                                        <tr>
-                                            <th style={{ textAlign: "left", padding: "12px 16px" }}>Falecido</th>
-                                            <th style={{ textAlign: "left", padding: "12px 16px" }}>Data da exumação</th>
-                                            <th style={{ textAlign: "left", padding: "12px 16px" }}>Quadra - Sepultura</th>
-                                            <th style={{ textAlign: "left", padding: "12px 16px" }}>Destinação</th>
-                                            <th style={{ textAlign: "left", padding: "12px 16px" }}>Responsável</th>
-                                            <th style={{ textAlign: "center", padding: "12px 16px", width: 80 }}>Ações</th>
-                                        </tr>
+                                        <>
+                                            <Th>Falecido</Th>
+                                            <Th>Data da exumação</Th>
+                                            <Th>Quadra - Sepultura</Th>
+                                            <Th>Destinação</Th>
+                                            <Th>Responsável</Th>
+                                            <Th>Ações</Th>
+                                        </>
                                     ) : (
-                                        <tr>
-                                            <th style={{ textAlign: "left", padding: "12px 16px" }}>Falecido</th>
-                                            <th style={{ textAlign: "left", padding: "12px 16px" }}>Data do Sepultamento</th>
-                                            <th style={{ textAlign: "left", padding: "12px 16px" }}>Taxa</th>
-                                            <th style={{ textAlign: "center", padding: "12px 16px", width: 80 }}>Ações</th>
-                                        </tr>
+                                        <>
+                                            <Th>Falecido</Th>
+                                            <Th>Data do Sepultamento</Th>
+                                            <Th>Taxa</Th>
+                                            <Th>Ações</Th>
+                                        </>
                                     )}
-                                </thead>
-                                <tbody>
+                                </THead>
+                                <TBody>
                                     {paginated.length === 0 ? (
 
-                                        <tr>
-                                            <td colSpan={6} style={{ padding: 24, textAlign: "center", color: "#666" }}>
+                                        <Tr>
+                                            <Td colSpan={6} style={{ padding: 24, textAlign: "center", color: "#666" }}>
                                                 {isLoading ? "Carregando..." : (tipoLista === "exumacoes" ? "Nenhuma exumação encontrada." : "Nenhum sepultamento encontrado.")}
-                                            </td>
-                                        </tr>
+                                            </Td>
+                                        </Tr>
                                     ) : (
                                         paginated.map((e, i) => (
                                             tipoLista === "exumacoes" ? (
-                                                <tr key={e.id ?? `exu-${i}`} style={{ borderBottom: "1px solid #f1f1f1" }}>
-                                                    <td style={{ padding: "12px 16px" }}>{e.nome_sep || "-"}</td>
-                                                    <td style={{ padding: "12px 16px" }}>{e.dh_exu ? new Date(e.dh_exu).toLocaleDateString() : "-"}</td>
-                                                    <td style={{ padding: "12px 16px" }}>{`${e.quadra_sep ?? e.num_quadra ?? "-"} - ${e.num_sepultura_sep ?? ""}`}</td>
-                                                    <td style={{ padding: "12px 16px" }}>{e.destino || "-"}</td>
-                                                    <td style={{ padding: "12px 16px" }}>{e.coveiro || "-"}</td>
-                                                    <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                                                <Tr key={e.id ?? `exu-${i}`} index={i}>
+                                                    <Td>{e.nome_sep || "-"}</Td>
+                                                    <Td style={{ padding: "12px 16px" }}>{e.dh_exu ? new Date(e.dh_exu).toLocaleDateString() : "-"}</Td>
+                                                    <Td style={{ padding: "12px 16px" }}>{`${e.quadra_sep ?? e.num_quadra ?? "-"} - ${e.num_sepultura_sep ?? ""}`}</Td>
+                                                    <Td style={{ padding: "12px 16px" }}>{e.destino || "-"}</Td>
+                                                    <Td style={{ padding: "12px 16px" }}>{e.coveiro || "-"}</Td>
+                                                    <Td style={{ padding: "12px 16px", textAlign: "center" }}>
                                                         <IconBtn type="button" onClick={() => handleView(e)}>
                                                             <FaEye />
                                                         </IconBtn>
-                                                    </td>
-                                                </tr>
+                                                    </Td>
+                                                </Tr>
 
                                             ) : (
-                                                <tr key={e.id ?? `sep-${i}`} style={{ borderBottom: "1px solid #f1f1f1" }}>
-                                                    <td style={{ padding: "12px 16px" }}>{e.nome_sep || "-"}</td>
-                                                    <td style={{ padding: "12px 16px" }}>{e.dh_sep ? new Date(e.dh_sep).toLocaleDateString() : "-"}</td>
-                                                    <td style={{ padding: "12px 16px" }}>{e.taxa_label ?? "-"}</td>
-                                                    <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                                                <Tr key={e.id ?? `sep-${i}`} index={i}>
+                                                    <Td style={{ padding: "12px 16px" }}>{e.nome_sep || "-"}</Td>
+                                                    <Td style={{ padding: "12px 16px" }}>{e.dh_sep ? new Date(e.dh_sep).toLocaleDateString() : "-"}</Td>
+                                                    <Td style={{ padding: "12px 16px" }}>{e.taxa_label ?? "-"}</Td>
+                                                    <Td style={{ padding: "12px 16px", textAlign: "center" }}>
                                                         <IconBtn type="button" onClick={() => handleView(e)}>
                                                             <FaEye />
                                                         </IconBtn>
-                                                    </td>
-                                                </tr>
+                                                    </Td>
+                                                </Tr>
                                             ))
                                         )
-                                    )}</tbody>
-                            </table>
+                                    )}</TBody>
+                            </Table>
                         </TableWrapper>
 
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 18 }}>
