@@ -7,6 +7,7 @@ import { GiArchiveRegister } from "react-icons/gi";
 import { LuCalendarSearch, LuFileSearch2 } from "react-icons/lu";
 import { FaCog } from "react-icons/fa";
 import { ImProfile } from "react-icons/im";
+import { LuFileStack } from "react-icons/lu";
 import { LogoContainer, LogoImage, NavContainer, NavItem, NavTitle, StyledNavLink, GlobalStyle } from "./styles";
 import sgclogo1 from "../../assets/SGCv2.png";
 import { Title } from "./styles"
@@ -15,14 +16,12 @@ import { Title } from "./styles"
 export default function SidebarMenu() {
 
     const menuItems = [
-        { name: "DASHBOARD", icon: <MdDashboard size={20} />, path: "/Home" },
-        { name: "CADASTRAR PROCESSO", icon: <GiArchiveRegister size={25} />, path: "/Cadastros" },
-        { name: "CALENDÁRIO", icon: <LuCalendarSearch size={20} />, path: "/Calendario" },
+        { name: "HOME", icon: <MdDashboard size={20} />, path: "/Home" },
+        { name: "CADASTROS", icon: <GiArchiveRegister size={25} />, path: "/Cadastros" },        
         { name: "SEPULTURAS", icon: <BsGrid3X3GapFill size={20} />, path: "/VerMapa" },
-        { name: "RELATÓRIOS", icon: <GrNotes size={20} />, path: "/Relatorios" },
-        { name: "REGISTROS", icon: <LuFileSearch2 size={22} />, path: "/Registros" },
-        { name: "CONTRATOS", icon: <ImProfile size={20} />, path: "/Contratos" },
-        { name: "CONFIGURAR", icon: <FaCog size={20} />, path: "/Configurar" },
+        { name: "CALENDÁRIO", icon: <LuCalendarSearch size={20} />, path: "/Calendario" },
+        { name: "REGISTROS GERAIS", icon: <LuFileStack size={20} />, path: "/ProcessSelection" },
+        { name: "CONFIGURAÇÃO", icon: <FaCog size={20} />, path: "/Configurar" },
     ];
 
     return (

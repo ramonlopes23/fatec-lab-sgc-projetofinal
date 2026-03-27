@@ -8,6 +8,8 @@ import VerMapa from "../pages/VerMapa";
 import Calendario from "../pages/Calendario";
 import Relatorios from "../pages/Relatorios";
 import Contratos from "../pages/Contratos";
+import ProcessSelection from "../pages/ProcessSelection";
+
 
 export default function AppRoutes() {
     return (
@@ -19,6 +21,7 @@ export default function AppRoutes() {
             <Route path='/configurar' element={<Configurar />} />
             <Route path='/registros' element={<Registros />} />
             <Route path='/vermapa' element={<VerMapa />} />
+            <Route path='/processselection' element={<ProcessSelection />} />
             <Route path='/relatorios' element={<Relatorios />} />
             <Route path='/contratos' element={<Contratos />} />
         </Routes>
