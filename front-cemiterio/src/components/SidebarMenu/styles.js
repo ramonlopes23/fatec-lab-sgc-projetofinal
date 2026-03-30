@@ -8,7 +8,6 @@ font-family:"Inter", sans-serif;
 }`;
 
 
-
 export const LogoContainer = styled.div`
   padding: 1.5rem;
   display: flex;
@@ -62,13 +61,13 @@ export const Title = styled.h2`
 
 
 export const NavItem = styled.li`
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.7rem;
 `;
 
 export const StyledNavLink = styled(NavLink)`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.55 rem;
   padding: 0.5rem 0rem;
   border-radius: 0.375rem;
   text-decoration: none;

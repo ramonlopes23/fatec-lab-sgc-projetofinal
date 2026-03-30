@@ -2,7 +2,7 @@ import MainLayout from "../../layout/MainLayout";
 import Footer from "../../components/Footer";
 import api from "../../services/api";
 import React, { useState, useMemo, useEffect } from "react";
-import { BtnPrimary, ColumnLeft, ColumnRight, Container, Field, FormActions, FormGrid, FormStyled, FormTop, Input, SelectTop, SmallLabel, Textarea, Title, TwoCols, InputCova, BtnClear, CheckboxInput, CheckboxLabel, CheckboxWrapper } from "./styles";
+import { BtnAction, BtnAction2, BtnPrimary, ColumnLeft, ColumnRight, Container, Field, FormActions, FormGrid, FormStyled, FormTop, Input, SelectTop, SmallLabel, Textarea, Title, TwoCols, InputCova, BtnClear, CheckboxInput, CheckboxLabel, CheckboxWrapper } from "./styles";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
@@ -1070,8 +1070,8 @@ export default function Cadastros() {
                                         </Field>
 
                                         <FormActions>
-                                            <BtnClear type="button" onClick={handleClearSepultamento} disabled={isSubmitting}>Limpar</BtnClear>
-                                            <BtnPrimary type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>Salvar</BtnPrimary>
+                                            <BtnAction2 type="button" onClick={handleClearSepultamento} disabled={isSubmitting}>LIMPAR</BtnAction2>
+                                            <BtnAction style={{marginLeft:5}} type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>SALVAR</BtnAction>
                                         </FormActions>
                                     </ColumnRight>
                                 </>
@@ -1570,8 +1570,8 @@ export default function Cadastros() {
                                         </Field>
 
                                         <FormActions>
-                                            <BtnClear type="button" onClick={handleClearFalecido} disabled={isSubmitting}>Limpar</BtnClear>
-                                            <BtnPrimary type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>Salvar</BtnPrimary>
+                                            <BtnAction2 type="button" onClick={handleClearFalecido} disabled={isSubmitting}>LIMPAR</BtnAction2>
+                                            <BtnAction style={{marginLeft:5}} type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>SALVAR</BtnAction>
                                         </FormActions>
                                     </ColumnRight>
                                 </>
@@ -1586,8 +1586,8 @@ export default function Cadastros() {
                             </DialogContentText>
                         </DialogContent>
                         <DialogActions>
-                            <BtnClear style={{ display: "flex", justifyContent: "flex-start", paddingLeft: 23 }} onClick={() => setConfirmOpen(false)} disabled={isSubmitting}>Cancelar</BtnClear>
-                            <BtnPrimary style={{ display: "flex", justifyContent: "flex-start", paddingLeft: 20 }} onClick={handleConfirmSubmit} disabled={isSubmitting} autoFocus>Confirmar</BtnPrimary>
+                            <BtnClear style={{ display: "flex", justifyContent: "flex-start", paddingLeft: 23 }} onClick={() => setConfirmOpen(false)} disabled={isSubmitting}>CANCELAR</BtnClear>
+                            <BtnPrimary style={{ display: "flex", justifyContent: "flex-start", paddingLeft: 20 }} onClick={handleConfirmSubmit} disabled={isSubmitting} autoFocus>CONFIRMAR</BtnPrimary>
                         </DialogActions>
                     </Dialog>
                 </Container>

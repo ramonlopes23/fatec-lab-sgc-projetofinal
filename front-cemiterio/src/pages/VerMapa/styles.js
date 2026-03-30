@@ -76,7 +76,7 @@ export const CovaItem = styled.button`
   justify-content: center;
   gap: 3px;
   width: 64px;
-  height: ${p=>(p.hasPets ? "88px" : "70px")};
+  height: ${p => (p.hasPets ? "88px" : "70px")};
   border-radius: 8px;
   cursor: pointer;
   box-sizing: border-box;
@@ -88,7 +88,7 @@ export const CovaItem = styled.button`
     if (s === "reservada") return "#d2b24a";
     if (s === "particular_ocupada") return "#000";
     if (s === "ocupada") return "#000";
-    if (s === "indisponível") return "rgba(170, 24, 24, 1)";
+    if (s === "indisponível") return "#aa1818";
     if (s === "disponível" || s === "livre") return "#9e9e9e";
     return "#fff";
   }};
@@ -214,26 +214,6 @@ export const Button = styled.button`
   box-shadow: 0 6px 16px rgba(15,13,58,0.18);
 
   &:hover { opacity: 0.7; }
-`;
-
-export const BtnAdd = styled.button`
-  display:flex;
-  gap:8px;
-  font-size:15px;
-  align-items:center;
-  margin-left: auto; 
-  margin-top: 15px;
-  background: #191970;
-  color: #fff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 600;
-  box-shadow: 0 6px 16px rgba(15,13,58,0.18);
-  position: static; 
-  right: auto;
-  &:hover { opacity: 0.7; transform: translateY(-1px); }
 `;
 
 export const BtnClose = styled.button`
@@ -486,4 +466,49 @@ export const QuadraDropdown = styled.div`
   min-width: 400px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   z-index: 999;
+`;
+
+export const BtnAction = styled.button`
+    display:flex;
+    gap:8px;
+    margin-top:16px;
+    margin-left:auto;
+    align-items:center;
+    border:2;
+    border-radius:10px;
+    border-color:rgba(10, 0, 196, 0.17);
+    padding:10px 18px;
+    background:#;
+    color:#191970;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:0 6px 16px rgba(15,13,58,0.18);
+    transition:transform 0.12s ease, opacity 0.11s ease;
+    position: static; 
+    right: auto;
+
+    &:hover{
+        opacity:0.5;
+        transform:translateY(-5px);
+    }
+`;
+
+export const BtnAdd = styled.button`
+  display:flex;
+  gap:8px;
+  font-size:15px;
+  align-items:center;
+  margin-left: auto; 
+  margin-top: 15px;
+  background: #191970;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgba(15,13,58,0.18);
+  position: static; 
+  right: auto;
+  &:hover { opacity: 0.7; transform: translateY(-1px); }
 `;

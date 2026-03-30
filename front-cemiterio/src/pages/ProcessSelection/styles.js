@@ -81,11 +81,11 @@ export const CardAction = styled.button`
     font-weight:600;
     cursor:pointer;
     box-shadow:0 6px 16px rgba(15,13,58,0.18);
-    transition:transform 0.12s ease, opacity 0.12s ease;
+    transition:transform 0.12s ease, opacity 0.11s ease;
 
     &:hover{
-        opacity:0.9;
-        transform:translateY(-1px);
+        opacity:0.5;
+        transform:translateY(-5px);
     }
 `;
 

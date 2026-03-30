@@ -11,6 +11,7 @@ import { CiCirclePlus } from "react-icons/ci";
 import { useLocation } from "react-router-dom";
 import { MdPets } from "react-icons/md";
 import {
+    BtnAction,
     QuadraDropdown,
     QuadraDropdownWrapper,
     QuadraSelectButton,
@@ -948,9 +949,9 @@ export default function VerMapa() {
                         })}
                     </CovaGrid>
 
-                    <BtnAdd onClick={() => setIsPieChartOpen(true)}>
-                        <FaChartPie />Distribuição de Sepulturas
-                    </BtnAdd>
+                    <BtnAction onClick={() => setIsPieChartOpen(true)}>
+                        <FaChartPie /> DISTRIBUIÇÃO DE SEPULTURAS
+                    </BtnAction>
                 </QuadraWrapper>
 
                 <LegendRow>
@@ -962,8 +963,8 @@ export default function VerMapa() {
                     ))}
 
                     <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center' }}>
-                        <BtnAdd onClick={handleAddQuadra}>Quadra<CiCirclePlus size={20} /></BtnAdd>
-                        <BtnAdd onClick={handleAddCova}>Sepultura<CiCirclePlus size={20} /></BtnAdd>
+                        <BtnAction onClick={handleAddQuadra}>ADICIONAR QUADRA</BtnAction>
+                        <BtnAction onClick={handleAddCova}>ADICIONAR SEPULTURA</BtnAction>
                     </div>
 
                 </LegendRow>
@@ -1055,7 +1056,7 @@ export default function VerMapa() {
                                     </div>
                                 </div>
                                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
-                                    <BtnClose type="button" onClick={handleCloseAddQuadraModal} style={{ padding: "8px 10px" }}>Cancelar</BtnClose>
+                                    <BtnAction type="button" onClick={handleCloseAddQuadraModal} style={{ padding: "8px 10px" }}>Cancelar</BtnAction>
                                     <BtnAdd type="submit" style={{ padding: "8px 10px" }}>Criar</BtnAdd>
 
                                 </div>

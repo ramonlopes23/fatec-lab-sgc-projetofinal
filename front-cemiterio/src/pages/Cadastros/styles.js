@@ -308,3 +308,43 @@ export const InputCova = styled.input`
   font-size: 14px;
   color: #222;
 `;
+
+export const BtnAction = styled.button`
+    margin-top:16px;
+    align-itself:flex-start;
+    border:2;
+    border-radius:24px;
+    border-color:rgba(10, 0, 196, 0.17);
+    padding:10px 18px;
+    background:#;
+    color:#191970;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:0 6px 16px rgba(15,13,58,0.18);
+    transition:transform 0.12s ease, opacity 0.11s ease;
+
+    &:hover{
+        opacity:0.5;
+        transform:translateY(-5px);
+    }
+`;
+
+export const BtnAction2 = styled.button`
+    margin-top:16px;
+    align-itself:flex-start;
+    border:2;
+    border-radius:24px;
+    border-color:#aa1818;
+    padding:10px 18px;
+    background:#;
+    color:#aa1818;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:0 6px 16px rgba(15,13,58,0.18);
+    transition:transform 0.12s ease, opacity 0.11s ease;
+
+    &:hover{
+        opacity:0.5;
+        transform:translateY(-5px);
+    }
+`;
