@@ -31,7 +31,6 @@ export default function Calendario() {
 
   return (
     <div>
-      <MainLayout>
         {loading ? (
           <div>Carregando calendário...</div>
         ) : error ? (
@@ -39,8 +38,6 @@ export default function Calendario() {
         ) : (
           <Calendar sepultamentos={sepultamentos} exumacoes={exumacoes} quadras={quadras} />
         )}
-      </MainLayout>
-      <Footer />
     </div>
   );
 }

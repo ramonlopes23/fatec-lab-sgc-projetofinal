@@ -1,7 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import api from "../../services/api";
-import MainLayout from "../../layout/MainLayout";
-import Footer from "../../components/Footer";
 import GridQuadras from "../../components/GridQuadras";
 import PieChartSepulturas from "../../components/PieChartSepulturas";
 import CovaPetsSection from "../../components/CovaPetsSection";
@@ -852,7 +850,7 @@ export default function VerMapa() {
     }
 
     return (
-        <><MainLayout>
+        <>
             <Container>
                 <Title>CONTROLE DE SEPULTURAS</Title>
 
@@ -1204,14 +1202,14 @@ export default function VerMapa() {
                                         return [...prev, createdPet];
                                     });
                                 }}
-                                onPetDeleted={(petId)=>{
-                                    setPetsAll((prev)=> prev.filter((p)=>String(p.id) !== String(petId)));
+                                onPetDeleted={(petId) => {
+                                    setPetsAll((prev) => prev.filter((p) => String(p.id) !== String(petId)));
                                 }}
                             >
 
                                 {(modalSepList && modalSepList.length > 0) ? (
                                     <>
-                                        <SepDivider />                                    
+                                        <SepDivider />
                                         <SepList>
                                             {modalSepList.map((s, idx) => {
                                                 const expanded = modalExpandedIndex === idx;
@@ -1370,6 +1368,6 @@ export default function VerMapa() {
 
             </Container >
 
-        </MainLayout > <Footer /></>
+        </>
     )
 }

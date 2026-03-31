@@ -1,6 +1,3 @@
-
-import MainLayout from "../../layout/MainLayout";
-import Footer from "../../components/Footer";
 import React, { useState } from "react";
 import { Avatar, BtnPrimary,ColumnLeft,ColumnRight,Container,Field,FormActions,FormGrid,FormStyled,Input,Select,Title} from "../Configurar/styles";
 
@@ -75,7 +72,6 @@ export default function Configurar() {
 
     return (
         <div>
-        <MainLayout>
             <Container>
                 <FormStyled onSubmit={handleSubmit}>
                     <Title>CONFIGURAR PERFIL</Title>
@@ -143,8 +139,6 @@ export default function Configurar() {
                     </FormGrid>
                 </FormStyled>
             </Container>
-        </MainLayout>
-        <Footer />
     </div>
         
     )

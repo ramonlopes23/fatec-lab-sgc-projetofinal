@@ -16,12 +16,12 @@ import { Title } from "./styles"
 export default function SidebarMenu() {
 
     const menuItems = [
-        { name: "HOME", icon: <MdDashboard size={20} />, path: "/Home" },
-        { name: "CADASTROS", icon: <GiArchiveRegister size={25} />, path: "/Cadastros" },        
-        { name: "SEPULTURAS", icon: <BsGrid3X3GapFill size={20} />, path: "/VerMapa" },
-        { name: "CALENDÁRIO", icon: <LuCalendarSearch size={20} />, path: "/Calendario" },
-        { name: "REGISTROS GERAIS", icon: <LuFileStack size={20} />, path: "/ProcessSelection" },
-        { name: "CONFIGURAÇÃO", icon: <FaCog size={20} />, path: "/Configurar" },
+        { name: "HOME", icon: <MdDashboard size={20} />, path: "/home" },
+        { name: "CADASTROS", icon: <GiArchiveRegister size={25} />, path: "/cadastros" },        
+        { name: "SEPULTURAS", icon: <BsGrid3X3GapFill size={20} />, path: "/vermapa" },
+        { name: "CALENDÁRIO", icon: <LuCalendarSearch size={20} />, path: "/calendario" },
+        { name: "REGISTROS GERAIS", icon: <LuFileStack size={20} />, path: "/processselection" },
+        { name: "CONFIGURAÇÃO", icon: <FaCog size={20} />, path: "/configurar" },
     ];
 
     return (

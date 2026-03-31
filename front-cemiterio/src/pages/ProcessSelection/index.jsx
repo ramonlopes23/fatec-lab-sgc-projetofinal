@@ -1,7 +1,5 @@
 import React from 'react'
 import { Btn, CardIcon, Container, Card, CardBody, CardHeader, DashboardWrapper, ProcessAction, ProcessItem, ProcessInfo, CardAction, CardText, CardTitle, CardsGrid, ProcessCard, Subtitle, Title } from './styles.js'
-import MainLayout from '../../layout/MainLayout.jsx';
-import Footer from '../../components/Footer/index.jsx';
 import { useNavigate } from 'react-router-dom';
 import { LiaFileContractSolid } from "react-icons/lia";
 import { GiArchiveResearch } from "react-icons/gi";
@@ -36,37 +34,34 @@ export default function ProcessSelection() {
     const navigate = useNavigate();
     return (
         <>
-            <MainLayout>
-                <Container>
-                    <DashboardWrapper>
-                        <Card>
-                            <CardHeader>SELEÇÃO DE PROCESSOS </CardHeader>
-                            <CardBody>
-                                <ProcessInfo>
-                                    Selecione o tipo de processo que deseja visualizar:
-                                </ProcessInfo>
-                            </CardBody>
-                        </Card>
-                    </DashboardWrapper>
-                    <CardsGrid>
-                        {OPTIONS.map((item) => {
-                            const Icon = item.icon;
+            <Container>
+                <DashboardWrapper>
+                    <Card>
+                        <CardHeader>SELEÇÃO DE PROCESSOS </CardHeader>
+                        <CardBody>
+                            <ProcessInfo>
+                                Selecione o tipo de processo que deseja visualizar:
+                            </ProcessInfo>
+                        </CardBody>
+                    </Card>
+                </DashboardWrapper>
+                <CardsGrid>
+                    {OPTIONS.map((item) => {
+                        const Icon = item.icon;
 
-                            return (
-                                <ProcessCard key={item.id}>
-                                    <CardIcon>
-                                        <Icon />
-                                    </CardIcon>
-                                    <CardTitle>{item.title}</CardTitle>
-                                    <CardText>{item.desc}</CardText>
-                                    <CardAction type="button" onClick={() => navigate(item.route)}>SELECIONAR</CardAction>
-                                </ProcessCard>
-                            )
-                        })}
-                    </CardsGrid>
-                </Container>
-            </MainLayout>
-            <Footer />
+                        return (
+                            <ProcessCard key={item.id}>
+                                <CardIcon>
+                                    <Icon />
+                                </CardIcon>
+                                <CardTitle>{item.title}</CardTitle>
+                                <CardText>{item.desc}</CardText>
+                                <CardAction type="button" onClick={() => navigate(item.route)}>SELECIONAR</CardAction>
+                            </ProcessCard>
+                        )
+                    })}
+                </CardsGrid>
+            </Container>
         </>
     )
 }
