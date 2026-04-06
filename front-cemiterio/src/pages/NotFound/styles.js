@@ -6,7 +6,6 @@ export const Container = styled.div`
     align-items:center;
     justify-content: center;
     height:100vh;
-    background: linear-gradiente(135deg, #667eea 0%, #764ba2 100%);
     color:#191970;
     text-align:center;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubutu', sans-serif;
@@ -17,7 +16,6 @@ export const Button = styled.button`
     padding:10px 20px;
     background:white;
     color:#191970;
-    border:5;
     border-color:#191970;
     border-radius:8px;
     cursor:pointer;

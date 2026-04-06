@@ -21,6 +21,18 @@ export const Grid = styled.div`
   }
 `;
 
+export const statusStyle = {
+  ativo: css`
+    background: #e8f5e9;
+    border-color: #4caf50;
+  `,
+  inativo: css`
+    background: #ffebee;
+    border-color: #f44336;
+    opacity: 0.6;
+  `,
+};
+
 export const Tile = styled.button`
   display: flex;
   flex-direction: column;
@@ -66,7 +78,7 @@ export const Tile = styled.button`
     `}
 
   /* Status dinâmico */
-  ${(props) => props.status [props.status]}
+  ${(props) => statusStyle [props.status] || css``}
 
   @media (max-width: 420px) {
     min-height: 56px;

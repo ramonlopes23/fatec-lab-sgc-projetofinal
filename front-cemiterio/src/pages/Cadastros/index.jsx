@@ -585,7 +585,7 @@ export default function Cadastros() {
                         return;
                     }
 
-                    const res = await api.post("/sepultamentos", payload);
+                    const res = await api.post("/burial  ", payload);
                     const created = res?.data ?? null;
 
                     try {
