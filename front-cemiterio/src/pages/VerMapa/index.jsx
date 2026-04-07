@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useBlocks } from "../../hooks/useBlocks";
 import { useCreateBlocks } from "../../hooks/useCreateBlocks";
-import api from "../../services/api";
+import useCreateGraves from "../../hooks/useCreateGraves";
+import api from "../../services/apijava";
 import GridQuadras from "../../components/GridQuadras";
 import PieChartSepulturas from "../../components/PieChartSepulturas";
 import CovaPetsSection from "../../components/CovaPetsSection";
@@ -73,7 +74,6 @@ export default function VerMapa() {
     } = useBlocks();
 
     const { handleCreateBlock, loading: creatingBlock } = useCreateBlocks({
-        existingBlocks: blocks,
         onSuccess: async (created) => {
             setBlocks((prev) => {
                 if (!Array.isArray(prev)) return [created];
@@ -85,6 +85,8 @@ export default function VerMapa() {
             alert("Quadra criada");
         }
     });
+
+    const { handleCreateGrave, loading: creatingGrave } = useCreateGraves();
 
     const [formQuadra, setFormQuadra] = useState({
         num_quadra: "",
@@ -505,9 +507,15 @@ export default function VerMapa() {
             return;
         }
 
+        const number = Number(num);
+        if (!Number.isInteger(number) || number <= 0) {
+            alert("Informe um número de quadra válido");
+            return;
+        }
+
         try {
             await handleCreateBlock({
-                number: Number(num),
+                number,
                 description,
                 cemeteryId: FIXED_CEMETERY_ID,
             });
@@ -520,47 +528,59 @@ export default function VerMapa() {
 
     const handleCreateCova = async (e) => {
         if (e && e.preventDefault) e.preventDefault();
+
         const quadra = String(formCova.quadra_cova || "").trim();
         const num = String(formCova.num_cova || "").trim();
         const tipo = String(formCova.tipo_cova || "").trim();
+
         if (!quadra || !num) {
-            alert("Informe quadra e número da cova");
+            alert("Informe quadra e número da sepultura");
             return;
         }
 
-        const payload = {
-            quadra_cova: quadra,
-            num_cova: num,
-            tipo_cova: tipo || "cova",
-            status: normalizeStatus(formCova.status),
-            capacidade: formCova.capacidade || "",
-            concessao: {
-                ativa: !!(formCova.concessao && formCova.concessao.ativa),
-                responsavel: formCova.concessao?.responsavel || "",
-                prazo_anos: Number(formCova.concessao?.prazo_anos || 0),
-                data_inicio: formCova.concessao?.data_inicio || "",
-                data_fim: formCova.concessao?.data_fim || ""
-            },
-            obs: formCova.obs || "",
-        };
-        try {
-            const chk = await api.get("/covas", { params: { quadra_cova: quadra, num_cova: num } })
-            if (Array.isArray(chk.data) && chk.data.length > 0) {
-                alert("Já existe uma cova com essa quadra e número");
-                return;
-            }
-
-        } catch (e) {
-            console.warn("Erro ao checar duplicata", e)
+        const parsedNumber = Number(num);
+        if (!Number.isInteger(parsedNumber) || parsedNumber <= 0) {
+            alert("Número da sepultura inválido");
+            return;
         }
-        try {
-            await api.post("/covas", payload);
+
+        const parsedBlockId = Number(quadra);
+        if (!Number.isInteger(parsedBlockId) || parsedBlockId <= 0) {
+            alert("Quadra inválida");
+            return;
+        }
+
+        const parsedBodyCapacity = Number(formCova.capacidade || 1);
+        if (!Number.isInteger(parsedBodyCapacity) || parsedBodyCapacity <= 0) {
+            alert("Capacidade inválida");
+            return;
+        }
+
+        const graveTypeMap = {
+            cova: "EARTH",
+            gaveta: "MAUSOLEUM",
+            nicho: "MAUSOLEUM",
+        };
+
+
+        const graveType = graveTypeMap[tipo] || "EARTH";
+        const areaType = formCova.concessao?.ativa ? "PERPETUAL" : "COMMON";
+
+        try{
+            await handleCreateGrave({
+                number:parsedNumber,
+                graveType,
+                bodyCapacity:parsedBodyCapacity,
+                areaType,
+                blockId: parsedBlockId,
+            });
+
             setModalAddCovaOpen(false);
             await loadMapData();
             alert("Sepultura criada");
-        } catch (err) {
-            console.error("Erro ao criar cova", err);
-            alert("Erro ao criar cova");
+        } catch(err){
+            console.error("Erro ao criar sepultura", err);
+            alert(err.message || "Erro ao criar sepultura")
         }
     }
 
@@ -1188,7 +1208,9 @@ export default function VerMapa() {
                                 </FormGrid>
                                 <ButtonsRow>
                                     <BtnClose type="button" onClick={handleCloseAddCovaModal} style={{ padding: "8px 10px" }}>Cancelar</BtnClose>
-                                    <BtnAdd type="submit" style={{ padding: "8px 10px" }}>Criar</BtnAdd>
+                                    <BtnAdd type="submit" disabled={creatingGrave} style={{ padding: "8px 10px" }}>
+                                        {creatingGrave ? "Criando..." : "Criar"}
+                                    </BtnAdd>
                                 </ButtonsRow>
                             </FormStyled>
                         </div>

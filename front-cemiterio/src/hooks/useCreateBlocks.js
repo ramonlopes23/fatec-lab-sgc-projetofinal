@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createBlock, getBlocks } from "../services/blockService";
 
-export function useCreateBlocks({ onSuccess }) {
+export function useCreateBlocks({ onSuccess }={}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -10,34 +10,48 @@ export function useCreateBlocks({ onSuccess }) {
     setError("");
 
     try {
-      const blocks = await getBlocks();
 
-      const exists = Array.isArray(blocks) && blocks.some(
-        (block) =>
-          String(block.number) === String(number) &&
-          Number(block.cemeteryId) === Number(cemeteryId)
-      );
+      const parsedNumber = Number(number);
+      const parsedCemeteryId = Number(cemeteryId);
 
-      if (exists) {
-        throw new Error("Já existe uma quadra com esse número neste cemitério.");
+      if(!Number.isInteger(parsedNumber) || parsedNumber <=0){
+        throw new Error("Número de quadra inválido")
       }
 
-      const created = await createBlock({
-        number,
-        description,
-        cemeteryId,
+      if(!Number.isInteger(parsedCemeteryId) || parsedCemeteryId <=0){
+        throw new Error("Cemitério inválido")
+      }
+
+      const existingBlocks = await getBlocks();
+
+      const alreadyExists = Array.isArray(existingBlocks) && existingBlocks.some((block)=> Number(block.number) === parsedNumber && Number(block.cemeteryId) === parsedCemeteryId);
+
+      if(alreadyExists){
+        throw new Error("Já existe quadra com esse número neste cemitério.")
+      }
+
+      const payload = {
+        number: parsedNumber,
+        description: String(description || "").trim(),
         active: true,
-      });
+        cemeteryId: parsedCemeteryId,
+        
+      };
+
+      const created = await createBlock(payload)
 
       if (onSuccess) {
-        onSuccess(created);
+        await onSuccess(created);
       }
 
       return created;
     } catch (err) {
+      const backendMessage = err?.response?.data?.message;
+      const message = backendMessage || err?.message || "Erro ao criar quadra.";
+
       console.error("Erro ao criar quadra:", err);
-      setError(err.message || "Erro ao criar quadra.");
-      throw err;
+      setError(message);
+      throw new Error(message);
     } finally {
       setLoading(false);
     }

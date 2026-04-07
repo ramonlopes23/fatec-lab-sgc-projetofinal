@@ -1,4 +1,4 @@
-import api from "./api";
+import api from "./apijava";
 
 export const getBlocks = async () => {
   const response = await api.get("/blocks");
