@@ -60,8 +60,15 @@ const normalizeStatus = (value) => {
     if (raw.includes("indispon")) return "indisponivel";
     if (raw.includes("livre")) return "livre";
     return raw;
+
 };
 
+const resolveBlockId = (value) => {
+    if (value && typeof value === "object") {
+        return value.id ?? value.blockId ?? "";
+    }
+    return value ?? "";
+}
 
 export default function VerMapa() {
 
@@ -126,7 +133,7 @@ export default function VerMapa() {
         });
 
         (covasData || []).forEach((cova) => {
-            const qKey = String(cova.quadra_cova ?? cova.quadra ?? "0");
+            const qKey = String(resolveBlockId(cova?.grave?.blockId ?? cova?.grave?.block ?? cova?.blockId ?? cova?.quadra ?? cova?.quadra_cova) || "0");
 
             if (!quadraMap.has(qKey)) {
                 quadraMap.set(qKey, {
@@ -566,11 +573,11 @@ export default function VerMapa() {
         const graveType = graveTypeMap[tipo] || "EARTH";
         const areaType = formCova.concessao?.ativa ? "PERPETUAL" : "COMMON";
 
-        try{
+        try {
             await handleCreateGrave({
-                number:parsedNumber,
+                number: parsedNumber,
                 graveType,
-                bodyCapacity:parsedBodyCapacity,
+                bodyCapacity: parsedBodyCapacity,
                 areaType,
                 blockId: parsedBlockId,
             });
@@ -578,7 +585,7 @@ export default function VerMapa() {
             setModalAddCovaOpen(false);
             await loadMapData();
             alert("Sepultura criada");
-        } catch(err){
+        } catch (err) {
             console.error("Erro ao criar sepultura", err);
             alert(err.message || "Erro ao criar sepultura")
         }
@@ -594,21 +601,56 @@ export default function VerMapa() {
 
     const loadMapData = useCallback(async () => {
         try {
-            const [rCovas, rSep, rExu, rPets] = await Promise.all([
-                api.get("/covas"),
+
+            const [rGraves] = await Promise.all([
+                api.get("/graves"),
+                loadBlocks(),
+            ]);
+
+            const rawGraves = rGraves?.data;
+            const gravesData = Array.isArray(rawGraves)
+                ? rawGraves
+                : Array.isArray(rawGraves?.content)
+                    ? rawGraves.content
+                    : Array.isArray(rawGraves?.data)
+                        ? rawGraves.data
+                        : [];           
+             
+
+            const normalizedCovasData = gravesData.map((grave) => ({
+                id: grave?.id,
+                quadra_cova: String(Number(resolveBlockId(grave?.blockId ?? grave?.block)) || 0),
+                num_cova: grave?.number ?? "",
+                tipo_cova: String(grave?.graveType || "").toUpperCase() === "MAUSOLEUM" ? "gaveta" : "cova",
+                capacidade: grave?.bodyCapacity === null || grave?.bodyCapacity === undefined ? "" : Number(grave.bodyCapacity),
+                status: grave?.blocked ? "indisponivel" : String(grave?.status || "").toUpperCase() === "OCCUPIED" ? "ocupada" : String(grave?.status || "").toUpperCase() === "MAINTENANCE" ? "indisponivel" : "livre",
+                active: grave?.active,
+                blocked: grave?.blocked,
+                reason: grave?.reason ?? "",
+                grave,
+            }));
+        
+            setCovasData(normalizedCovasData);
+
+            const [rSep, rExu, rPets] = await Promise.allSettled([
                 api.get("/sepultamentos"),
                 api.get("/exumacoes"),
                 api.get("/pets"),
             ]);
 
-            await loadBlocks();
+            const sepData =
+                rSep.status === "fulfilled" && Array.isArray(rSep.value?.data)
+                    ? rSep.value.data
+                    : [];
+            const exuData =
+                rExu.status === "fulfilled" && Array.isArray(rExu.value?.data)
+                    ? rExu.value.data
+                    : [];
+            const petsData =
+                rPets.status === "fulfilled" && Array.isArray(rPets.value?.data)
+                    ? rPets.value.data
+                    : [];
 
-            const covasData = Array.isArray(rCovas.data) ? rCovas.data : [];
-            const sepData = Array.isArray(rSep.data) ? rSep.data : [];
-            const petsData = Array.isArray(rPets.data) ? rPets.data : [];
-            const exuData = Array.isArray(rExu.data) ? rExu.data : [];
-
-            setCovasData(covasData);
             setSepultamentosAll(sepData);
             setPetsAll(petsData);
 
@@ -632,7 +674,7 @@ export default function VerMapa() {
 
 
             const covaIdToQuadra = Object.fromEntries(
-                covasData.map((c) => [String(c.id), String(c.quadra_cova ?? c.quadra ?? "")])
+                normalizedCovasData.map((c) => [String(c.id), String(c.quadra_cova ?? c.quadra ?? "")])
             );
 
             const tmp = {};
@@ -643,7 +685,15 @@ export default function VerMapa() {
                 const quadraKey = String(
                     sep.quadra_sep ??
                     sep.quadra ??
-                    covaIdToQuadra[String(sep.covaId ?? sep.cova_id ?? sep.cova ?? "")] ??
+                    covaIdToQuadra[
+                    String(
+                        sep.graveId ??
+                        sep.grave_id ??
+                        sep.covaId ??
+                        sep.cova ??
+                        ""
+                    )
+                    ] ??
                     "0"
                 );
 
@@ -824,8 +874,8 @@ export default function VerMapa() {
 
     const statusList = [
         { key: "ocupada", label: "Ocupada", color: "#000" },
-        { key: "disponível", label: "Disponível", color: "#9e9e9e" },
-        { key: "indisponível", label: "Indisponível", color: "#c55" },
+        { key: "disponivel", label: "Disponível", color: "#9e9e9e" },
+        { key: "indisponivel", label: "Indisponivel", color: "#c55" },
         { key: "particular", label: "Particular", color: "#d2b24a" },
         { key: "particular_ocupada", label: "P/O (Particular e ocupada)", color: "#000", borderColor: "#d2b24a", borderWidth: 3 }
     ];
@@ -867,6 +917,7 @@ export default function VerMapa() {
         });
         return ids.size;
     }
+
 
     return (
         <>
@@ -912,33 +963,29 @@ export default function VerMapa() {
                     <CovaGrid>
                         {quadraSelecionada.covas.map((cova) => {
 
-                            const rawStatus = String(cova.status || "").toLowerCase();
-/*                             const isReservadaByStatus = rawStatus.includes("reserv");
- */                            const hasTitulo = /* isReservadaByStatus */  !!cova?.cova?.concessao?.ativa || !!(cova.sep && String(cova.sep.titulo_posse ?? "").toLowerCase() === "sim");
+                            const backendStatus = String(cova?.grave?.status || "").toUpperCase();
+                            const gravesStatusRaw = String(cova?.grave?.status || "").toLowerCase();
+                            const isBlocked = !!cova?.grave?.blocked;
+                            const isPerpetual = String(cova?.grave?.areaType || cova?.areaType || "").toUpperCase() === "PERPETUAL";
+
                             const sepCount = getSepultadosCountBySep(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
                             const petCount = getPetsCountBySep(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
-                            const capacidadeNum = Number(cova.capacidade ?? 0);
-                            const capacidadeTotal = capacidadeNum + sepCount;
 
-                            let displayStatus = cova.status;
+                            const capacidadeTotal = Number(cova?.grave?.bodyCapacity ?? cova.capacidade ?? 0);
+                            const occupiedCount = sepCount > 0 ? sepCount : gravesStatusRaw === "occupied" && capacidadeTotal > 0 ? capacidadeTotal : 0;
 
-                            if (rawStatus.includes("indispon")) {
-                                displayStatus = "indisponível";
-                            }
-                            else if (capacidadeTotal > 0) {
-                                if (sepCount >= capacidadeTotal) {
-                                    displayStatus = hasTitulo ? "particular_ocupada" : "ocupada";
-                                }
-                                else if (hasTitulo) {
-                                    displayStatus = "reservada"
-                                }
-                                else {
-                                    displayStatus = "disponível"
-                                }
+                            let displayStatus = "disponivel";
 
-                            } /* else if(isReservadaByStatus){
+
+                            if (isBlocked || backendStatus === "MAINTENANCE" ) {
+                                displayStatus = "indisponivel";
+                            } else if (backendStatus === "OCCUPIED") {
+                                displayStatus = isPerpetual ? "particular_ocupada" : "ocupada";
+                            } else if (isPerpetual) {
                                 displayStatus = "reservada";
-                            } */
+                            } else {
+                                displayStatus = "disponivel";
+                            }
 
                             return (
                                 <CovaItem
@@ -947,11 +994,10 @@ export default function VerMapa() {
                                     borderColor={(displayStatus === "reservada" || displayStatus === "particular_ocupada") ? "#d2b24a" : undefined}
                                     borderWidth={(displayStatus === "reservada" || displayStatus === "particular_ocupada") ? 5 : undefined}
                                     onClick={() => handleClickCova(cova)}
-                                    title={`Cova ${cova.numero} - ${displayStatus} (⚰️ ${sepCount}/${capacidadeTotal}${petCount > 0 ? ` | 🐾 ${petCount}` : ""})`}
+                                    title={`Cova ${cova.numero} - ${displayStatus} (⚰️ ${occupiedCount}/${capacidadeTotal}${petCount > 0 ? ` | 🐾 ${petCount}` : ""})`}
                                 >
-                                    {/*  <GiCoffin aria-hidden="true" /> */}
                                     <span className="cova-number" aria-hidden="true">{cova.numero}  </span>
-                                    <span className="cova-capacity" aria-hidden="true"><GiCoffin />{`${sepCount}/${capacidadeTotal}`}  </span>
+                                    <span className="cova-capacity" aria-hidden="true"><GiCoffin />{`${occupiedCount}/${capacidadeTotal}`}  </span>
                                     {petCount > 0 && (
                                         <>
                                             <span className="cova-divider" aria-hidden="true" />
@@ -1141,7 +1187,7 @@ export default function VerMapa() {
                                             <SmallSelect style={{ width: 200 }} name="status" value={formCova.status} onChange={handleCovaChange}>
                                                 <option value="livre">Disponível</option>
                                                 <option value="reservada">Particular</option>
-                                                <option value="indisponível">Indisponível</option>
+                                                <option value="indisponivel">Indisponível</option>
                                             </SmallSelect>
                                         </Field>
 

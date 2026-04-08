@@ -88,14 +88,16 @@ export const CovaItem = styled.button`
     if (s === "reservada") return "#d2b24a";
     if (s === "particular_ocupada") return "#000";
     if (s === "ocupada") return "#000";
-    if (s === "indisponível") return "#aa1818";
-    if (s === "disponível" || s === "livre") return "#9e9e9e";
-    return "#fff";
+    if (s === "indisponível" || s === "indisponivel") return "#aa1818";
+    if (s === "disponível" || s === "disponivel" || s === "livre") return "#9e9e9e";
+    return "#f4f8f5";
   }};
 
   color: ${p => {
     const s = String(p.status || "").toLowerCase();
-    return (s === "reservada" ? "#000" : "#fff");
+    if(s === "reservada") return "#000";
+    if(s === "particular_ocupada" || s === "ocupada" || s === "indisponível" || s === "indisponivel") return "#fff";
+    return "#191970"
   }};
 
   border: ${p => (p.borderColor ? `${p.borderWidth ?? 2}px solid ${p.borderColor}` : "transparent")};
@@ -122,22 +124,23 @@ export const CovaItem = styled.button`
     line-height: 0.9;
     color: inherit;
     opacity: 0.9;
-    display:inline-fledx;
+    display:inline-flex;
     align-items:center;
     gap:4px;
   }
+
   & .cova-petCap{    
     font-size: 10px;
     font-weight: 600;
     line-height: 0.9;
     color: inherit;
     opacity: 0.9;
-    display:inline-fledx;
+    display:inline-flex;
     align-items:center;
     gap:4px;
   }
 
-  &:cova-divider { 
+  & .cova-divider { 
     width: 80%;
     height:1px;
     background:currentColor;
