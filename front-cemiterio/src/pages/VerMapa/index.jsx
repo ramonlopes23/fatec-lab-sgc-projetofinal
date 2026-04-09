@@ -28,6 +28,7 @@ import {
     LegendRow,
     SmallSelect,
     BtnAdd,
+    BtnActionCancel,
     BtnClose,
     BtnPrimaryClose,
     Input,
@@ -572,6 +573,9 @@ export default function VerMapa() {
 
         const graveType = graveTypeMap[tipo] || "EARTH";
         const areaType = formCova.concessao?.ativa ? "PERPETUAL" : "COMMON";
+        const blocked = String(formCova.status).toLowerCase() === "indisponivel";
+        const backendStatus = blocked ? "MAINTENANCE" : "AVAILABLE";
+
 
         try {
             await handleCreateGrave({
@@ -580,6 +584,8 @@ export default function VerMapa() {
                 bodyCapacity: parsedBodyCapacity,
                 areaType,
                 blockId: parsedBlockId,
+                status: backendStatus,
+                blocked,                
             });
 
             setModalAddCovaOpen(false);
@@ -614,8 +620,8 @@ export default function VerMapa() {
                     ? rawGraves.content
                     : Array.isArray(rawGraves?.data)
                         ? rawGraves.data
-                        : [];           
-             
+                        : [];
+
 
             const normalizedCovasData = gravesData.map((grave) => ({
                 id: grave?.id,
@@ -629,7 +635,7 @@ export default function VerMapa() {
                 reason: grave?.reason ?? "",
                 grave,
             }));
-        
+
             setCovasData(normalizedCovasData);
 
             const [rSep, rExu, rPets] = await Promise.allSettled([
@@ -963,28 +969,31 @@ export default function VerMapa() {
                     <CovaGrid>
                         {quadraSelecionada.covas.map((cova) => {
 
-                            const backendStatus = String(cova?.grave?.status || "").toUpperCase();
-                            const gravesStatusRaw = String(cova?.grave?.status || "").toLowerCase();
-                            const isBlocked = !!cova?.grave?.blocked;
-                            const isPerpetual = String(cova?.grave?.areaType || cova?.areaType || "").toUpperCase() === "PERPETUAL";
+                            const grave = cova?.cova?.grave ?? cova?.grave ?? {};
+                            const backendStatus = String(grave?.status ?? "").toUpperCase();
+                            const rawAreaType = grave?.areaType ?? grave?.area_type ?? cova?.areaType ?? cova?.area_type ?? "";
+                            const isPerpetual = String(rawAreaType).toUpperCase() === "PERPETUAL";
+                            const isBlocked = !!grave?.blocked;
 
                             const sepCount = getSepultadosCountBySep(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
                             const petCount = getPetsCountBySep(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
 
-                            const capacidadeTotal = Number(cova?.grave?.bodyCapacity ?? cova.capacidade ?? 0);
-                            const occupiedCount = sepCount > 0 ? sepCount : gravesStatusRaw === "occupied" && capacidadeTotal > 0 ? capacidadeTotal : 0;
+                            const capacidadeTotal = Number(grave?.bodyCapacity ?? cova?.capacidade ?? 0);
+                            const occupiedCount =
+                                sepCount > 0
+                                    ? sepCount
+                                    : backendStatus === "OCCUPIED" && capacidadeTotal > 0
+                                        ? capacidadeTotal
+                                        : 0;
 
                             let displayStatus = "disponivel";
 
-
-                            if (isBlocked || backendStatus === "MAINTENANCE" ) {
+                            if (isBlocked || backendStatus === "MAINTENANCE") {
                                 displayStatus = "indisponivel";
                             } else if (backendStatus === "OCCUPIED") {
                                 displayStatus = isPerpetual ? "particular_ocupada" : "ocupada";
                             } else if (isPerpetual) {
                                 displayStatus = "reservada";
-                            } else {
-                                displayStatus = "disponivel";
                             }
 
                             return (
@@ -1133,13 +1142,13 @@ export default function VerMapa() {
                                 </Field>
 
                                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
-                                    <BtnAction
+                                    <BtnActionCancel
                                         type="button"
                                         onClick={handleCloseAddQuadraModal}
                                         style={{ padding: "8px 10px" }}
                                     >
                                         Cancelar
-                                    </BtnAction>
+                                    </BtnActionCancel>
 
                                     <BtnAdd
                                         type="submit"
@@ -1185,8 +1194,7 @@ export default function VerMapa() {
                                         <Field>
                                             <Label>Status: </Label>
                                             <SmallSelect style={{ width: 200 }} name="status" value={formCova.status} onChange={handleCovaChange}>
-                                                <option value="livre">Disponível</option>
-                                                <option value="reservada">Particular</option>
+                                                <option value="disponivel">Disponível</option>
                                                 <option value="indisponivel">Indisponível</option>
                                             </SmallSelect>
                                         </Field>
@@ -1253,7 +1261,7 @@ export default function VerMapa() {
 
                                 </FormGrid>
                                 <ButtonsRow>
-                                    <BtnClose type="button" onClick={handleCloseAddCovaModal} style={{ padding: "8px 10px" }}>Cancelar</BtnClose>
+                                    <BtnActionCancel type="button" onClick={handleCloseAddCovaModal} style={{ padding: "8px 10px" }}>Cancelar</BtnActionCancel>
                                     <BtnAdd type="submit" disabled={creatingGrave} style={{ padding: "8px 10px" }}>
                                         {creatingGrave ? "Criando..." : "Criar"}
                                     </BtnAdd>

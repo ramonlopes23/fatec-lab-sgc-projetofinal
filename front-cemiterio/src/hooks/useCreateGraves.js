@@ -11,6 +11,8 @@ export default function useCreateGraves({ onSuccess } = {}) {
         bodyCapacity,
         areaType,
         blockId,
+        status,
+        blocked,
     }) => {
         setLoading(true);
         setError("");
@@ -40,6 +42,10 @@ export default function useCreateGraves({ onSuccess } = {}) {
                 throw new Error("Quadra inválida.");
             }
 
+            if (typeof blocked !== "boolean") {
+                throw new Error("Estado de bloqueio inválido")
+            }
+
             const existingGraves = await getGrave();
 
             const alreadyExists = Array.isArray(existingGraves) && existingGraves.some((grave) => Number(grave.number) === parsedNumber && Number(grave.blockId) === parsedBlockId);
@@ -48,12 +54,21 @@ export default function useCreateGraves({ onSuccess } = {}) {
                 throw new Error("Já existe uma sepultura com esse número nesta quadra. ");
             }
 
+            const normalizedStatus = String(status || "AVAILABLE").toUpperCase();
+            const normalizedBlocked =
+                typeof blocked === "boolean"
+                    ? blocked
+                    : normalizedStatus === "MAINTENANCE";
+
+
             const payload = {
                 number: parsedNumber,
                 graveType: String(graveType).toUpperCase(),
                 bodyCapacity: parsedBodyCapacity,
                 areaType: String(areaType).toUpperCase(),
                 blockId: parsedBlockId,
+                status: normalizedStatus,
+                blocked: normalizedBlocked,
             };
 
             const created = await createGrave(payload);

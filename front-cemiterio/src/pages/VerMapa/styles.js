@@ -496,6 +496,31 @@ export const BtnAction = styled.button`
     }
 `;
 
+export const BtnActionCancel = styled.button`
+    display:flex;
+    gap:8px;
+    margin-top:16px;
+    margin-right:20px;
+    align-items:center;
+    border:2;
+    border-radius:10px;
+    border-color:rgba(10, 0, 196, 0.17);
+    padding:10px 18px;
+    background:#;
+    color:#191970;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:0 6px 16px rgba(15,13,58,0.18);
+    transition:transform 0.12s ease, opacity 0.11s ease;
+    position: static; 
+    right: auto;
+
+    &:hover{
+        opacity:0.5;
+        transform:translateY(-5px);
+    }
+`;
+
 export const BtnAdd = styled.button`
   display:flex;
   gap:8px;

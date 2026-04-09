@@ -106,7 +106,7 @@ function GridQuadras({
               title={`${q.num_quadra}${q.status ? ` - ${q.status}` : ""}`}
             >
               <TileLabel>{q.num_quadra}</TileLabel>
-              {showStatus && <TileBadge>{q.status ?? ""}</TileBadge>}
+
             </Tile>
           );
         })}

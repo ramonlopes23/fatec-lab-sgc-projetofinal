@@ -4,46 +4,74 @@ import api from "../../services/api";
 import { useState, useRef, useMemo } from "react";
 
 
-const colors = [
-    "#9e9e9e", "#000", "#c55", "#d2b24a", { fill: "#000", stroke: "#d2b24a", strokeWidth: 4 }
+const PIE_SERIES = [
+    { key: "disponivel", label: "Disponível", color: "#9e9e9e" },
+    { key: "ocupada", label: "Ocupada", color: "#000" },
+    { key: "indisponivel", label: "Indisponivel", color: "#c55" },
+    { key: "particular", label: "Particular", color: "#d2b24a" },
+    { key: "particular_ocupada", label: "P/O", color: "#000", borderColor: "#d2b24a", borderWidth: 4 },
 ];
 
 function easeOutCubic(t) {
     return 1 - Math.pow(1 - t, 3);
 }
 
+function normalizeBackendStatus(grave) {
+    const backendStatus = String(grave?.status ?? "").toUpperCase();
+    const areaType = String(grave?.areaType ?? grave?.area_type ?? "").toUpperCase();
+    const isBlocked = grave?.blocked === true;
+
+    if (isBlocked || backendStatus === "MAINTENANCE") {
+        return "indisponivel";
+    }
+
+    if (backendStatus === "OCCUPIED") {
+        return areaType === "PERPETUAL" ? "particular_ocupada" : "ocupada";
+    }
+
+    if (areaType === "PERPETUAL") {
+        return "particular";
+    }
+
+    return "disponivel";
+}
+
 export default function PieChartSepulturas() {
 
-    const [covas, setCovas] = useState([]);
-    const [sepultamentos, setSepultamentos] = useState([]);
+    const [graves, setGraves] = useState([]);
     const [loading, setLoading] = useState(false);
     const [activeIndex, setActiveIndex] = useState(null);
     const [animFactor, setAnimFactor] = useState(1);
+    const animFactorRef = useRef(1);
     const rafRef = useRef(null);
 
     useEffect(() => {
         let mounted = true;
         setLoading(true);
 
-        Promise.all([
-            api.get("/covas"),
-            api.get("/sepultamentos"),
-        ])
-            .then(([rCovas, rSep]) => {
+        api.get("/graves")
+            .then((response) => {
                 if (!mounted) return;
-                setCovas(Array.isArray(rCovas.data) ? rCovas.data : []);
-                setSepultamentos(Array.isArray(rSep.data) ? rSep.data : []);
+
+                const raw = response?.data;
+                const list = Array.isArray(raw) ? raw : Array.isArray(raw?.content) ? raw.content : Array.isArray(raw?.data) ? raw.data : [];
+
+                setGraves(list);
             })
             .catch((err) => {
                 if (!mounted) return;
                 console.error("Erro ao carregar dados do gráfico:", err);
-                setCovas([]);
-                setSepultamentos([]);
+                setGraves([]);
             })
-            .finally(() => mounted && setLoading(false));
+            .finally(() => {
+                if (mounted) setLoading(false)
+            })
 
-        return () => (mounted = false);
+        return () => {
+            mounted = false;
+        }
     }, []);
+
 
     const data = useMemo(() => {
         const counts = {
@@ -54,83 +82,21 @@ export default function PieChartSepulturas() {
             particular_ocupada: 0,
         };
 
-        /* const sepCountByCova = {}; */
-
-        const covaMap = new Map();
-        (covas || []).forEach(cova => {
-            const key = `${cova.quadra_cova || ""}-${cova.num_cova || ""}`;
-            covaMap.set(key, cova);
-        })
-
-        const sepCountMap = new Map();
-        const visibleSep = (sepultamentos || []).filter(s => !s.foi_exumado);
-        visibleSep.forEach(sep => {
-            const quadraKey = String(sep.quadra ?? sep.quadra_sep);
-            const numero = String(sep.num_sepultura_sep ?? "");
-            const key = `${quadraKey}-${numero}`;
-            if (!sepCountMap.has(key)) sepCountMap.set(key, new Set());
-            const id = sep.id ?? sep._id ?? null;
-            sepCountMap.get(key).add(id != null ? String(id) : `${key}-${sep.dh_sep ?? sep.data_obito_sep}`);
+        (graves || []).forEach((grave) => {
+            const bucket = normalizeBackendStatus(grave);
+            counts[bucket] += 1;
         });
 
-        /* const sepId = sep.id ?? sep._id ?? null;
-        if (sepId != null) {
-            sepCountMap[key].add(String(sepId));
-        } else {
-            sepCountMap[key].add(`${quadraKey}-${numero}-${sep.dh_sep ?? ""}`);
-        }
+        return PIE_SERIES.map((item) => ({
+            status: item.label,
+            key: item.key,
+            value: counts[item.key] ?? 0,
+        }));
+    }, [graves]);
 
-        const sepCountNumeric = {};
-        Object.keys(sepCountByCova).forEach(key => {
-            sepCountNumeric[key] = sepCountByCova[key].size;
-        }); */
-
-        (covas || []).forEach(cova => {
-            const quadraKey = String(cova.quadra_cova ?? cova.quadra ?? "");
-            const numero = String(cova.num_cova ?? cova.numero ?? "");
-            const key = `${quadraKey}-${numero}`;
-
-            const sepCount = sepCountMap.get(key)?.size ?? 0;
-            const capacidadeNum = Number(cova.capacidade ?? 0);
-            const capacidadeTotal = capacidadeNum + sepCount;
-
-            const statusRaw = String(cova.status ?? "").toLowerCase();
-            if (statusRaw.includes("indispon")) {
-                counts.indisponivel++;
-                return;
-            }
-
-            const sepForCova = visibleSep.find(s =>
-                String(s.quadra_sep ?? s.quadra ?? "") === quadraKey &&
-                String(s.num_sepultura_sep ?? s.num_sepultura ?? "") === numero
-            )
-            const hasTitulo = (cova.concessao && cova.concessao.ativa === true) || (sepForCova && String(sepForCova.titulo_posse ?? "").toLowerCase() === "sim")
-
-
-            if (capacidadeTotal > 0) {
-                if (sepCount >= capacidadeTotal) {
-                    counts.ocupada++;
-                }
-                if (hasTitulo && sepCount >= capacidadeTotal) {
-                    counts.particular_ocupada++;
-                } else if (hasTitulo) {
-                    counts.particular++
-                } else {
-                    counts.disponivel++
-                }
-            } else {
-                counts.disponivel++
-            }
-        });
-
-        return [
-            { status: "Disponível", value: counts.disponivel },
-            { status: "Ocupada", value: counts.ocupada },
-            { status: "Indisponivel", value: counts.indisponivel },
-            { status: "Particular", value: counts.particular },
-            { status: "P/O", value: counts.particular_ocupada },
-        ]
-    }, [covas, sepultamentos]);
+    useEffect(() => {
+        animFactorRef.current = animFactor;
+    }, [animFactor]);
 
     useEffect(() => {
         cancelAnimationFrame(rafRef.current);
@@ -152,7 +118,8 @@ export default function PieChartSepulturas() {
         return () => cancelAnimationFrame(rafRef.current)
     }, [activeIndex]);
 
-    const total = data.reduce((s, it) => s + (Number(it.value) || 0), 0);
+    const total = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+
 
     function renderActiveShape(props) {
         const {
@@ -211,11 +178,17 @@ export default function PieChartSepulturas() {
                         onMouseLeave={() => setActiveIndex(null)}
                     >
                         {data.map((entry, index) => {
-                            const colorEntry = colors[index % colors.length];
-                            if (typeof colorEntry === "string") {
-                                return <Cell key={index} fill={colorEntry} />
-                            }
-                            return <Cell key={index} {...colorEntry} />
+                            const colorEntry = PIE_SERIES[index % PIE_SERIES.length];
+                            return colorEntry.borderColor ? (
+                                <Cell
+                                    key={entry.key}
+                                    fill={colorEntry.color}
+                                    stroke={colorEntry.borderColor}
+                                    strokeWidth={colorEntry.borderWidth}
+                                />
+                            ) : (
+                                <Cell key={entry.key} fill={colorEntry.color} />
+                            );
                         })}
                     </Pie>
                     <Tooltip formatter={(value) => `${value} (${((value / total) * 100).toFixed(1)}%)`} />
