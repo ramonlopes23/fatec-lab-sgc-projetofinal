@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createGrave, getGrave } from "../services/graveService";
 
-export default function useCreateGraves({ onSuccess } = {}) {
+export function useCreateGraves({ onSuccess } = {}) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 

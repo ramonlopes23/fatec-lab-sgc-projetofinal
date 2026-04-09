@@ -1,14 +1,13 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useBlocks } from "../../hooks/useBlocks";
 import { useCreateBlocks } from "../../hooks/useCreateBlocks";
-import useCreateGraves from "../../hooks/useCreateGraves";
+import { useCreateGraves } from "../../hooks/useCreateGraves";
 import api from "../../services/apijava";
 import GridQuadras from "../../components/GridQuadras";
 import PieChartSepulturas from "../../components/PieChartSepulturas";
 import CovaPetsSection from "../../components/CovaPetsSection";
 import { GiCoffin } from "react-icons/gi";
 import { FaChartPie } from "react-icons/fa";
-import { CiCirclePlus } from "react-icons/ci";
 import { useLocation } from "react-router-dom";
 import { MdPets } from "react-icons/md";
 import {
@@ -52,17 +51,6 @@ import {
     SepItemRow,
     SepToggle,
 } from "./styles";
-
-const normalizeStatus = (value) => {
-    const raw = String(value || "").trim().toLowerCase();
-    if (!raw) return "livre";
-    if (raw.includes("reserv") || raw.includes("particular")) return "reservada";
-    if (raw.includes("ocup")) return "ocupada";
-    if (raw.includes("indispon")) return "indisponivel";
-    if (raw.includes("livre")) return "livre";
-    return raw;
-
-};
 
 const resolveBlockId = (value) => {
     if (value && typeof value === "object") {
@@ -585,7 +573,7 @@ export default function VerMapa() {
                 areaType,
                 blockId: parsedBlockId,
                 status: backendStatus,
-                blocked,                
+                blocked,
             });
 
             setModalAddCovaOpen(false);
@@ -960,8 +948,8 @@ export default function VerMapa() {
                 </div>
                 <QuadraWrapper key={quadraSelecionada.id || "preview"}>
                     <QuadraInfo key={String(quadraSelecionada.id)}>
-                        <InfoPill>Capacidade máxima de sepulturas: {quadraSelecionada.max_covas > 0 ? quadraSelecionada.max_covas : "-"}</InfoPill>
-                        <InfoPill>Número atual de sepulturas: {Array.isArray(quadraSelecionada.covas) ? quadraSelecionada.covas.length : getCovasCount?.(quadraSelecionada.num_quadra ?? quadraSelecionada.id) ?? 0}</InfoPill>
+{/*                         <InfoPill>Capacidade máxima de sepulturas: {quadraSelecionada.max_covas > 0 ? quadraSelecionada.max_covas : "-"}</InfoPill>
+ */}                        <InfoPill>Número atual de sepulturas: {Array.isArray(quadraSelecionada.covas) ? quadraSelecionada.covas.length : getCovasCount?.(quadraSelecionada.num_quadra ?? quadraSelecionada.id) ?? 0}</InfoPill>
                         <InfoPill>Número atual de sepultados: {getSepultadosCount(quadraSelecionada.id ?? quadraSelecionada.num_quadra ?? selectedQuadraId)}</InfoPill>
 
                     </QuadraInfo>

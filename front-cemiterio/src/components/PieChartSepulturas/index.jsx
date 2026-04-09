@@ -1,7 +1,6 @@
-import React, { useEffect } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Sector } from "recharts";
 import api from "../../services/api";
-import { useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 
 
 const PIE_SERIES = [
