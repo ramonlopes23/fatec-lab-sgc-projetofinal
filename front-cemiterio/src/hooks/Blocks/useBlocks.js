@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getBlocks, inactivateBlock } from "../services/blockService";
+import { getBlocks, inactivateBlock } from "../../services/blockService";
 
 export function useBlocks() {
   const [blocks, setBlocks] = useState([]);

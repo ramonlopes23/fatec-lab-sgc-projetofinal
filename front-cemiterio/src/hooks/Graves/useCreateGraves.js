@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createGrave, getGrave } from "../services/graveService";
+import { createGrave, getGrave } from "../../services/graveService";
 
 export function useCreateGraves({ onSuccess } = {}) {
     const [loading, setLoading] = useState(false);

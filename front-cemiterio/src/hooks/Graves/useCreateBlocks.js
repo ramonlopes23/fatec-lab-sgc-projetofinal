@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createBlock, getBlocks } from "../services/blockService";
+import { createBlock, getBlocks } from "../../services/blockService";
 
 export function useCreateBlocks({ onSuccess }={}) {
   const [loading, setLoading] = useState(false);

@@ -11,12 +11,33 @@ import Relatorios from "../pages/Relatorios";
 import Contratos from "../pages/Contratos";
 import ProcessSelection from "../pages/ProcessSelection";
 import NotFound from "../pages/NotFound";
+import Login from "../pages/Login";
+import { useAuthStore } from "../stores/authStore";
 
+function PrivateRoute({ children }) {
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+    const hydrated = useAuthStore((s) => s.hydrated);
+
+    if (!hydrated) return <div style={{ padding: 24 }}>Carregando sessão...</div>;
+    return isAuthenticated ? children : <Navigate to="/login" replace />;
+}
+
+function PublicOnlyRoute({ children }) {
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+    return isAuthenticated ? <Navigate to="/home" replace /> : children;
+}
 
 export default function AppRoutes() {
     return (
         <Routes>
-            <Route element={<AppShell />}>
+            <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+            <Route
+                element={
+                    <PrivateRoute>
+                        <AppShell />
+                    </PrivateRoute>
+                }
+            >
                 <Route path='/' element={<Navigate to="/home" />} />
                 <Route path='/home' element={<Home />} />
                 <Route path='/calendario' element={<Calendario />} />
