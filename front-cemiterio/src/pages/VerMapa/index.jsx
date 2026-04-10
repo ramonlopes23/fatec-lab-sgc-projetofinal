@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { useBlocks } from "../../hooks/useBlocks";
-import { useCreateBlocks } from "../../hooks/useCreateBlocks";
-import { useCreateGraves } from "../../hooks/useCreateGraves";
+import { useBlocks } from "../../hooks/Blocks/useBlocks";
+import sgcLogo from "../../assets/SGCv2.png";
+import { useCreateBlocks } from "../../hooks/Graves/useCreateBlocks";
+import { useCreateGraves } from "../../hooks/Graves/useCreateGraves";
 import api from "../../services/apijava";
 import GridQuadras from "../../components/GridQuadras";
 import PieChartSepulturas from "../../components/PieChartSepulturas";
@@ -25,6 +26,8 @@ import {
     Title,
     LegendItem,
     LegendRow,
+    LoaderCircle,
+    LoaderLogo,
     SmallSelect,
     BtnAdd,
     BtnActionCancel,
@@ -50,6 +53,8 @@ import {
     SepList,
     SepItemRow,
     SepToggle,
+    LoadingMap,
+    InnerLoadingMap,
 } from "./styles";
 
 const resolveBlockId = (value) => {
@@ -91,6 +96,7 @@ export default function VerMapa() {
 
     const [covasData, setCovasData] = useState([]);
     const [petsAll, setPetsAll] = useState([]);
+    const [isMapLoading, setIsMapLoading] = useState(true);
     const [sepultamentosAll, setSepultamentosAll] = useState([]);
     const [selectedQuadraId, setSelectedQuadraId] = useState(null);
 
@@ -594,6 +600,7 @@ export default function VerMapa() {
     }
 
     const loadMapData = useCallback(async () => {
+        setIsMapLoading(true)
         try {
 
             const [rGraves] = await Promise.all([
@@ -741,6 +748,8 @@ export default function VerMapa() {
             }
         } catch (err) {
             console.error("Erro ao carregar sepultamento/quadras", err);
+        } finally {
+            setIsMapLoading(false);
         }
     }, [location.search, loadBlocks]);
 
@@ -918,12 +927,21 @@ export default function VerMapa() {
             <Container>
                 <Title>CONTROLE DE SEPULTURAS</Title>
 
+                {isMapLoading && (
+                    <LoadingMap>
+                        <InnerLoadingMap>
+                            <LoaderCircle data-loader="logo-circle">
+                                <LoaderLogo src={sgcLogo} alt="SGC" />
+                            </LoaderCircle>
+                        </InnerLoadingMap>
+                    </LoadingMap>
+                )}
 
                 <div style={{ margin: "12px 0", display: "flex", gap: 12, alignItems: "center" }}>
                     <label style={{ fontWeight: 600, color: "#171770" }}>Quadra: </label>
 
                     <QuadraDropdownWrapper style={{ position: "relative", }} ref={dropdownRef}>
-                        <QuadraSelectButton onClick={() => setIsQuadraDropdownOpen(!isQuadraDropdownOpen)}
+                        <QuadraSelectButton disabled={isMapLoading} onClick={() => { if (isMapLoading) return; setIsQuadraDropdownOpen(!isQuadraDropdownOpen) }}
                         >
                             {selectedQuadraId ? `Quadra ${quadrasDesc.find(q => String(q.id) === String(selectedQuadraId))?.num_quadra || selectedQuadraId}` : "Selecione uma quadra"}
                             <span style={{ marginLeft: "8px" }}>
@@ -948,7 +966,7 @@ export default function VerMapa() {
                 </div>
                 <QuadraWrapper key={quadraSelecionada.id || "preview"}>
                     <QuadraInfo key={String(quadraSelecionada.id)}>
-{/*                         <InfoPill>Capacidade máxima de sepulturas: {quadraSelecionada.max_covas > 0 ? quadraSelecionada.max_covas : "-"}</InfoPill>
+                        {/*                         <InfoPill>Capacidade máxima de sepulturas: {quadraSelecionada.max_covas > 0 ? quadraSelecionada.max_covas : "-"}</InfoPill>
  */}                        <InfoPill>Número atual de sepulturas: {Array.isArray(quadraSelecionada.covas) ? quadraSelecionada.covas.length : getCovasCount?.(quadraSelecionada.num_quadra ?? quadraSelecionada.id) ?? 0}</InfoPill>
                         <InfoPill>Número atual de sepultados: {getSepultadosCount(quadraSelecionada.id ?? quadraSelecionada.num_quadra ?? selectedQuadraId)}</InfoPill>
 
@@ -1009,7 +1027,7 @@ export default function VerMapa() {
                         })}
                     </CovaGrid>
 
-                    <BtnAction onClick={() => setIsPieChartOpen(true)}>
+                    <BtnAction disabled={isMapLoading} onClick={() => setIsPieChartOpen(true)}>
                         <FaChartPie /> DISTRIBUIÇÃO DE SEPULTURAS
                     </BtnAction>
                 </QuadraWrapper>
@@ -1023,8 +1041,8 @@ export default function VerMapa() {
                     ))}
 
                     <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center' }}>
-                        <BtnAction onClick={handleAddQuadra}>ADICIONAR QUADRA</BtnAction>
-                        <BtnAction onClick={handleAddCova}>ADICIONAR SEPULTURA</BtnAction>
+                        <BtnAction disabled={isMapLoading} onClick={handleAddQuadra}>ADICIONAR QUADRA</BtnAction>
+                        <BtnAction disabled={isMapLoading} onClick={handleAddCova}>ADICIONAR SEPULTURA</BtnAction>
                     </div>
 
                 </LegendRow>
@@ -1389,7 +1407,7 @@ export default function VerMapa() {
                             </CovaPetsSection>
 
                             <ModalButtonsRow>
-                                <BtnPrimaryClose onClick={() => { setModalOpen(false); setSelectedCova(null); setModalForm(null); }} style={{ padding: "8px 10px" }}>Fechar</BtnPrimaryClose>
+                                <BtnActionCancel onClick={() => { setModalOpen(false); setSelectedCova(null); setModalForm(null); }} style={{ padding: "8px 10px" }}>Fechar</BtnActionCancel>
                             </ModalButtonsRow>
 
                         </ModalContent>

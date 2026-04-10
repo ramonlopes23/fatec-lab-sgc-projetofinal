@@ -17,7 +17,7 @@ function GridQuadras({
   num,
   quadrasArr,
   columnsMinWidth = 92,
-  showStatus = true,
+/*   showStatus = true, */
 }) {
   const [internalSelected, setInternalSelected] = useState(null);
   const lastEmittedRef = useRef(null);
