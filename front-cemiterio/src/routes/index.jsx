@@ -22,7 +22,7 @@ function PrivateRoute({ children }) {
     return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
-function PublicOnlyRoute({ children }) {
+function  PublicOnlyRoute({ children }) {
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     return isAuthenticated ? <Navigate to="/home" replace /> : children;
 }

@@ -1,10 +1,30 @@
 import React, { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
+import { MdOutlineAccountBalance } from "react-icons/md";
 import { useAuthStore } from "../../stores/authStore";
-
+import sgcLogo from "../../assets/SGC.png";
+import logo_horizontal from "../../assets/logo_horizontal.png";
+import {
+    Page,
+    BrandSide,
+    BrandWrap,
+    BrandLogo,
+    BrandSubtitle,
+    FormSide,
+    Card,
+    Title,
+    Field,
+    Label,
+    Input,
+    Select,
+    HelperLink,
+    ErrorText,
+    PrimaryButton,
+    SecondaryButton,
+    PrefeituraLogo,
+} from "./styles";
 
 export default function Login() {
-
     const navigate = useNavigate();
 
     const login = useAuthStore((s) => s.login);
@@ -12,47 +32,82 @@ export default function Login() {
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const error = useAuthStore((s) => s.error);
 
-    const [form, setForm] = useState({ username: "", password: "" });
+    const [form, setForm] = useState({
+        username: "",
+        password: "",
+        role: "",
+    });
 
     if (isAuthenticated) return <Navigate to="/home" replace />;
 
     const handleSubmit = async (e) => {
-        e.preventDefault()
+        e.preventDefault();
         try {
-            await login(form);
+            await login({ username: form.username, password: form.password });
             navigate("/home", { replace: true });
-
         } catch {
-            //erro ja tratado na store (store.error)
+            // erro tratado na store
         }
-    }
+    };
 
     return (
-        <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#f6f8ff" }}>
-            <form onSubmit={handleSubmit} style={{ width: 360, padding: 20, borderRadius: 12, background: "#fff", boxShadow: "0 8px 24px rgba(0,0,0,.12)" }}>
-                <h2 style={{ marginTop: 0, color: "#191970" }}>Login SGC</h2>
+        <Page>
+            <BrandSide>
+                <BrandWrap>
+                    <PrefeituraLogo src={logo_horizontal} alt="Prefeitura" />
 
-                <label>Usuário</label>
-                <input
-                    value={form.username}
-                    onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))}
-                    style={{ width: "100%", marginBottom: 10 }}
-                />
+                    <BrandLogo src={sgcLogo} alt="SGC" />
+                    <BrandSubtitle>SISTEMA DE GERENCIAMENTO DE CEMITÉRIOS</BrandSubtitle>
+                </BrandWrap>
+            </BrandSide>
 
-                <label>Senha</label>
-                <input
-                    type="password"
-                    value={form.password}
-                    onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-                    style={{ width: "100%", marginBottom: 12 }}
-                />
 
-                {error ? <p style={{ color: "#aa1818" }}>{error}</p> : null}
+            <FormSide>
+                <Card onSubmit={handleSubmit}>
+                    <Title>LOGIN</Title>
 
-                <button type="submit" disabled={isLoading} style={{ width: "100%" }}>
-                    {isLoading ? "Entrando..." : "Entrar"}
-                </button>
-            </form>
-        </div>
-    )
+                    <Field>
+                        <Label>Usuário</Label>
+                        <Input
+                            placeholder="Digite o nome do usuário"
+                            value={form.username}
+                            onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))}
+                        />
+                    </Field>
+
+                    <Field>
+                        <Label>Senha</Label>
+                        <Input
+                            type="password"
+                            placeholder="Digite a senha do usuário"
+                            value={form.password}
+                            onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+                        />
+                    </Field>
+
+                    <Field>
+                        <Label>Cargo/Função</Label>
+                        <Select
+                            value={form.role}
+                            onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
+                        >
+                            <option value="">Selecione seu cargo/função</option>
+                            <option value="ADMIN">Administrador</option>
+                            <option value="USER">Operador</option>
+                        </Select>
+                    </Field>
+
+                    <HelperLink type="button">Esqueceu a senha?</HelperLink>
+
+                    {error ? <ErrorText>{error}</ErrorText> : null}
+
+                    <PrimaryButton type="submit" disabled={isLoading}>
+                        {isLoading ? "ENTRANDO..." : "ENTRAR"}
+                    </PrimaryButton>
+
+                    <SecondaryButton type="button">CRIAR CONTA</SecondaryButton>
+                </Card>
+            </FormSide>
+        </Page>
+    );
 }
