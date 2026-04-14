@@ -14,6 +14,7 @@ export const LayoutContainer = styled.div`
 
 export const Content = styled.div`
   flex: 1;
+  border-left:1px solid var(--app-border);
   display: flex;
   flex-direction: column;
   width:${({isSidebarOpen}) => (isSidebarOpen? 'calc(100% - 16rem)' : '100%')};
@@ -25,18 +26,19 @@ export const Content = styled.div`
 export const PageContent = styled.main`
   flex: 1;
   padding: 1rem;
-  background-color: #f8f9f9ff;
+  background-color: var(--app-bg);
+  color:var(--app-text);
   overflow: auto;
 `;
 
 export const SidebarContainer = styled.div`
   width:16rem;
   height:100vh;
-  background-color:#ffffff;
+  background-color:var(--app-surface);
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
   display:flex;
   flex-direction:column;
-  border-right: 0.5px solid rgba(25,25,112,0.1) ;
+  border-right: 0.5px solid var (--app-border);
   position:fixed;
   transform:${({isOpen})=> (isOpen ?"translate(0)":"translate(-100%)")};
   transition:transform 0.3s ease;

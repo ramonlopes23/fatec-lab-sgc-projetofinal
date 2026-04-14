@@ -3,7 +3,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import AppShell from "../layout/AppShell";
 import Home from "../pages/Home";
 import Cadastros from "../pages/Cadastros";
-import Configurar from "../pages/Configurar";
 import Registros from "../pages/Registros";
 import VerMapa from "../pages/VerMapa";
 import Calendario from "../pages/Calendario";
@@ -42,7 +41,6 @@ export default function AppRoutes() {
                 <Route path='/home' element={<Home />} />
                 <Route path='/calendario' element={<Calendario />} />
                 <Route path='/cadastros' element={<Cadastros />} />
-                <Route path='/configurar' element={<Configurar />} />
                 <Route path='/registros' element={<Registros />} />
                 <Route path='/vermapa' element={<VerMapa />} />
                 <Route path='/processselection' element={<ProcessSelection />} />
