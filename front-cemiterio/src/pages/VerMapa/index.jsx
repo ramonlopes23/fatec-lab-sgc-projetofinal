@@ -3,7 +3,9 @@ import { useBlocks } from "../../hooks/Blocks/useBlocks";
 import sgcLogo from "../../assets/SGCv2.png";
 import { useCreateBlocks } from "../../hooks/Graves/useCreateBlocks";
 import { useCreateGraves } from "../../hooks/Graves/useCreateGraves";
-import api from "../../services/apijava";
+import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx"
+import api from "../../services/index.js";
+import { patchGraveStatus } from "../../services/graveService";
 import GridQuadras from "../../components/GridQuadras";
 import PieChartSepulturas from "../../components/PieChartSepulturas";
 import CovaPetsSection from "../../components/CovaPetsSection";
@@ -56,6 +58,7 @@ import {
     LoadingMap,
     InnerLoadingMap,
 } from "./styles";
+import { Alert, Snackbar } from "@mui/material";
 
 const resolveBlockId = (value) => {
     if (value && typeof value === "object") {
@@ -74,6 +77,12 @@ export default function VerMapa() {
         setBlocks
     } = useBlocks();
 
+    const {
+        showSuccess,
+        showError,
+        ToastElement,
+    } = useToastFeedback();
+
     const { handleCreateBlock, loading: creatingBlock } = useCreateBlocks({
         onSuccess: async (created) => {
             setBlocks((prev) => {
@@ -83,7 +92,7 @@ export default function VerMapa() {
             })
             setSelectedQuadraId(created.id);
             setModalAddQuadraOpen(false);
-            alert("Quadra criada");
+            showSuccess("Quadra criada")
         }
     });
 
@@ -100,6 +109,7 @@ export default function VerMapa() {
     const [sepultamentosAll, setSepultamentosAll] = useState([]);
     const [selectedQuadraId, setSelectedQuadraId] = useState(null);
 
+
     const quadras = useMemo(() => {
         const normalizeCovaStatus = (s) => {
             if (!s) return "livre";
@@ -107,7 +117,7 @@ export default function VerMapa() {
             if (raw.includes("reserv")) return "reservada";
             if (raw.includes("indispon")) return "indisponivel";
             if (raw.includes("ocup")) return "ocupada";
-            if (raw === "livre" || raw === "disponivel" || raw === "disponivel") return "livre";
+            if (raw === "livre" || raw === "disponivel" || raw === "disponivel") return "Livre";
             return raw;
         };
 
@@ -240,6 +250,7 @@ export default function VerMapa() {
         num_cova: "",
         tipo_cova: "cova",
         status: "",
+        blocked: false,
         capacidade: "",
         concessao: {
             ativa: false,
@@ -266,7 +277,7 @@ export default function VerMapa() {
         if (!sep) return;
         const key = String(sep.id);
         if (exumacoesPending[key]) {
-            alert("Já existe uma exumação para esse registro");
+            showError("Já existe uma exumação para esse registro");
         }
 
         const sepQuadraKey = sep.quadra_sep ?? sep.quadra ?? (selectedCova?.cova?.quadra_cova ?? selectedCova?.quadra_cova) ?? selectedQuadraId ?? "";
@@ -303,10 +314,10 @@ export default function VerMapa() {
 
     const submitExumacao = async (e) => {
         if (e && e.preventDefault) e.preventDefault();
-        if (!exumacoesForm || !exumacoesForm.sepultamentoId) return alert("Dados inválidos");
+        if (!exumacoesForm || !exumacoesForm.sepultamentoId) return showError("Dados inválidos");
 
         const key = String(exumacoesForm.sepultamentoId)
-        if (exumacoesPending[key]) return alert("Já existe uma exumação pendente para este registro.");
+        if (exumacoesPending[key]) return showError("Já existe uma exumação pendente para este registro.");
 
         try {
             const payload = { ...exumacoesForm, status: "pendente", confirmado: false };
@@ -325,20 +336,20 @@ export default function VerMapa() {
             };
 
             setExumacoesModalIsOpen(false);
-            alert("Exumação cadastrada e aguardando confirmação. ");
+            showSuccess("Exumação cadastrada e aguardando confirmação. ");
         } catch (err) {
             console.error("Erro ao enviar exumação", err);
-            alert("Erro ao cadastrar exumação" + (err?.message || ""));
+            showError("Erro ao cadastrar exumação" + (err?.message || ""));
         }
     }
 
 
     const cancelExumacao = async (sep) => {
-        if (!sep || !sep.id) return alert("Sepultamento inválido");
+        if (!sep || !sep.id) return showError("Sepultamento inválido");
         const key = String(sep.id);
         const ex = exumacoesPending[key];
         if (!ex || !ex.id) {
-            return alert("Nenhuma exumação pendente para este registro");
+            return showError("Nenhuma exumação pendente para este registro");
         }
         if (!confirm(`Cancelar exumação pendente para ${sep.nome_sep || "este registro"}?`)) return;
         try {
@@ -349,10 +360,10 @@ export default function VerMapa() {
                 return clone;
             });
             try { window.dispatchEvent(new CustomEvent("processoCancelado", { detail: ex })); } catch (e) { e };
-            alert("Exumação cancelada. ");
+            showError("Exumação cancelada. ");
         } catch (err) {
             console.error("Erro ao cancelar exumação", err);
-            alert("Erro ao cancelar exumação");
+            showError("Erro ao cancelar exumação");
         }
     }
 
@@ -426,6 +437,7 @@ export default function VerMapa() {
             num_cova: "",
             tipo_cova: "cova",
             status: "disponivel",
+            blocked: false,
             capacidade: "",
             concessao: {
                 ativa: false,
@@ -505,13 +517,13 @@ export default function VerMapa() {
         const description = String(formQuadra.descricao || "").trim();
 
         if (!num) {
-            alert("Informe o número da quadra");
+            showError("Informe o número da quadra");
             return;
         }
 
         const number = Number(num);
         if (!Number.isInteger(number) || number <= 0) {
-            alert("Informe um número de quadra válido");
+            showError("Informe um número de quadra válido");
             return;
         }
 
@@ -523,10 +535,138 @@ export default function VerMapa() {
             });
         } catch (err) {
             console.error("Erro ao criar quadra", err);
-            alert(err.message || "Erro ao criar quadra");
+            showError(err.message || "Erro ao criar quadra");
         }
     };
 
+    /* const handleToggleBlockedLegal = async () => {
+        const grave = selectedGraveForModal;
+        if (!grave?.id) {
+            alert("Sepultura sem identificação para atualização");
+            return;
+        }
+
+        try {
+            const nextBlocked = !grave.blocked;
+            const updated = await updateGrave(grave.id, {
+                ...grave,
+                blocked: nextBlocked,
+            });
+
+            const finalBlocked = typeof updated?.blocked === "boolean" ? updated.blocked : nextBlocked;
+
+            setCovasData((prev) =>
+                prev.map((item) =>
+                    String(item?.grave?.id) !== String(grave.id)
+                        ? item
+                        : {
+                            ...item,
+                            blocked: finalBlocked,
+                            grave: {
+                                ...item.grave,
+                                ...updated,
+                                blocked: finalBlocked,
+                            },
+                        }
+                )
+            );
+
+            console.log(finalBlocked)
+
+            setSelectedCova((prev) => {
+                if (!prev) return prev;
+                const prevGrave = prev?.cova?.grave ?? prev?.grave ?? null;
+                if (!prevGrave || String(prevGrave.id) !== String(grave.id)) return prev;
+
+                if (prev?.cova) {
+                    return {
+                        ...prev,
+                        cova: {
+                            ...prev.cova,
+                            blocked: finalBlocked,
+                            grave: {
+                                ...prev.cova.grave,
+                                ...updated,
+                                blocked: finalBlocked,
+                            },
+                        },
+                    };
+                }
+
+                return {
+                    ...prev,
+                    blocked: finalBlocked,
+                    grave: {
+                        ...prev.grave,
+                        ...updated,
+                        blocked: finalBlocked,
+                    },
+                };
+            });
+            console.log(finalBlocked)
+            showInfo(finalBlocked ? "Sepultura bloqueada por questão legal." : "Bloqueio legal removido");
+        } catch (err) {
+            console.error("Erro ao atualizar blocked da sepultura", err);
+            alert(err?.response?.data?.message || err?.message || "Erro ao atualizar bloqueio legal.");
+        }
+    } */
+
+    const handleToggleStatus = async () => {
+        const grave = selectedGraveForModal;
+        if (!grave?.id) {
+            showError("Sepultura sem identificação para atualização");
+            return;
+        }
+
+        try {
+            const currentStatus = String(grave?.status || "").toUpperCase();
+            const nextStatus = currentStatus === "AVAILABLE" ? "MAINTENANCE" : "AVAILABLE";
+
+            await patchGraveStatus(grave.id, nextStatus);
+
+            // Atualizar covasData
+            setCovasData((prev) =>
+                prev.map((item) =>
+                    String(item?.grave?.id) !== String(grave.id)
+                        ? item
+                        : {
+                            ...item,
+                            grave: { ...item.grave, status: nextStatus },
+                            status: item.blocked ? "indisponivel" : nextStatus === "OCCUPIED" ? "ocupada" : "livre",
+                        }
+                )
+            );
+
+            // Atualizar selectedCova
+            setSelectedCova((prev) => {
+                if (!prev) return prev;
+                const prevGrave = prev?.cova?.grave ?? prev?.grave ?? null;
+                if (!prevGrave || String(prevGrave.id) !== String(grave.id)) return prev;
+
+                if (prev?.cova) {
+                    return {
+                        ...prev,
+                        cova: {
+                            ...prev.cova,
+                            grave: { ...prev.cova.grave, status: nextStatus },
+                        },
+                        status: prev.blocked ? "indisponivel" : nextStatus === "OCCUPIED" ? "ocupada" : "livre",
+                    };
+                }
+
+                return {
+                    ...prev,
+                    grave: { ...prev.grave, status: nextStatus },
+                    status: prev.blocked ? "indisponivel" : nextStatus === "OCCUPIED" ? "ocupada" : "livre",
+                };
+            });
+
+            alert(nextStatus === "MAINTENANCE" ? "Sepultura marcada como indisponível (manutenção)." : "Sepultura marcada como disponível.");
+        } catch (err) {
+            console.error("Erro ao atualizar status da sepultura", err);
+            alert(err?.response?.data?.message || err?.message || "Erro ao atualizar status.");
+        }
+    };
 
     const handleCreateCova = async (e) => {
         if (e && e.preventDefault) e.preventDefault();
@@ -536,25 +676,25 @@ export default function VerMapa() {
         const tipo = String(formCova.tipo_cova || "").trim();
 
         if (!quadra || !num) {
-            alert("Informe quadra e número da sepultura");
+            showError("Informe quadra e número da sepultura");
             return;
         }
 
         const parsedNumber = Number(num);
         if (!Number.isInteger(parsedNumber) || parsedNumber <= 0) {
-            alert("Número da sepultura inválido");
+            showError("Número da sepultura inválido");
             return;
         }
 
         const parsedBlockId = Number(quadra);
         if (!Number.isInteger(parsedBlockId) || parsedBlockId <= 0) {
-            alert("Quadra inválida");
+            showError("Quadra inválida");
             return;
         }
 
         const parsedBodyCapacity = Number(formCova.capacidade || 1);
         if (!Number.isInteger(parsedBodyCapacity) || parsedBodyCapacity <= 0) {
-            alert("Capacidade inválida");
+            showError("Capacidade inválida");
             return;
         }
 
@@ -567,8 +707,8 @@ export default function VerMapa() {
 
         const graveType = graveTypeMap[tipo] || "EARTH";
         const areaType = formCova.concessao?.ativa ? "PERPETUAL" : "COMMON";
-        const blocked = String(formCova.status).toLowerCase() === "indisponivel";
-        const backendStatus = blocked ? "MAINTENANCE" : "AVAILABLE";
+        const blocked = false;
+        const backendStatus = "AVAILABLE";
 
 
         try {
@@ -584,10 +724,10 @@ export default function VerMapa() {
 
             setModalAddCovaOpen(false);
             await loadMapData();
-            alert("Sepultura criada");
+            showSuccess("Sepultura criada");
         } catch (err) {
             console.error("Erro ao criar sepultura", err);
-            alert(err.message || "Erro ao criar sepultura")
+            showError(err.message || "Erro ao criar sepultura")
         }
     }
 
@@ -624,7 +764,7 @@ export default function VerMapa() {
                 num_cova: grave?.number ?? "",
                 tipo_cova: String(grave?.graveType || "").toUpperCase() === "MAUSOLEUM" ? "gaveta" : "cova",
                 capacidade: grave?.bodyCapacity === null || grave?.bodyCapacity === undefined ? "" : Number(grave.bodyCapacity),
-                status: grave?.blocked ? "indisponivel" : String(grave?.status || "").toUpperCase() === "OCCUPIED" ? "ocupada" : String(grave?.status || "").toUpperCase() === "MAINTENANCE" ? "indisponivel" : "livre",
+                status: grave?.blocked ? "indisponivel" : String(grave?.status || "").toUpperCase() === "OCCUPIED" ? "ocupada" : "livre",
                 active: grave?.active,
                 blocked: grave?.blocked,
                 reason: grave?.reason ?? "",
@@ -886,10 +1026,18 @@ export default function VerMapa() {
     const sepDataForModal = modalForm ?? selectedCova?.sep ?? null;
     const isOccupiedForModal = String(selectedCova?.status || "").toLowerCase().includes("ocup") || !!sepDataForModal;
     const tipoForModal = selectedCova?.tipo_cova ?? selectedCova?.cova?.tipo_cova ?? sepDataForModal?.tipo_cova ?? sepDataForModal?.tipo_sep ?? "-";
+    const selectedGraveForModal = selectedCova?.cova?.grave ?? selectedCova?.grave ?? null;
+    const bloqueadoForModal = Boolean(selectedGraveForModal?.blocked);
     const capacidadeForModal = selectedCova?.capacidade ?? selectedCova?.cova?.capacidade ?? selectedCova?.sep?.capacidade ?? sepDataForModal?.capacidade ?? "-";
     const observacoesForModal = selectedCova?.obs ?? selectedCova?.cova?.obs ?? "-";
-    const numeroForModal = sepDataForModal?.num_sepultura_sep ?? sepDataForModal?.num_sepultura ?? sepDataForModal?.numero ?? selectedCova?.numero ?? "-";
-    /* const nomeSepForModal = sepDataForModal?.nome_sep ?? sepDataForModal?.falecido?.nome_fal ?? sepDataForModal?.falecido?.nome ?? null; */
+    const numeroForModal =
+        sepDataForModal?.num_sepultura_sep ??
+        sepDataForModal?.num_sepultura ??
+        sepDataForModal?.numero ??
+        selectedCova?.numero ??
+        selectedCova?.cova?.num_cova ??
+        selectedCova?.cova?.grave?.number ??
+        "-";    /* const nomeSepForModal = sepDataForModal?.nome_sep ?? sepDataForModal?.falecido?.nome_fal ?? sepDataForModal?.falecido?.nome ?? null; */
 
     const getPetsCountBySep = (cova, quadraId) => {
         if (!cova) return 0;
@@ -924,6 +1072,7 @@ export default function VerMapa() {
 
     return (
         <>
+            {ToastElement}
             <Container>
                 <Title>CONTROLE DE SEPULTURAS</Title>
 
@@ -994,7 +1143,7 @@ export default function VerMapa() {
 
                             let displayStatus = "disponivel";
 
-                            if (isBlocked || backendStatus === "MAINTENANCE") {
+                            if (isBlocked) {
                                 displayStatus = "indisponivel";
                             } else if (backendStatus === "OCCUPIED") {
                                 displayStatus = isPerpetual ? "particular_ocupada" : "ocupada";
@@ -1205,6 +1354,7 @@ export default function VerMapa() {
                                             </SmallSelect>
                                         </Field>
 
+
                                         <TwoCols>
                                             <Field>
                                                 <Label>Número: </Label>
@@ -1284,11 +1434,27 @@ export default function VerMapa() {
                         display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999
                     }} onMouseDown={(e) => { if (e.target === e.currentTarget) { setModalOpen(false); setSelectedCova(null); setModalForm(null); } }}>
                         <ModalContent>
-
                             <p><strong>Nº da sepultura:</strong> {numeroForModal}</p>
                             <p><strong>Status:</strong> {selectedCova.status ?? (isOccupiedForModal ? "ocupada" : "-")}</p>
+                            <label
+                                type="button"
+                                onClick={handleToggleStatus}
+                                disabled={!selectedGraveForModal?.id}
+                                style={{ marginBottom: 12, cursor: "pointer" }}
+                            >
+                                {String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE" ? "Liberar para uso" : "Marcar indisponível (manutenção)"}
+                            </label>
                             <p><strong>Tipo:</strong> {tipoForModal}</p>
                             <p><strong>Espaços disponíveis na sepultura:</strong> {capacidadeForModal}</p>
+                            <p><strong>Bloqueado por questões legais?:</strong> {bloqueadoForModal ? "Sim" : "Não"}</p>
+                            {/* <BtnAdd
+                                type="button"
+                                onClick={handleToggleBlockedLegal}
+                                disabled={!selectedGraveForModal?.id}
+                                style={{ marginBottom: 12 }}
+                            >
+                                {bloqueadoForModal ? "Remover bloqueio legal" : "Bloquear por questão legal"}
+                            </BtnAdd> */}
                             <p><strong>Observações:</strong> {observacoesForModal}</p>
 
                             <CovaPetsSection
@@ -1397,18 +1563,15 @@ export default function VerMapa() {
                                 ) : (
                                     sepDataForModal ? (
                                         <>
-                                            <p><strong>Nome do sepultado: </strong> {modalForm.nome_sep || modalForm.falecido?.nome_fal || modalForm.falecido?.nome || "-"}</p>
-                                            <p><strong>Data e hora do sepultamento: </strong> {modalForm.dh_sep || modalForm.data_hora || modalForm.data_obito_sep || "-"}</p>
-                                            <p><strong>Data do óbito: </strong> {modalForm.data_obito || modalForm.data_obito_sep || "-"}</p>
+                                            <p><strong>Nome do sepultado: </strong> {sepDataForModal.nome_sep || sepDataForModal.falecido?.nome_fal || sepDataForModal.falecido?.nome || "-"}</p>
+                                            <p><strong>Data e hora do sepultamento: </strong> {sepDataForModal.dh_sep || sepDataForModal.data_hora || sepDataForModal.data_obito_sep || "-"}</p>
+                                            <p><strong>Data do óbito: </strong> {sepDataForModal.data_obito || sepDataForModal.data_obito_sep || "-"}</p>
                                         </>
                                     ) : null
 
                                 )}
                             </CovaPetsSection>
 
-                            <ModalButtonsRow>
-                                <BtnActionCancel onClick={() => { setModalOpen(false); setSelectedCova(null); setModalForm(null); }} style={{ padding: "8px 10px" }}>Fechar</BtnActionCancel>
-                            </ModalButtonsRow>
 
                         </ModalContent>
                     </div>
