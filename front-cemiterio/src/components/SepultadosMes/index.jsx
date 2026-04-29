@@ -1,4 +1,4 @@
-import api from "../../services/api";
+import api from "../../services/index.js";
 import { Card, CardBody, CardHeader, DashboardWrapper } from "./styles";
 import React, { useState, useMemo, useEffect } from "react";
 

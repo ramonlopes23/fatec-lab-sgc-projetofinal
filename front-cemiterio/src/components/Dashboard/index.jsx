@@ -3,7 +3,7 @@ import { DashboardWrapper, Card, CardHeader, CardBody, ProcessItem, ProcessInfo,
 import { FaCross } from "react-icons/fa";
 import { FaSkullCrossbones } from "react-icons/fa";
 import { FaTools } from "react-icons/fa";
-import api from "../../services/api";
+import api from "../../services/index.js";
 
 export default function Dashboard() {
 

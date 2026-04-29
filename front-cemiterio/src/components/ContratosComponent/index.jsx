@@ -9,7 +9,7 @@ import { FaRegEdit } from "react-icons/fa";
 import { AiOutlineUserSwitch } from "react-icons/ai";
 import { FaTrash } from "react-icons/fa"
 import { RiDeleteBin2Line } from "react-icons/ri";
-import api from "../../services/api";
+import api from "../../services/index.js";
 import React, { useEffect, useMemo, useState } from "react"
 
 const STATUS_OPTIONS = [

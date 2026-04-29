@@ -12,7 +12,7 @@ export function useCreateGraves({ onSuccess } = {}) {
         areaType,
         blockId,
         status,
-        blocked,
+        blocked = false,
     }) => {
         setLoading(true);
         setError("");

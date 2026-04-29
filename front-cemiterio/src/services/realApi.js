@@ -1,12 +1,12 @@
 import axios from "axios";
 import { useAuthStore } from "../stores/authStore";
 
-const api = axios.create({
+const  realApi = axios.create({
   baseURL: "/api",
   timeout:10000,
 });
 
-api.interceptors.request.use((config) => {
+realApi.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken;
   if(token){
     config.headers = config.headers || {};
@@ -15,7 +15,7 @@ api.interceptors.request.use((config) => {
   return config
 });
 
-api.interceptors.response.use(
+realApi.interceptors.response.use(
   (response) => response,
   (error) =>{
     const status = error?.response?.status;
@@ -29,4 +29,4 @@ api.interceptors.response.use(
   }
 )
 
-export default api;
+export default realApi;

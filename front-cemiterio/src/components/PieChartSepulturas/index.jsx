@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Sector } from "recharts";
-import api from "../../services/api";
+import api from "../../services/index.js";
 import { useEffect, useState, useRef, useMemo } from "react";
 
 

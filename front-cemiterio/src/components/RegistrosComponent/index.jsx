@@ -6,7 +6,7 @@ import {
   Card, TableWrapper, Table, THead, Th, TBody, Tr, Td, Actions, IconBtn, TableScroller, FormStyled, Container, Title, SearchBar, SearchInput, SmallSelect,
   BtnPrimary, Input, BtnPrimarySave, SmallInput, TwoCols, Field, SearchWrapper, SearchIcon, Label, ModalContent, ModalGrid, ModalOverlay, BtnPrimaryClose
 } from "./styles";
-import api from "../../services/api";
+import api from "../../services/index.js";
 import FormControl from "@mui/material/FormControl";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";

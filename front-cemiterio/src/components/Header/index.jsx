@@ -13,9 +13,6 @@ export default function Header({ onMenuClick }) {
     const hydrated = useAuthStore((s) => s.hydrated);
 
     const [photo, setPhoto] = useState(null);
-    const [setTheme] = useState(
-        () => document.body.getAttribute("data-theme") || "light"
-    );
 
     useEffect(() => {
         const load = () => {
@@ -29,56 +26,16 @@ export default function Header({ onMenuClick }) {
         return () => window.removeEventListener("userPhotoUpdated", load);
     }, [user?.photo, user?.avatar]);
 
-    useEffect(() => {
-        const raw = localStorage.getItem(PREF_KEY);
-        if (!raw) return;
-        try {
-            const parsed = JSON.parse(raw);
-            const persistedTheme = parsed?.theme === "dark" ? "dark" : "light";
-            setTheme(persistedTheme);
-            document.body.setAttribute("data-theme", persistedTheme);
-        } catch {
-            //ignore
-        }
-    }, []);
-
     const displayName = useMemo(() => {
         if (!hydrated) return "Carregando...";
         return user?.name || user?.username || user?.email || "Usuário";
     }, [hydrated, user]);
-
-    const toggleTheme = () => {
-        const nextTheme = theme === "dark" ? "light" : "dark";
-        setTheme(nextTheme);
-        document.body.setAttribute("data-theme", nextTheme);
-    
-        let current = {};
-        try {
-            current = JSON.parse(localStorage.getItem(PREF_KEY) || "{}");
-        } catch {
-            current = {};
-        }
-
-        localStorage.setItem(
-            PREF_KEY,
-            JSON.stringify({
-                ...current,
-                theme: nextTheme,
-            })
-        );
-
     
         return (
             <HeaderContainer>
                 <MenuButton type="button" onClick={onMenuClick}>
                     <HiBars4 />
                 </MenuButton>
-                <HeaderRight>
-                    <ThemeButton type="button" onClick={toggleTheme} aria-label="Alternar tema">
-                        {theme === "dark" ? <FaSun /> : <FaMoon />}
-                        {theme === "dark" ? "Claro" : "Escuro"}
-                    </ThemeButton>
-
                     <UserContainer>
                         <UserAvatar>
                             {photo ? (
@@ -98,9 +55,7 @@ export default function Header({ onMenuClick }) {
                         </UserAvatar>
                         <UserName>Bem vindo, {displayName}</UserName>
                     </UserContainer>
-                </HeaderRight>
             </HeaderContainer>
 
         )
     }
-} 
