@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useBlocks } from "../../hooks/Blocks/useBlocks";
 import sgcLogo from "../../assets/SGCv2.png";
-import { useCreateBlocks } from "../../hooks/Graves/useCreateBlocks";
+import { useCreateBlocks } from "../../hooks/Blocks/useCreateBlocks.js";
 import { useCreateGraves } from "../../hooks/Graves/useCreateGraves";
+import { useCreateCemetery } from "../../hooks/Cemetery/useCreateCemetery.js";
+import { useCemeteryStore } from "../../stores/cemeteryStore.js";
 import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx"
 import api from "../../services/index.js";
 import { patchGraveStatus } from "../../services/graveService";
@@ -58,7 +60,6 @@ import {
     LoadingMap,
     InnerLoadingMap,
 } from "./styles";
-import { Alert, Snackbar } from "@mui/material";
 
 const resolveBlockId = (value) => {
     if (value && typeof value === "object") {
@@ -68,6 +69,7 @@ const resolveBlockId = (value) => {
 }
 
 export default function VerMapa() {
+    const { selectedCemeteryId, loadCemeteries, setSelectedCemeteryId } = useCemeteryStore();
 
     const FIXED_CEMETERY_ID = 1;
 
@@ -79,6 +81,7 @@ export default function VerMapa() {
 
     const {
         showSuccess,
+        showInfo,
         showError,
         ToastElement,
     } = useToastFeedback();
@@ -98,6 +101,14 @@ export default function VerMapa() {
 
     const { handleCreateGrave, loading: creatingGrave } = useCreateGraves();
 
+    const { handleCreateCemetery, loading: creatingCemetery } = useCreateCemetery();
+
+    const [formCemetery, setFormCemetery] = useState({
+        name: "",
+        foundation: "",
+        active: true,
+    })
+
     const [formQuadra, setFormQuadra] = useState({
         num_quadra: "",
         descricao: "",
@@ -109,6 +120,12 @@ export default function VerMapa() {
     const [sepultamentosAll, setSepultamentosAll] = useState([]);
     const [selectedQuadraId, setSelectedQuadraId] = useState(null);
 
+    const visibleBlocks = useMemo(() => {
+        const selectedId = Number(selectedCemeteryId);
+        if (!Number.isInteger(selectedId) || selectedId <= 0) return [];
+
+        return (blocks || []).filter((block) => Number(block.cemeteryId) === selectedId);
+    }, [blocks, selectedCemeteryId]);
 
     const quadras = useMemo(() => {
         const normalizeCovaStatus = (s) => {
@@ -125,7 +142,7 @@ export default function VerMapa() {
 
         const quadraMap = new Map();
 
-        (blocks || []).forEach((block) => {
+        (visibleBlocks || []).forEach((block) => {
             quadraMap.set(String(block.id), {
                 id: block.id,
                 num_quadra: String(block.number),
@@ -210,7 +227,7 @@ export default function VerMapa() {
         return Array.from(quadraMap.values()).sort((a, b) =>
             Number(a.num_quadra) - Number(b.num_quadra)
         );
-    }, [blocks, covasData, sepultamentosAll]);
+    }, [visibleBlocks, covasData, sepultamentosAll]);
 
     const [isQuadraDropdownOpen, setIsQuadraDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -261,6 +278,18 @@ export default function VerMapa() {
         },
         obs: "",
     });
+
+    useEffect(() => {
+        if (!visibleBlocks.length) {
+            setSelectedQuadraId(null);
+            return;
+        }
+
+        const selectedExists = visibleBlocks.some((block) => String(block.id) === String(selectedQuadraId));
+        if (!selectedExists) {
+            setSelectedQuadraId(visibleBlocks[0].id);
+        }
+    }, [visibleBlocks, selectedQuadraId]);
 
     const location = useLocation();
 
@@ -509,9 +538,54 @@ export default function VerMapa() {
         updateFieldByName(name, incoming);
     };
 
+    const handleCemeteryChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        const incoming = type === "checkbox" ? checked : value;
+        setFormCemetery((prev) => ({ ...prev, [name]: incoming }));
+    };
+
+    const handleCreateCemeterySubmit = async (e) => {
+        if (e?.preventDefault) e.preventDefault();
+
+        const name = String(formCemetery.name || "").trim();
+        const foundation = String(formCemetery.foundation || "").trim();
+        const active = Boolean(formCemetery.active);
+
+        if (!name) {
+            showError("Informe o nome do cemitério.");
+            return;
+        }
+
+        if (!foundation) {
+            showError("Informe a data de fundação.");
+            return;
+        }
+
+        try {
+            const created = await handleCreateCemetery({ name, foundation, active });
+            if (created?.id != null) {
+                setSelectedCemeteryId(created.id);
+            }
+            await loadCemeteries().catch(() => { });
+            showSuccess("Cemitério criado com sucesso.");
+            setFormCemetery({
+                name: "",
+                foundation: "",
+                active: true,
+            });
+        } catch (err) {
+            showError(err?.message || "Erro ao criar cemitério.");
+        }
+    };
 
     const handleCreateQuadra = async (e) => {
         if (e?.preventDefault) e.preventDefault();
+
+        const cemeteryId = Number(selectedCemeteryId);
+        if (!Number.isInteger(cemeteryId) || cemeteryId <= 0) {
+            showError("Selecione um cemitério antes de criar a quadra.");
+            return;
+        }
 
         const num = String(formQuadra.num_quadra || "").trim();
         const description = String(formQuadra.descricao || "").trim();
@@ -531,7 +605,7 @@ export default function VerMapa() {
             await handleCreateBlock({
                 number,
                 description,
-                cemeteryId: FIXED_CEMETERY_ID,
+                cemeteryId,
             });
         } catch (err) {
             console.error("Erro ao criar quadra", err);
@@ -661,10 +735,14 @@ export default function VerMapa() {
                 };
             });
 
-            alert(nextStatus === "MAINTENANCE" ? "Sepultura marcada como indisponível (manutenção)." : "Sepultura marcada como disponível.");
+            showSuccess(
+                nextStatus === "MAINTENANCE"
+                    ? "Sepultura marcada como indisponível (manutenção)."
+                    : "Sepultura marcada como disponível."
+            );
         } catch (err) {
             console.error("Erro ao atualizar status da sepultura", err);
-            alert(err?.response?.data?.message || err?.message || "Erro ao atualizar status.");
+            showError(err?.response?.data?.message || err?.message || "Erro ao atualizar status.");
         }
     };
 
@@ -1097,7 +1175,6 @@ export default function VerMapa() {
                                 {isQuadraDropdownOpen ? "▲" : "▼"}
                             </span>
                         </QuadraSelectButton>
-
                         {isQuadraDropdownOpen && (
                             <QuadraDropdown>
                                 <GridQuadras
@@ -1195,6 +1272,56 @@ export default function VerMapa() {
                     </div>
 
                 </LegendRow>
+
+                <form
+                    onSubmit={handleCreateCemeterySubmit}
+                    style={{
+                        margin: "12px 0 16px",
+                        padding: 12,
+                        border: "1px solid #d9d9ea",
+                        borderRadius: 8,
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 10,
+                        alignItems: "flex-end",
+                    }}
+                >
+                    <Field style={{ minWidth: 220, margin: 0 }}>
+                        <Label>Nome do cemitério</Label>
+                        <Input
+                            name="name"
+                            value={formCemetery.name}
+                            onChange={handleCemeteryChange}
+                            placeholder="Ex.: Cemitério do Cambiri"
+                        />
+                    </Field>
+
+                    <Field style={{ minWidth: 180, margin: 0 }}>
+                        <Label>Data de fundação</Label>
+                        <Input
+                            type="date"
+                            name="foundation"
+                            value={formCemetery.foundation}
+                            onChange={handleCemeteryChange}
+                        />
+                    </Field>
+
+                    <Field style={{ margin: 0 }}>
+                        <Label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            Ativo?
+                            <input
+                                type="checkbox"
+                                name="active"
+                                checked={!!formCemetery.active}
+                                onChange={handleCemeteryChange}
+                            />
+                        </Label>
+                    </Field>
+
+                    <BtnAdd type="submit" disabled={creatingCemetery} style={{ padding: "8px 10px" }}>
+                        {creatingCemetery ? "Salvando..." : "Salvar cemitério"}
+                    </BtnAdd>
+                </form>
 
                 {isPieChartOpen && (
                     <div style={{
