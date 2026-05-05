@@ -134,6 +134,8 @@ export const Textarea = styled.textarea`
 export const FormActions = styled.div`
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
   margin-top: 6px;
 
   @media (max-width: 880px) {
@@ -142,6 +144,9 @@ export const FormActions = styled.div`
 `;
 
 export const BtnPrimary = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: #191970;
   color: #fff;
   border: none;
@@ -161,12 +166,19 @@ export const BtnPrimary = styled.button`
   transform: translateZ(0);
 
   &:hover {
-    opacity: 0.8;
-    transform: scale(1.12);
+    opacity: 0.92;
+    transform: translateY(-1px);
     box-shadow: 0 10px 22px rgba(15,13,58,0.25);
   }
   &:active {
-    transform: scale(1.06);
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+    transform: none;
+    box-shadow: none;
   }
 `;
 
@@ -266,6 +278,9 @@ export const CheckboxLabel = styled.label`
 `;
 
 export const BtnClear = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: #bbc1c3;
   color: #000;
   border: none;
@@ -286,12 +301,19 @@ export const BtnClear = styled.button`
   transform: translateZ(0);
 
   &:hover {
-    opacity: 0.8;
-    transform: scale(1.12);
+    opacity: 0.9;
+    transform: translateY(-1px);
     box-shadow: 0 10px 22px rgba(15,13,58,0.25);
   }
   &:active {
-    transform: scale(1.06);
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+    transform: none;
+    box-shadow: none;
   }
 `;
 
@@ -311,12 +333,11 @@ export const InputCova = styled.input`
 
 export const BtnAction = styled.button`
     margin-top:16px;
-    align-itself:flex-start;
-    border:2;
+    align-self:flex-start;
+    border:2px solid rgba(10, 0, 196, 0.17);
     border-radius:24px;
-    border-color:rgba(10, 0, 196, 0.17);
     padding:10px 18px;
-    background:#;
+    background:#fff;
     color:#191970;
     font-weight:600;
     cursor:pointer;
@@ -324,19 +345,24 @@ export const BtnAction = styled.button`
     transition:transform 0.12s ease, opacity 0.11s ease;
 
     &:hover{
-        opacity:0.5;
-        transform:translateY(-5px);
+        opacity:0.88;
+        transform:translateY(-1px);
+    }
+
+    &:disabled {
+        cursor:not-allowed;
+        opacity:0.55;
+        transform:none;
     }
 `;
 
 export const BtnAction2 = styled.button`
     margin-top:16px;
-    align-itself:flex-start;
-    border:2;
+    align-self:flex-start;
+    border:2px solid #aa1818;
     border-radius:24px;
-    border-color:#aa1818;
     padding:10px 18px;
-    background:#;
+    background:#fff;
     color:#aa1818;
     font-weight:600;
     cursor:pointer;
@@ -344,7 +370,64 @@ export const BtnAction2 = styled.button`
     transition:transform 0.12s ease, opacity 0.11s ease;
 
     &:hover{
-        opacity:0.5;
-        transform:translateY(-5px);
+        opacity:0.88;
+        transform:translateY(-1px);
     }
+
+    &:disabled {
+        cursor:not-allowed;
+        opacity:0.55;
+        transform:none;
+    }
+`;
+
+export const SearchFieldWrapper = styled.div`
+  position: relative;
+`;
+
+export const SearchResults = styled.ul`
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 50;
+  max-height: 220px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #191970;
+  border-radius: 16px;
+  box-shadow: 0 16px 32px rgba(25, 25, 112, 0.12);
+`;
+
+export const SearchResultItem = styled.li`
+  padding: 8px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f1f1;
+  color: #222;
+
+  &:hover {
+    background: #f6f7ff;
+  }
+
+  &:last-child {
+    border-bottom: 0;
+  }
+`;
+
+export const FilePreview = styled.img`
+  width: 160px;
+  height: 120px;
+  object-fit: cover;
+  margin-top: 8px;
+  border-radius: 6px;
+  border: 1px solid #e6e8f2;
+`;
+
+export const InlineFeedback = styled.small`
+  display: inline-block;
+  margin-top: 6px;
+  color: #666;
 `;

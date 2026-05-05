@@ -3,7 +3,7 @@ import styled from "styled-components";
 export const DashboardWrapper = styled.div`
   display: flex;
   justify-content: center;
-  padding: 2rem;
+  padding: 2rem 1rem;
 `;
 
 export const Card = styled.div`
@@ -35,10 +35,16 @@ export const ProcessItem = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   padding: 1rem;
   border-radius: 8px;
+
+  @media (max-width: 720px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 `;
 
 export const ProcessInfo = styled.div`
@@ -58,10 +64,30 @@ export const ProcessInfo = styled.div`
 `;
 
 export const ProcessAction = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
   font-weight: bold;
-  color: #191970
+  color: #191970;
+
+  @media (max-width: 720px) {
+    width: 100%;
+    justify-content: flex-start;
+  }
 `;
 
+export const ProcessType = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(25, 25, 112, 0.08);
+  color: #191970;
+  font-size: 0.8rem;
+`;
 
 export const Btn = styled.button`
   background: #191970;
@@ -73,6 +99,24 @@ export const Btn = styled.button`
   font-weight: 600;
   box-shadow: 0 6px 16px rgba(15,13,58,0.18);
 
-  &:hover { opacity: 0.95; }
+  &:hover {
+    opacity: 0.95;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+    transform: none;
+  }
+`;
+
+export const EmptyState = styled.div`
+  padding: 12px;
+  color: #5f637a;
+  text-align: center;
+  border: 1px dashed #d6d9e6;
+  border-radius: 8px;
+  background: #fafbff;
 `;
 

@@ -29,7 +29,10 @@ import {
     InfoPill,
     Title,
     LegendItem,
+    LegendButton,
     LegendRow,
+    ActiveFilterPill,
+    EmptyMapState,
     LoaderCircle,
     LoaderLogo,
     SmallSelect,
@@ -48,17 +51,55 @@ import {
     ColumnRight,
     ButtonsRow,
     TwoCols,
-    ModalContent,
     ModalButtonsRow,
+    DrawerOverlay,
+    CovaDrawer,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerCloseButton,
+    DrawerBody,
+    DrawerSection,
+    DrawerSectionTitle,
     SepDivider,
     SepHeader,
     SepItemButton,
+    SepItemContent,
+    SepDetailPanel,
+    SepDetailText,
     SepItemName,
     SepList,
     SepItemRow,
     SepToggle,
     LoadingMap,
     InnerLoadingMap,
+    MapToolbar,
+    ToolbarLabel,
+    DropdownIcon,
+    LegendActions,
+    CemeteryForm,
+    CompactField,
+    InlineCheckLabel,
+    CompactButton,
+    CompactCancelButton,
+    ModalSurface,
+    ModalTitle,
+    ModalActions,
+    ModalGrid,
+    ModalGridFull,
+    SelectMedium,
+    SelectSmall,
+    InputTiny,
+    InputMedium,
+    ToggleStatusLabel,
+    BtnDanger,
+    ChartModalContent,
+    ChartModalHeader,
+    ChartModalTitle,
+    ChartModalBody,
+    ChartArea,
+    ChartLegend,
+    ToggleStatusRow,
+    ToggleStatusText
 } from "./styles";
 
 const resolveBlockId = (value) => {
@@ -260,6 +301,7 @@ export default function VerMapa() {
     const [modalOpen, setModalOpen] = useState(false);
     const [modalForm, setModalForm] = useState(null);
     const [modalAddQuadraOpen, setModalAddQuadraOpen] = useState(false);
+    const [statusFilter, setStatusFilter] = useState(null);
 
     const [modalAddCovaOpen, setModalAddCovaOpen] = useState(false);
     const [formCova, setFormCova] = useState({
@@ -1097,7 +1139,7 @@ export default function VerMapa() {
         { key: "ocupada", label: "Ocupada", color: "#000" },
         { key: "disponivel", label: "Disponível", color: "#9e9e9e" },
         { key: "indisponivel", label: "Indisponivel", color: "#c55" },
-        { key: "particular", label: "Particular", color: "#d2b24a" },
+        { key: "reservada", label: "Particular", color: "#d2b24a" },
         { key: "particular_ocupada", label: "P/O (Particular e ocupada)", color: "#000", borderColor: "#d2b24a", borderWidth: 3 }
     ];
 
@@ -1147,6 +1189,57 @@ export default function VerMapa() {
         return ids.size;
     }
 
+    const getCovaDisplayMeta = (cova) => {
+        const grave = cova?.cova?.grave ?? cova?.grave ?? {};
+        const backendStatus = String(grave?.status ?? "").toUpperCase();
+        const rawAreaType = grave?.areaType ?? grave?.area_type ?? cova?.areaType ?? cova?.area_type ?? "";
+        const isPerpetual = String(rawAreaType).toUpperCase() === "PERPETUAL";
+        const isBlocked = !!grave?.blocked;
+
+        const sepCount = getSepultadosCountBySep(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
+        const petCount = getPetsCountBySep(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
+        const capacidadeTotal = Number(grave?.bodyCapacity ?? cova?.capacidade ?? 0);
+        const occupiedCount =
+            sepCount > 0
+                ? sepCount
+                : backendStatus === "OCCUPIED" && capacidadeTotal > 0
+                    ? capacidadeTotal
+                    : 0;
+
+        let displayStatus = "disponivel";
+
+        if (isBlocked) {
+            displayStatus = "indisponivel";
+        } else if (backendStatus === "OCCUPIED") {
+            displayStatus = isPerpetual ? "particular_ocupada" : "ocupada";
+        } else if (isPerpetual) {
+            displayStatus = "reservada";
+        }
+
+        return {
+            displayStatus,
+            sepCount,
+            petCount,
+            capacidadeTotal,
+            occupiedCount,
+        };
+    };
+
+    const filteredCovas = (quadraSelecionada.covas || []).filter((cova) => {
+        if (!statusFilter) return true;
+        return getCovaDisplayMeta(cova).displayStatus === statusFilter;
+    });
+
+    const activeStatusLabel = statusList.find((s) => s.key === statusFilter)?.label ?? "";
+
+    const closeCovaDrawer = () => {
+        setModalOpen(false);
+        setSelectedCova(null);
+        setModalForm(null);
+        setModalSepList([]);
+        setModalExpandedIndex(null);
+    };
+
 
     return (
         <>
@@ -1164,16 +1257,16 @@ export default function VerMapa() {
                     </LoadingMap>
                 )}
 
-                <div style={{ margin: "12px 0", display: "flex", gap: 12, alignItems: "center" }}>
-                    <label style={{ fontWeight: 600, color: "#171770" }}>Quadra: </label>
+                <MapToolbar>
+                    <ToolbarLabel>Quadra: </ToolbarLabel>
 
-                    <QuadraDropdownWrapper style={{ position: "relative", }} ref={dropdownRef}>
+                    <QuadraDropdownWrapper ref={dropdownRef}>
                         <QuadraSelectButton disabled={isMapLoading} onClick={() => { if (isMapLoading) return; setIsQuadraDropdownOpen(!isQuadraDropdownOpen) }}
                         >
                             {selectedQuadraId ? `Quadra ${quadrasDesc.find(q => String(q.id) === String(selectedQuadraId))?.num_quadra || selectedQuadraId}` : "Selecione uma quadra"}
-                            <span style={{ marginLeft: "8px" }}>
+                            <DropdownIcon>
                                 {isQuadraDropdownOpen ? "▲" : "▼"}
-                            </span>
+                            </DropdownIcon>
                         </QuadraSelectButton>
                         {isQuadraDropdownOpen && (
                             <QuadraDropdown>
@@ -1189,7 +1282,7 @@ export default function VerMapa() {
                             </QuadraDropdown>
                         )}
                     </QuadraDropdownWrapper>
-                </div>
+                </MapToolbar>
                 <QuadraWrapper key={quadraSelecionada.id || "preview"}>
                     <QuadraInfo key={String(quadraSelecionada.id)}>
                         {/*                         <InfoPill>Capacidade máxima de sepulturas: {quadraSelecionada.max_covas > 0 ? quadraSelecionada.max_covas : "-"}</InfoPill>
@@ -1198,60 +1291,67 @@ export default function VerMapa() {
 
                     </QuadraInfo>
                     <QuadraTitle>{quadraSelecionada.nome || "Nenhuma quadra selecionada"}</QuadraTitle>
-                    <CovaGrid>
-                        {quadraSelecionada.covas.map((cova) => {
+                    {filteredCovas.length === 0 ? (
+                        <EmptyMapState>
+                            {statusFilter ? `Nenhuma sepultura encontrada para ${activeStatusLabel}.` : "Nenhuma sepultura cadastrada nesta quadra."}
+                        </EmptyMapState>
+                    ) : (
+                        <CovaGrid>
+                            {filteredCovas.map((cova) => {
 
-                            const grave = cova?.cova?.grave ?? cova?.grave ?? {};
-                            const backendStatus = String(grave?.status ?? "").toUpperCase();
-                            const rawAreaType = grave?.areaType ?? grave?.area_type ?? cova?.areaType ?? cova?.area_type ?? "";
-                            const isPerpetual = String(rawAreaType).toUpperCase() === "PERPETUAL";
-                            const isBlocked = !!grave?.blocked;
+                                const grave = cova?.cova?.grave ?? cova?.grave ?? {};
+                                const backendStatus = String(grave?.status ?? "").toUpperCase();
+                                const rawAreaType = grave?.areaType ?? grave?.area_type ?? cova?.areaType ?? cova?.area_type ?? "";
+                                const isPerpetual = String(rawAreaType).toUpperCase() === "PERPETUAL";
+                                const isBlocked = !!grave?.blocked;
 
-                            const sepCount = getSepultadosCountBySep(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
-                            const petCount = getPetsCountBySep(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
+                                const sepCount = getSepultadosCountBySep(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
+                                const petCount = getPetsCountBySep(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
 
-                            const capacidadeTotal = Number(grave?.bodyCapacity ?? cova?.capacidade ?? 0);
-                            const occupiedCount =
-                                sepCount > 0
-                                    ? sepCount
-                                    : backendStatus === "OCCUPIED" && capacidadeTotal > 0
-                                        ? capacidadeTotal
-                                        : 0;
+                                const capacidadeTotal = Number(grave?.bodyCapacity ?? cova?.capacidade ?? 0);
+                                const occupiedCount =
+                                    sepCount > 0
+                                        ? sepCount
+                                        : backendStatus === "OCCUPIED" && capacidadeTotal > 0
+                                            ? capacidadeTotal
+                                            : 0;
 
-                            let displayStatus = "disponivel";
+                                let displayStatus = "disponivel";
 
-                            if (isBlocked) {
-                                displayStatus = "indisponivel";
-                            } else if (backendStatus === "OCCUPIED") {
-                                displayStatus = isPerpetual ? "particular_ocupada" : "ocupada";
-                            } else if (isPerpetual) {
-                                displayStatus = "reservada";
-                            }
+                                if (isBlocked) {
+                                    displayStatus = "indisponivel";
+                                } else if (backendStatus === "OCCUPIED") {
+                                    displayStatus = isPerpetual ? "particular_ocupada" : "ocupada";
+                                } else if (isPerpetual) {
+                                    displayStatus = "reservada";
+                                }
 
-                            return (
-                                <CovaItem
-                                    key={cova.id}
-                                    status={displayStatus}
-                                    borderColor={(displayStatus === "reservada" || displayStatus === "particular_ocupada") ? "#d2b24a" : undefined}
-                                    borderWidth={(displayStatus === "reservada" || displayStatus === "particular_ocupada") ? 5 : undefined}
-                                    onClick={() => handleClickCova(cova)}
-                                    title={`Cova ${cova.numero} - ${displayStatus} (⚰️ ${occupiedCount}/${capacidadeTotal}${petCount > 0 ? ` | 🐾 ${petCount}` : ""})`}
-                                >
-                                    <span className="cova-number" aria-hidden="true">{cova.numero}  </span>
-                                    <span className="cova-capacity" aria-hidden="true"><GiCoffin />{`${occupiedCount}/${capacidadeTotal}`}  </span>
-                                    {petCount > 0 && (
-                                        <>
-                                            <span className="cova-divider" aria-hidden="true" />
-                                            <span className="cova-petCap" aria-hidden="true">
-                                                <MdPets size={12} />
-                                                {petCount}
-                                            </span>
-                                        </>
-                                    )}
-                                </CovaItem>
-                            )
-                        })}
-                    </CovaGrid>
+                                return (
+                                    <CovaItem
+                                        key={cova.id}
+                                        status={displayStatus}
+                                        borderColor={(displayStatus === "reservada" || displayStatus === "particular_ocupada") ? "#d2b24a" : undefined}
+                                        borderWidth={(displayStatus === "reservada" || displayStatus === "particular_ocupada") ? 5 : undefined}
+                                        $selected={String(selectedCova?.id) === String(cova.id)}
+                                        onClick={() => handleClickCova(cova)}
+                                        title={`Cova ${cova.numero} - ${displayStatus} (⚰️ ${occupiedCount}/${capacidadeTotal}${petCount > 0 ? ` | 🐾 ${petCount}` : ""})`}
+                                    >
+                                        <span className="cova-number" aria-hidden="true">{cova.numero}  </span>
+                                        <span className="cova-capacity" aria-hidden="true"><GiCoffin />{`${occupiedCount}/${capacidadeTotal}`}  </span>
+                                        {petCount > 0 && (
+                                            <>
+                                                <span className="cova-divider" aria-hidden="true" />
+                                                <span className="cova-petCap" aria-hidden="true">
+                                                    <MdPets size={12} />
+                                                    {petCount}
+                                                </span>
+                                            </>
+                                        )}
+                                    </CovaItem>
+                                )
+                            })}
+                        </CovaGrid>
+                    )}
 
                     <BtnAction disabled={isMapLoading} onClick={() => setIsPieChartOpen(true)}>
                         <FaChartPie /> DISTRIBUIÇÃO DE SEPULTURAS
@@ -1260,33 +1360,36 @@ export default function VerMapa() {
 
                 <LegendRow>
                     {statusList.map(s => (
-                        <LegendItem key={s.key} color={s.color} borderColor={s.borderColor} borderWidth={s.borderWidth}>
+                        <LegendButton
+                            key={s.key}
+                            type="button"
+                            color={s.color}
+                            borderColor={s.borderColor}
+                            borderWidth={s.borderWidth}
+                            $active={statusFilter === s.key}
+                            onClick={() => setStatusFilter((current) => current === s.key ? null : s.key)}
+                            aria-pressed={statusFilter === s.key}
+                        >
                             <span className="color" />
                             <span>{s.label}</span>
-                        </LegendItem>
+                        </LegendButton>
                     ))}
 
-                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center' }}>
+                    {statusFilter && (
+                        <ActiveFilterPill type="button" onClick={() => setStatusFilter(null)}>
+                            Limpar filtro: {activeStatusLabel}
+                        </ActiveFilterPill>
+                    )}
+
+                    <LegendActions>
                         <BtnAction disabled={isMapLoading} onClick={handleAddQuadra}>ADICIONAR QUADRA</BtnAction>
                         <BtnAction disabled={isMapLoading} onClick={handleAddCova}>ADICIONAR SEPULTURA</BtnAction>
-                    </div>
+                    </LegendActions>
 
                 </LegendRow>
 
-                <form
-                    onSubmit={handleCreateCemeterySubmit}
-                    style={{
-                        margin: "12px 0 16px",
-                        padding: 12,
-                        border: "1px solid #d9d9ea",
-                        borderRadius: 8,
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 10,
-                        alignItems: "flex-end",
-                    }}
-                >
-                    <Field style={{ minWidth: 220, margin: 0 }}>
+                <CemeteryForm onSubmit={handleCreateCemeterySubmit}>
+                    <CompactField $minWidth="220px">
                         <Label>Nome do cemitério</Label>
                         <Input
                             name="name"
@@ -1294,9 +1397,9 @@ export default function VerMapa() {
                             onChange={handleCemeteryChange}
                             placeholder="Ex.: Cemitério do Cambiri"
                         />
-                    </Field>
+                    </CompactField>
 
-                    <Field style={{ minWidth: 180, margin: 0 }}>
+                    <CompactField $minWidth="180px">
                         <Label>Data de fundação</Label>
                         <Input
                             type="date"
@@ -1304,10 +1407,10 @@ export default function VerMapa() {
                             value={formCemetery.foundation}
                             onChange={handleCemeteryChange}
                         />
-                    </Field>
+                    </CompactField>
 
-                    <Field style={{ margin: 0 }}>
-                        <Label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <CompactField>
+                        <InlineCheckLabel>
                             Ativo?
                             <input
                                 type="checkbox"
@@ -1315,400 +1418,358 @@ export default function VerMapa() {
                                 checked={!!formCemetery.active}
                                 onChange={handleCemeteryChange}
                             />
-                        </Label>
-                    </Field>
+                        </InlineCheckLabel>
+                    </CompactField>
 
-                    <BtnAdd type="submit" disabled={creatingCemetery} style={{ padding: "8px 10px" }}>
+                    <CompactButton type="submit" disabled={creatingCemetery}>
                         {creatingCemetery ? "Salvando..." : "Salvar cemitério"}
-                    </BtnAdd>
-                </form>
+                    </CompactButton>
+                </CemeteryForm>
 
                 {isPieChartOpen && (
-                    <div style={{
-                        position: "fixed",
-                        inset: 0,
-                        background: "rgba(0,0,0,0.5)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        zIndex: 1000
-                    }} onMouseDown={(e) => {
+                    <ModalOverlay onMouseDown={(e) => {
                         if (e.target === e.currentTarget) setIsPieChartOpen(false);
                     }}>
-                        <div style={{
-                            background: "#fff",
-                            borderRadius: 12,
-                            padding: 20,
-                            width: "90%",
-                            maxWidth: 500,
-                            maxHeight: "60vh",
-                            overflow: "auto",
-                            boxShadow: "0 4px 24px rgba(0,0,0,0.2)",
-                            display: "flex",
-                            flexDirection: "column"
-                        }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                                <h2 style={{ marginLeft: 55, color: "#191970", fontSize: 25 }}>DISTRIBUIÇÃO DAS SEPULTURAS </h2>
-                            </div>
-
-                            <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flex: 1 }}>
-
-                                <div style={{ flex: 1, minWidth: 300 }}>
+                        <ChartModalContent>
+                            <ChartModalHeader>
+                                <ChartModalTitle>DISTRIBUICAO DAS SEPULTURAS</ChartModalTitle>
+                            </ChartModalHeader>
+                            <ChartModalBody>
+                                <ChartArea>
                                     <PieChartSepulturas />
-                                </div>
-
-                                <div style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 12,
-                                    minWidth: 180,
-                                    paddingTop: 70
-                                }}>
+                                </ChartArea>
+                                <ChartLegend>
                                     {statusList.map(s => (
                                         <LegendItem key={s.key} color={s.color} borderColor={s.borderColor} borderWidth={s.borderWidth}>
                                             <span className="color" />
                                             <span>{s.label}</span>
                                         </LegendItem>
                                     ))}
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
+                                </ChartLegend>
+                            </ChartModalBody>
+                        </ChartModalContent>
+                    </ModalOverlay>
                 )}
 
+
                 {modalAddQuadraOpen && (
-                    <ModalOverlay>
-                        <div
-                            style={{
-                                position: "fixed",
-                                inset: 0,
-                                background: "rgba(0,0,0,0.4)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                zIndex: 9999
-                            }}
-                            onMouseDown={(e) => {
-                                if (e.target === e.currentTarget) handleCloseAddQuadraModal();
-                            }}
-                        >
-                            <form
-                                onSubmit={handleCreateQuadra}
-                                style={{
-                                    color: "#171770",
-                                    width: 400,
-                                    background: "#fff",
-                                    padding: 18,
-                                    borderRadius: 8
-                                }}
-                            >
-                                <h3 style={{ marginTop: 0 }}>Criar quadra</h3>
+                    <ModalOverlay
+                        onMouseDown={(e) => {
+                            if (e.target === e.currentTarget) handleCloseAddQuadraModal();
+                        }}
+                    >
+                        <ModalSurface as="form" onSubmit={handleCreateQuadra} $width="400px">
+                            <ModalTitle>Criar quadra</ModalTitle>
 
-                                <Field>
-                                    <Label>Nº da quadra:</Label>
-                                    <Input
-                                        name="num_quadra"
-                                        value={formQuadra.num_quadra}
-                                        onChange={handleQuadraChange}
-                                    />
-                                </Field>
+                            <Field>
+                                <Label>Nº da quadra:</Label>
+                                <Input
+                                    name="num_quadra"
+                                    value={formQuadra.num_quadra}
+                                    onChange={handleQuadraChange}
+                                />
+                            </Field>
 
-                                <Field>
-                                    <Label>Descrição:</Label>
-                                    <Input
-                                        name="descricao"
-                                        value={formQuadra.descricao || ""}
-                                        onChange={handleQuadraChange}
-                                    />
-                                </Field>
+                            <Field>
+                                <Label>Descrição:</Label>
+                                <Input
+                                    name="descricao"
+                                    value={formQuadra.descricao || ""}
+                                    onChange={handleQuadraChange}
+                                />
+                            </Field>
 
-                                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
-                                    <BtnActionCancel
-                                        type="button"
-                                        onClick={handleCloseAddQuadraModal}
-                                        style={{ padding: "8px 10px" }}
-                                    >
-                                        Cancelar
-                                    </BtnActionCancel>
+                            <ModalActions>
+                                <CompactCancelButton
+                                    type="button"
+                                    onClick={handleCloseAddQuadraModal}
+                                >
+                                    Cancelar
+                                </CompactCancelButton>
 
-                                    <BtnAdd
-                                        type="submit"
-                                        disabled={creatingBlock}
-                                        style={{ padding: "8px 10px" }}
-                                    >
-                                        {creatingBlock ? "Criando..." : "Criar"}
-                                    </BtnAdd>
-                                </div>
-                            </form>
-                        </div>
+                                <CompactButton
+                                    type="submit"
+                                    disabled={creatingBlock}
+                                >
+                                    {creatingBlock ? "Criando..." : "Criar"}
+                                </CompactButton>
+                            </ModalActions>
+                        </ModalSurface>
                     </ModalOverlay>
                 )}
 
 
                 {modalAddCovaOpen && (
-                    <ModalOverlay >
-                        <div style={{
-                            position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999
-                        }} onMouseDown={(e) => { if (e.target === e.currentTarget) handleCloseAddCovaModal(); }}>
-                            <FormStyled onSubmit={handleCreateCova} style={{ color: "#171770", width: 520, background: "#fff", padding: 18, borderRadius: 8 }}>
-                                <h3 style={{ marginTop: 0 }} >Criar sepultura</h3>
+                    <ModalOverlay onMouseDown={(e) => { if (e.target === e.currentTarget) handleCloseAddCovaModal(); }}>
+                        <ModalSurface as="form" onSubmit={handleCreateCova} $width="520px">
+                            <ModalTitle>Criar sepultura</ModalTitle>
 
-                                <FormGrid >
-                                    <ColumnLeft>
+                            <FormGrid >
+                                <ColumnLeft>
+                                    <Field>
+                                        <Label>Quadra: </Label>
+                                        <SelectMedium name="quadra_cova" value={formCova.quadra_cova} onChange={handleCovaChange}>
+                                            <option value="">Selecione a quadra</option>
+                                            {quadrasDesc.map((q, idx) => {
+                                                const used = Array.isArray(q.covas) ? q.covas.length : getCovasCount(q.num_quadra ?? q.id);
+                                                const max = Number(q.max_covas || 0);
+                                                const full = max > 0 && used >= max;
+                                                return (
+                                                    <option key={`${String(q.id ?? q.num_sepultura ?? idx)}`} value={String(q.id)} disabled={full}>
+                                                        {q.num_quadra ? `Quadra ${q.num_quadra}` : q.nome || `Quadra ${q.id}`} {full ? `(lotada)` : ''}
+                                                    </option>
+                                                )
+                                            })}
+                                        </SelectMedium>
+                                    </Field>
+
+                                    <Field>
+                                        <Label>Status: </Label>
+                                        <SelectMedium name="status" value={formCova.status} onChange={handleCovaChange}>
+                                            <option value="disponivel">Disponível</option>
+                                            <option value="indisponivel">Indisponível</option>
+                                        </SelectMedium>
+                                    </Field>
+
+
+                                    <TwoCols>
                                         <Field>
-                                            <Label>Quadra: </Label>
-                                            <SmallSelect style={{ width: 200 }} name="quadra_cova" value={formCova.quadra_cova} onChange={handleCovaChange}>
-                                                <option value="">Selecione a quadra</option>
-                                                {quadrasDesc.map((q, idx) => {
-                                                    const used = Array.isArray(q.covas) ? q.covas.length : getCovasCount(q.num_quadra ?? q.id);
-                                                    const max = Number(q.max_covas || 0);
-                                                    const full = max > 0 && used >= max;
-                                                    return (
-                                                        <option key={`${String(q.id ?? q.num_sepultura ?? idx)}`} value={String(q.id)} disabled={full}>
-                                                            {q.num_quadra ? `Quadra ${q.num_quadra}` : q.nome || `Quadra ${q.id}`} {full ? `(lotada)` : ''}
-                                                        </option>
-                                                    )
-                                                })}
-                                            </SmallSelect>
+                                            <Label>Número: </Label>
+                                            <InputTiny name="num_cova" value={formCova.num_cova} onChange={handleCovaChange} />
                                         </Field>
 
                                         <Field>
-                                            <Label>Status: </Label>
-                                            <SmallSelect style={{ width: 200 }} name="status" value={formCova.status} onChange={handleCovaChange}>
-                                                <option value="disponivel">Disponível</option>
-                                                <option value="indisponivel">Indisponível</option>
-                                            </SmallSelect>
+                                            <Label>Tipo: </Label>
+                                            <SelectSmall name="tipo_cova" value={formCova.tipo_cova} onChange={handleCovaChange}>
+                                                <option value="cova">Cova</option>
+                                                <option value="gaveta">Gaveta</option>
+                                                <option value="nicho">Nicho</option>
+                                            </SelectSmall>
                                         </Field>
+                                    </TwoCols>
+
+                                    <Field>
+                                        <Label>Capacidade: </Label>
+                                        <InputMedium type="number" name="capacidade" value={formCova.capacidade} onChange={handleCovaChange} />
+                                    </Field>
 
 
-                                        <TwoCols>
+                                </ColumnLeft>
+
+                                <ColumnRight>
+
+                                    <Field>
+                                        <Label>
+                                            Possui título de posse?<input type="checkbox" name="concessao.ativa" checked={!!formCova.concessao?.ativa} onChange={handleCovaChange} />
+                                        </Label>
+                                    </Field>
+
+                                    {formCova.concessao?.ativa ? (
+                                        <>
                                             <Field>
-                                                <Label>Número: </Label>
-                                                <Input style={{ width: 70 }} name="num_cova" value={formCova.num_cova} onChange={handleCovaChange} />
+                                                <Label>Responsável: </Label>
+                                                <Input name="concessao.responsavel" value={formCova.concessao?.responsavel || ""} onChange={handleCovaChange} />
+                                            </Field>
+                                            <Field>
+                                                <Label>Prazo (anos): </Label>
+                                                <Input type="number" name="concessao.prazo_anos" value={formCova.concessao?.prazo_anos || 0} onChange={handleCovaChange} />
+                                            </Field>
+                                            <Field>
+                                                <Label>Data Início: </Label>
+                                                <Input type="date" name="concessao.data_inicio" value={formCova.concessao?.data_inicio || ""} onChange={handleCovaChange} />
                                             </Field>
 
                                             <Field>
-                                                <Label>Tipo: </Label>
-                                                <SmallSelect style={{ width: 80 }} name="tipo_cova" value={formCova.tipo_cova} onChange={handleCovaChange}>
-                                                    <option value="cova">Cova</option>
-                                                    <option value="gaveta">Gaveta</option>
-                                                    <option value="nicho">Nicho</option>
-                                                </SmallSelect>
+                                                <Label>Data Fim: </Label>
+                                                <Input type="date" name="concessao.data_fim" value={formCova.concessao?.data_fim || ""} onChange={handleCovaChange} />
                                             </Field>
-                                        </TwoCols>
+                                        </>
+                                    ) : null}
 
-                                        <Field>
-                                            <Label>Capacidade: </Label>
-                                            <Input style={{ width: 200 }} type="number" name="capacidade" value={formCova.capacidade} onChange={handleCovaChange} />
-                                        </Field>
+                                    <Field>
+                                        <Label>Observações: </Label>
+                                        <Textarea name="obs" value={formCova.obs || ""} onChange={handleCovaChange}></Textarea>
+                                    </Field>
+                                </ColumnRight>
 
-
-                                    </ColumnLeft>
-
-                                    <ColumnRight>
-
-                                        <Field>
-                                            <Label>
-                                                Possui título de posse?<input type="checkbox" name="concessao.ativa" checked={!!formCova.concessao?.ativa} onChange={handleCovaChange} />
-                                            </Label>
-                                        </Field>
-
-                                        {formCova.concessao?.ativa ? (
-                                            <>
-                                                <Field>
-                                                    <Label>Responsável: </Label>
-                                                    <Input name="concessao.responsavel" value={formCova.concessao?.responsavel || ""} onChange={handleCovaChange} />
-                                                </Field>
-                                                <Field>
-                                                    <Label>Prazo (anos): </Label>
-                                                    <Input type="number" name="concessao.prazo_anos" value={formCova.concessao?.prazo_anos || 0} onChange={handleCovaChange} />
-                                                </Field>
-                                                <Field>
-                                                    <Label>Data Início: </Label>
-                                                    <Input type="date" name="concessao.data_inicio" value={formCova.concessao?.data_inicio || ""} onChange={handleCovaChange} />
-                                                </Field>
-
-                                                <Field>
-                                                    <Label>Data Fim: </Label>
-                                                    <Input type="date" name="concessao.data_fim" value={formCova.concessao?.data_fim || ""} onChange={handleCovaChange} />
-                                                </Field>
-                                            </>
-                                        ) : null}
-
-                                        <Field>
-                                            <Label>Observações: </Label>
-                                            <Textarea name="obs" value={formCova.obs || ""} onChange={handleCovaChange}></Textarea>
-                                        </Field>
-                                    </ColumnRight>
-
-                                </FormGrid>
-                                <ButtonsRow>
-                                    <BtnActionCancel type="button" onClick={handleCloseAddCovaModal} style={{ padding: "8px 10px" }}>Cancelar</BtnActionCancel>
-                                    <BtnAdd type="submit" disabled={creatingGrave} style={{ padding: "8px 10px" }}>
-                                        {creatingGrave ? "Criando..." : "Criar"}
-                                    </BtnAdd>
-                                </ButtonsRow>
-                            </FormStyled>
-                        </div>
+                            </FormGrid>
+                            <ButtonsRow>
+                                <CompactCancelButton type="button" onClick={handleCloseAddCovaModal}>Cancelar</CompactCancelButton>
+                                <CompactButton type="submit" disabled={creatingGrave}>
+                                    {creatingGrave ? "Criando..." : "Criar"}
+                                </CompactButton>
+                            </ButtonsRow>
+                        </ModalSurface>
                     </ModalOverlay>
                 )}
 
                 {modalOpen && selectedCova && (
+                    <DrawerOverlay onMouseDown={(e) => { if (e.target === e.currentTarget) closeCovaDrawer(); }}>
+                        <CovaDrawer>
+                            <DrawerHeader>
+                                <DrawerTitle>
+                                    <strong>Sepultura {numeroForModal}</strong>
+                                    <span>{quadraSelecionada.nome || "Quadra selecionada"}</span>
+                                </DrawerTitle>
+                                <DrawerCloseButton type="button" onClick={closeCovaDrawer}>Fechar</DrawerCloseButton>
+                            </DrawerHeader>
+                            <DrawerBody>
+                                <DrawerSection>
+                                    <DrawerSectionTitle>Dados da sepultura</DrawerSectionTitle>
+                                    <SepDetailText><strong>Nº da sepultura:</strong> {numeroForModal}</SepDetailText>
+                                    <SepDetailText><strong>Status:</strong> {selectedCova.status ?? (isOccupiedForModal ? "ocupada" : "-")}</SepDetailText>
+                                    <SepDetailText><strong>Tipo:</strong> {tipoForModal}</SepDetailText>
+                                    <SepDetailText><strong>Espaços disponíveis na sepultura:</strong> {capacidadeForModal}</SepDetailText>
+                                    <SepDetailText><strong>Bloqueado por questões legais?:</strong> {bloqueadoForModal ? "Sim" : "Não"}</SepDetailText>
+                                    <SepDetailText><strong>Observações:</strong> {observacoesForModal}</SepDetailText>
+                                    <ToggleStatusRow>
+                                        <ToggleStatusText>
+                                            {String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"
+                                                ? "Indisponível (manutenção)"
+                                                : "Disponível para uso"}
+                                        </ToggleStatusText>
 
-                    <div style={{
-                        position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",
-                        display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999
-                    }} onMouseDown={(e) => { if (e.target === e.currentTarget) { setModalOpen(false); setSelectedCova(null); setModalForm(null); } }}>
-                        <ModalContent>
-                            <p><strong>Nº da sepultura:</strong> {numeroForModal}</p>
-                            <p><strong>Status:</strong> {selectedCova.status ?? (isOccupiedForModal ? "ocupada" : "-")}</p>
-                            <label
-                                type="button"
-                                onClick={handleToggleStatus}
-                                disabled={!selectedGraveForModal?.id}
-                                style={{ marginBottom: 12, cursor: "pointer" }}
-                            >
-                                {String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE" ? "Liberar para uso" : "Marcar indisponível (manutenção)"}
-                            </label>
-                            <p><strong>Tipo:</strong> {tipoForModal}</p>
-                            <p><strong>Espaços disponíveis na sepultura:</strong> {capacidadeForModal}</p>
-                            <p><strong>Bloqueado por questões legais?:</strong> {bloqueadoForModal ? "Sim" : "Não"}</p>
-                            {/* <BtnAdd
-                                type="button"
-                                onClick={handleToggleBlockedLegal}
-                                disabled={!selectedGraveForModal?.id}
-                                style={{ marginBottom: 12 }}
-                            >
-                                {bloqueadoForModal ? "Remover bloqueio legal" : "Bloquear por questão legal"}
-                            </BtnAdd> */}
-                            <p><strong>Observações:</strong> {observacoesForModal}</p>
+                                        <ToggleStatusLabel
+                                            type="button"
+                                            onClick={handleToggleStatus}
+                                            disabled={!selectedGraveForModal?.id}
+                                            $active={String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"}
+                                            aria-label="Alternar status da sepultura"
+                                            aria-pressed={String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"}
+                                            title={String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"
+                                                ? "Liberar para uso"
+                                                : "Marcar indisponível (manutenção)"}
+                                        />
+                                    </ToggleStatusRow>
+                                </DrawerSection>
+                                <DrawerSection>
+                                    <DrawerSectionTitle>Sepultamentos e pets</DrawerSectionTitle>
 
-                            <CovaPetsSection
-                                selectedCova={selectedCova}
-                                sepultamentos={modalSepList}
-                                petsAll={petsAll}
-                                onPetCreated={(createdPet) => {
-                                    setPetsAll((prev) => {
-                                        const id = createdPet?.id;
-                                        if (id == null) return [...prev, createdPet];
-                                        const idx = prev.findIndex((p) => String(p.id) === String(id));
-                                        if (idx >= 0) {
-                                            const clone = [...prev];
-                                            clone[idx] = createdPet;
-                                            return clone;
-                                        }
-                                        return [...prev, createdPet];
-                                    });
-                                }}
-                                onPetDeleted={(petId) => {
-                                    setPetsAll((prev) => prev.filter((p) => String(p.id) !== String(petId)));
-                                }}
-                            >
+                                    <CovaPetsSection
+                                        selectedCova={selectedCova}
+                                        sepultamentos={modalSepList}
+                                        petsAll={petsAll}
+                                        onPetCreated={(createdPet) => {
+                                            setPetsAll((prev) => {
+                                                const id = createdPet?.id;
+                                                if (id == null) return [...prev, createdPet];
+                                                const idx = prev.findIndex((p) => String(p.id) === String(id));
+                                                if (idx >= 0) {
+                                                    const clone = [...prev];
+                                                    clone[idx] = createdPet;
+                                                    return clone;
+                                                }
+                                                return [...prev, createdPet];
+                                            });
+                                        }}
+                                        onPetDeleted={(petId) => {
+                                            setPetsAll((prev) => prev.filter((p) => String(p.id) !== String(petId)));
+                                        }}
+                                    >
 
-                                {(modalSepList && modalSepList.length > 0) ? (
-                                    <>
-                                        <SepDivider />
-                                        <SepList>
-                                            {modalSepList.map((s, idx) => {
-                                                const expanded = modalExpandedIndex === idx;
-                                                return (
-                                                    <div key={s.id ?? idx}>
-                                                        <SepItemRow>
-                                                            <SepItemButton
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setModalExpandedIndex(expanded ? null : idx);
-                                                                    if (!expanded) {
-                                                                        (async () => {
-                                                                            const falId = s?.falecido ?? s?.falecido_id ?? s?.falecidoId;
-                                                                            let fall = null;
-                                                                            if (falId) {
-                                                                                try {
-                                                                                    const rf = await api.get(`/falecidos/${falId}`);
-                                                                                    fall = rf.data;
-                                                                                } catch (e) {
-                                                                                    console.error("Erro ", e)
-                                                                                }
+                                        {(modalSepList && modalSepList.length > 0) ? (
+                                            <>
+                                                <SepDivider />
+                                                <SepList>
+                                                    {modalSepList.map((s, idx) => {
+                                                        const expanded = modalExpandedIndex === idx;
+                                                        return (
+                                                            <div key={s.id ?? idx}>
+                                                                <SepItemRow>
+                                                                    <SepItemButton
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setModalExpandedIndex(expanded ? null : idx);
+                                                                            if (!expanded) {
+                                                                                (async () => {
+                                                                                    const falId = s?.falecido ?? s?.falecido_id ?? s?.falecidoId;
+                                                                                    let fall = null;
+                                                                                    if (falId) {
+                                                                                        try {
+                                                                                            const rf = await api.get(`/falecidos/${falId}`);
+                                                                                            fall = rf.data;
+                                                                                        } catch (e) {
+                                                                                            console.error("Erro ", e)
+                                                                                        }
+                                                                                    }
+                                                                                    setModalForm({ ...s, falecido: fall || null });
+                                                                                })();
                                                                             }
-                                                                            setModalForm({ ...s, falecido: fall || null });
-                                                                        })();
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                                                                    <SepItemName>{s.nome_sep || s.falecido || "-"}</SepItemName>
+                                                                        }}
+                                                                    >
+                                                                        <SepItemContent>
+                                                                            <SepItemName>{s.nome_sep || s.falecido || "-"}</SepItemName>
 
-                                                                </div>
-                                                            </SepItemButton>
+                                                                        </SepItemContent>
+                                                                    </SepItemButton>
 
-                                                            <SepToggle
-                                                                aria-expanded={expanded}
-                                                                onClick={() => {
-                                                                    const willExpand = !expanded;
-                                                                    setModalExpandedIndex(willExpand ? idx : null);
-                                                                    if (willExpand) {
-                                                                        (async () => {
-                                                                            const falId = s?.falecido ?? s?.falecido_id ?? s?.falecidoId;
-                                                                            let fall = null;
-                                                                            if (falId) {
-                                                                                try {
-                                                                                    const rf = await api.get(`/falecidos/${falId}`);
-                                                                                    fall = rf.data;
-                                                                                } catch (e) {
-                                                                                    console.error("Erro ", e)
-                                                                                }
+                                                                    <SepToggle
+                                                                        aria-expanded={expanded}
+                                                                        onClick={() => {
+                                                                            const willExpand = !expanded;
+                                                                            setModalExpandedIndex(willExpand ? idx : null);
+                                                                            if (willExpand) {
+                                                                                (async () => {
+                                                                                    const falId = s?.falecido ?? s?.falecido_id ?? s?.falecidoId;
+                                                                                    let fall = null;
+                                                                                    if (falId) {
+                                                                                        try {
+                                                                                            const rf = await api.get(`/falecidos/${falId}`);
+                                                                                            fall = rf.data;
+                                                                                        } catch (e) {
+                                                                                            console.error("Erro ", e)
+                                                                                        }
+                                                                                    }
+                                                                                    setModalForm({ ...s, falecido: fall || null });
+                                                                                })();
                                                                             }
-                                                                            setModalForm({ ...s, falecido: fall || null });
-                                                                        })();
-                                                                    }
-                                                                }}
-                                                            >
-                                                                {expanded ? "▾" : "▸"}
-                                                            </SepToggle>
-                                                        </SepItemRow>
+                                                                        }}
+                                                                    >
+                                                                        {expanded ? "▾" : "▸"}
+                                                                    </SepToggle>
+                                                                </SepItemRow>
 
-                                                        {expanded && modalForm && modalForm.id === (s.id ?? modalForm.id) ? (
-                                                            <div style={{ padding: "8px 12px 12px", borderLeft: "3px solid #eef0ff", background: "#fff" }}>
-                                                                <p style={{ margin: "6px 0" }}><strong>Nome do sepultado: </strong>{modalForm.nome_sep || modalForm.falecido?.nome_fal || modalForm.falecido?.nome || "-"}</p>
-                                                                <p style={{ margin: "6px 0" }}><strong>Data e hora do sepultamento: </strong>{modalForm.dh_sep || modalForm.data_hora || modalForm.data_obito_sep || "-"}</p>
-                                                                <p style={{ margin: "6px 0" }}><strong>Data do óbito: </strong>{modalForm.data_obito || modalForm.data_obito_sep || "-"}</p>
-                                                                <p style={{ margin: "6px 0" }}><strong>Responsável: </strong>{modalForm.nome_resp || modalForm.falecido?.nome_resp || "-"}</p>
-                                                                <p style={{ margin: "6px 0" }}><strong>Contato do responsável: </strong>{modalForm.tel_resp || modalForm.falecido?.tel_resp || "-"}</p>
-                                                                {exumacoesPending[String(s.id)] ? (
-                                                                    <BtnAdd style={{ backgroundColor: "#cf142b" }} type="button" onClick={() => cancelExumacao(s)}>Cancelar exumação</BtnAdd>
-                                                                ) : (
-                                                                    <BtnAdd type="button" onClick={() => { openExumacaoForm(s); setModalOpen(false); }}>Iniciar exumação</BtnAdd>
-                                                                )}
+                                                                {expanded && modalForm && modalForm.id === (s.id ?? modalForm.id) ? (
+                                                                    <SepDetailPanel>
+                                                                        <SepDetailText><strong>Nome do sepultado: </strong>{modalForm.nome_sep || modalForm.falecido?.nome_fal || modalForm.falecido?.nome || "-"}</SepDetailText>
+                                                                        <SepDetailText><strong>Data e hora do sepultamento: </strong>{modalForm.dh_sep || modalForm.data_hora || modalForm.data_obito_sep || "-"}</SepDetailText>
+                                                                        <SepDetailText><strong>Data do óbito: </strong>{modalForm.data_obito || modalForm.data_obito_sep || "-"}</SepDetailText>
+                                                                        <SepDetailText><strong>Responsável: </strong>{modalForm.nome_resp || modalForm.falecido?.nome_resp || "-"}</SepDetailText>
+                                                                        <SepDetailText><strong>Contato do responsável: </strong>{modalForm.tel_resp || modalForm.falecido?.tel_resp || "-"}</SepDetailText>
+                                                                        {exumacoesPending[String(s.id)] ? (
+                                                                            <BtnDanger type="button" onClick={() => cancelExumacao(s)}>Cancelar exumação</BtnDanger>
+                                                                        ) : (
+                                                                            <BtnAdd type="button" onClick={() => { openExumacaoForm(s); closeCovaDrawer(); }}>Iniciar exumação</BtnAdd>
+                                                                        )}
+                                                                    </SepDetailPanel>
+                                                                ) : null}
                                                             </div>
-                                                        ) : null}
-                                                    </div>
-                                                );
-                                            })}
-                                        </SepList>
-                                    </>
-                                ) : (
-                                    sepDataForModal ? (
-                                        <>
-                                            <p><strong>Nome do sepultado: </strong> {sepDataForModal.nome_sep || sepDataForModal.falecido?.nome_fal || sepDataForModal.falecido?.nome || "-"}</p>
-                                            <p><strong>Data e hora do sepultamento: </strong> {sepDataForModal.dh_sep || sepDataForModal.data_hora || sepDataForModal.data_obito_sep || "-"}</p>
-                                            <p><strong>Data do óbito: </strong> {sepDataForModal.data_obito || sepDataForModal.data_obito_sep || "-"}</p>
-                                        </>
-                                    ) : null
+                                                        );
+                                                    })}
+                                                </SepList>
+                                            </>
+                                        ) : (
+                                            sepDataForModal ? (
+                                                <>
+                                                    <SepDetailText><strong>Nome do sepultado: </strong> {sepDataForModal.nome_sep || sepDataForModal.falecido?.nome_fal || sepDataForModal.falecido?.nome || "-"}</SepDetailText>
+                                                    <SepDetailText><strong>Data e hora do sepultamento: </strong> {sepDataForModal.dh_sep || sepDataForModal.data_hora || sepDataForModal.data_obito_sep || "-"}</SepDetailText>
+                                                    <SepDetailText><strong>Data do óbito: </strong> {sepDataForModal.data_obito || sepDataForModal.data_obito_sep || "-"}</SepDetailText>
+                                                </>
+                                            ) : null
 
-                                )}
-                            </CovaPetsSection>
-
-
-                        </ModalContent>
-                    </div>
+                                        )}
+                                    </CovaPetsSection>
+                                </DrawerSection>
+                            </DrawerBody>
+                        </CovaDrawer>
+                    </DrawerOverlay>
                 )}
 
                 {exumacoesModalIsOpen && exumacoesForm && (
                     <ModalOverlay>
-                        <form onSubmit={submitExumacao} style={{ color: "#171770", width: 520, background: "#fff", padding: 18, borderRadius: 8 }}>
-                            <h3 style={{ marginTop: 0 }}>Iniciar exumação</h3>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                        <ModalSurface as="form" onSubmit={submitExumacao} $width="520px">
+                            <ModalTitle>Iniciar exumacao</ModalTitle>
+                            <ModalGrid>
                                 <div>
                                     <Label>Quadra</Label>
                                     <Input readOnly value={exumacoesForm.quadra_sep || ""} />
@@ -1719,10 +1780,10 @@ export default function VerMapa() {
                                     <Input readOnly value={exumacoesForm.num_sepultura_sep || ""} />
                                 </div>
 
-                                <div style={{ gridColumn: "span 2" }}>
+                                <ModalGridFull>
                                     <Label>Nome do sepultado</Label>
                                     <Input readOnly value={exumacoesForm.nome_sep || ""} />
-                                </div>
+                                </ModalGridFull>
 
                                 <div>
                                     <Label>Data e hora</Label>
@@ -1748,15 +1809,15 @@ export default function VerMapa() {
                                     <Label>Observações</Label>
                                     <Textarea value={exumacoesForm.obs_exu || ""} onChange={(ev) => handleExumacaoField("obs_exu", ev.target.value)} />
                                 </div>
-                            </div>
+                            </ModalGrid>
 
 
-                            <ButtonsRow style={{ marginTop: 12 }}>
+                            <ModalActions>
                                 <BtnClose type="button" onClick={() => setExumacoesModalIsOpen(false)}>Cancelar</BtnClose>
                                 <BtnAdd type="submit">Confirmar</BtnAdd>
-                            </ButtonsRow>
+                            </ModalActions>
 
-                        </form>
+                        </ModalSurface>
                     </ModalOverlay>
 
 
@@ -1767,3 +1828,7 @@ export default function VerMapa() {
         </>
     )
 }
+
+
+
+

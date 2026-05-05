@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { DashboardWrapper, Card, CardHeader, CardBody, ProcessItem, ProcessInfo, ProcessAction, Btn } from "./styles";
+import { DashboardWrapper, Card, CardHeader, CardBody, ProcessItem, ProcessInfo, ProcessAction, ProcessType, EmptyState, Btn } from "./styles";
 import { FaCross } from "react-icons/fa";
 import { FaSkullCrossbones } from "react-icons/fa";
 import { FaTools } from "react-icons/fa";
@@ -281,13 +281,15 @@ export default function Dashboard() {
                                 )}
                             </ProcessInfo>
                             <ProcessAction>
-                                {icones[p._type] || null}
-                                <span style={{ marginLeft: 8 }}>{p._type}</span>
+                                <ProcessType>
+                                    {icones[p._type] || null}
+                                    {p._type}
+                                </ProcessType>
                                 {p.local && <span> {p.local} </span>}
-                                <Btn style={{ marginLeft: 12 }} onClick={() => handleConfirm(p)}>Confirmar conclusão</Btn>
+                                <Btn onClick={() => handleConfirm(p)}>Confirmar conclusão</Btn>
                             </ProcessAction>
                         </ProcessItem>
-                    )) : <div style={{ padding: 12 }}>Nenhum evento agendado para hoje.</div>}                </CardBody>
+                    )) : <EmptyState>Nenhum evento agendado para hoje.</EmptyState>}                </CardBody>
             </Card>
         </DashboardWrapper>
 

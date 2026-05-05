@@ -60,7 +60,7 @@ export const CemeterySwitcher = styled.div`
 
 export const CemeteryButton = styled.button`
   width: 100%;
-  max-width: 350px;
+  max-width: 300px;
   min-width: 220px;
   min-height: 40px;
   border: 1px solid rgba(25, 25, 112, 0.16);
@@ -85,8 +85,8 @@ export const CemeteryButton = styled.button`
 export const CemeteryPanel = styled.div`
   position: absolute;
   top: calc(100% + 0.5rem);
-  left: 0;
-  width: 100%;
+  left: 10;
+  width: 50%;
   background: #ffffff;
   border: 1px solid rgba(25, 25, 112, 0.12);
   border-radius: 14px;
@@ -178,11 +178,11 @@ export const UserAvatar = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: -6px;
+  margin-right: -5px;
   flex-shrink: 0;
 
   svg {
-    font-size: 1.3rem;
+    font-size: 1.7rem;
   }
 `;
 

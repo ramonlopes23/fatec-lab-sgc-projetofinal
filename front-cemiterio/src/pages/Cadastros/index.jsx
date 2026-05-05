@@ -1,6 +1,6 @@
 import api from "../../services/index.js";
 import React, { useState, useMemo, useEffect } from "react";
-import { BtnAction, BtnAction2, BtnPrimary, ColumnLeft, ColumnRight, Container, Field, FormActions, FormGrid, FormStyled, FormTop, Input, SelectTop, SmallLabel, Textarea, Title, TwoCols, InputCova, BtnClear, CheckboxInput, CheckboxLabel, CheckboxWrapper } from "./styles";
+import { BtnAction, BtnAction2, BtnPrimary, ColumnLeft, ColumnRight, Container, Field, FormActions, FormGrid, FormStyled, FormTop, Input, SelectTop, SmallLabel, Textarea, Title, TwoCols, InputCova, BtnClear, CheckboxInput, CheckboxLabel, CheckboxWrapper, SearchFieldWrapper, SearchResults, SearchResultItem, FilePreview, InlineFeedback } from "./styles";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
@@ -14,9 +14,11 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import { applyMaskByFieldName } from "../../utils/masks";
+import { capitalizeWords } from "../../utils/text.js";
 import { isEmpty, validateForm, isValidDateRange, RULES_FALECIDO, RULES_RESPONSAVEL, RULES_SEPULTAMENTO, getFieldError, hasErrors } from "../../utils/validation"
 
 export default function Cadastros() {
+
 
     const falecido = {
         nome_fal: "",
@@ -45,6 +47,7 @@ export default function Cadastros() {
         cep_resp: "",
         endereco_resp: "",
     };
+
 
     const sepultamento = {
         nome_sep: "",
@@ -124,6 +127,15 @@ export default function Cadastros() {
         return saved?.searchFal || "";
     });
 
+
+    const name_case_fields = new Set([
+        "nome_fal",
+        "filiacao_pai",
+        "filiacao_mae",
+        "nome_doutor",
+        "nome_resp",
+    ])
+
     const [filteredFalecidos, setFilteredFalecidos] = useState([]);
     const [showFalList, setShowFalList] = useState(false);
     const [busca, setBusca] = useState('');
@@ -140,6 +152,7 @@ export default function Cadastros() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isIndigente, setIsIndigente] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
+
 
     const fieldSxStyle = {
         "& .MuiOutlinedInput-root": {
@@ -318,6 +331,10 @@ export default function Cadastros() {
 
 
         let maskedValue = applyMaskByFieldName(name, incoming);
+
+        if (name_case_fields.has(name)) {
+            maskedValue = capitalizeWords(maskedValue)
+        }
 
         if (name === "certidao_obito") {
             maskedValue = String(maskedValue || "").slice(0, 32);
@@ -757,7 +774,8 @@ export default function Cadastros() {
             if (f && f.cpf) return applyMaskByFieldName('cpf', f.cpf);
         }
         return form.cpf ? applyMaskByFieldName('cpf', form.cpf) : "-";
-    }, [form.falecido, form.falecido_id, form.cpf, falecidos])
+    }, [form.falecido, form.falecido_id, form.cpf, falecidos]);
+
 
     return (
         <div>
@@ -858,7 +876,7 @@ export default function Cadastros() {
                             <>
                                 <ColumnLeft>
                                     <Field>
-                                        <div style={{ position: "relative" }}>
+                                        <SearchFieldWrapper>
                                             <TextField
                                                 fullWidth
                                                 variant="outlined"
@@ -878,11 +896,9 @@ export default function Cadastros() {
                                                 }}
                                             />
                                             {showFalList && filteredFalecidos.length > 0 && (
-                                                <ul style={{ position: "absolute", left: 0, right: 0, top: "100%", zIndex: 50, background: "#fff", borderRadius: "16px", border: "1px solid #191970", maxHeight: 220, overflow: "auto", margin: 0, padding: 0, listStyle: "none" }}>
+                                                <SearchResults>
                                                     {filteredFalecidos.map((f) => (
-                                                        <li key={f.id} style={{
-                                                            padding: 8, cursor: "pointer", borderBottom: "1px solid #f1f1f1",
-                                                        }}
+                                                        <SearchResultItem key={f.id}
                                                             onMouseDown={(ev) => {
                                                                 ev.preventDefault();
                                                                 handleSelectFalecido(String(f.id));
@@ -890,11 +906,11 @@ export default function Cadastros() {
                                                                 setShowFalList(false);
                                                             }}>
                                                             {f.nome_fal || f.nome}
-                                                        </li>
+                                                        </SearchResultItem>
                                                     ))}
-                                                </ul>
+                                                </SearchResults>
                                             )}
-                                        </div>
+                                        </SearchFieldWrapper>
                                     </Field>
 
                                     <Field>
@@ -1067,7 +1083,7 @@ export default function Cadastros() {
 
                                     <FormActions>
                                         <BtnAction2 type="button" onClick={handleClearSepultamento} disabled={isSubmitting}>LIMPAR</BtnAction2>
-                                        <BtnAction style={{ marginLeft: 5 }} type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>SALVAR</BtnAction>
+                                        <BtnAction type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>SALVAR</BtnAction>
                                     </FormActions>
                                 </ColumnRight>
                             </>
@@ -1317,7 +1333,7 @@ export default function Cadastros() {
                                     <Field>
                                         <input type="file" accept="image/*" onChange={e => handleFileChange(e, "residencia")} />
                                         {form.residencia_preview && (
-                                            <img src={form.residencia_preview} alt="preview comprovante" style={{ width: 160, height: 120, objectFit: "cover", marginTop: 8, borderRadius: 6 }} />
+                                            <FilePreview src={form.residencia_preview} alt="preview comprovante" />
                                         )}
                                     </Field>
 
@@ -1325,7 +1341,7 @@ export default function Cadastros() {
                                         <label>Declaração de óbito</label>
                                         <input name="dec_obito" type="file" accept="image/*" onChange={e => handleFileChange(e, "dec_obito")} />
                                         {form.dec_obito_preview && (
-                                            <img src={form.dec_obito_preview} alt="preview declaração de óbito" style={{ width: 160, height: 120, objectFit: "cover", marginTop: 8, borderRadius: 6 }} />
+                                            <FilePreview src={form.dec_obito_preview} alt="preview declaração de óbito" />
                                         )}
                                     </Field>
 
@@ -1522,7 +1538,7 @@ export default function Cadastros() {
                                                 inputLabel: { sx: labelSxStyle }
                                             }}
                                         />
-                                        {loadingCep && <small style={{ color: "#666" }}>Buscando...</small>}
+                                        {loadingCep && <InlineFeedback>Buscando...</InlineFeedback>}
                                     </Field>
 
                                     <Field>
@@ -1567,7 +1583,7 @@ export default function Cadastros() {
 
                                     <FormActions>
                                         <BtnAction2 type="button" onClick={handleClearFalecido} disabled={isSubmitting}>LIMPAR</BtnAction2>
-                                        <BtnAction style={{ marginLeft: 5 }} type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>SALVAR</BtnAction>
+                                        <BtnAction type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>SALVAR</BtnAction>
                                     </FormActions>
                                 </ColumnRight>
                             </>
@@ -1582,8 +1598,8 @@ export default function Cadastros() {
                         </DialogContentText>
                     </DialogContent>
                     <DialogActions>
-                        <BtnClear style={{ display: "flex", justifyContent: "flex-start", paddingLeft: 23 }} onClick={() => setConfirmOpen(false)} disabled={isSubmitting}>CANCELAR</BtnClear>
-                        <BtnPrimary style={{ display: "flex", justifyContent: "flex-start", paddingLeft: 20 }} onClick={handleConfirmSubmit} disabled={isSubmitting} autoFocus>CONFIRMAR</BtnPrimary>
+                        <BtnClear onClick={() => setConfirmOpen(false)} disabled={isSubmitting}>CANCELAR</BtnClear>
+                        <BtnPrimary onClick={handleConfirmSubmit} disabled={isSubmitting} autoFocus>CONFIRMAR</BtnPrimary>
                     </DialogActions>
                 </Dialog>
             </Container>

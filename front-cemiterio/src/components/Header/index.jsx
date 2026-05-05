@@ -208,7 +208,6 @@ export default function Header({ onMenuClick }) {
                             </UserAvatar>
                             <UserName>Bem vindo, {displayName}</UserName>
                         </UserContainer>
-                        {isUserDropdownOpen ? <FaChevronUp /> : <FaChevronDown />}
                     </UserDropdownButton>
 
                     {isUserDropdownOpen && (

@@ -10,5 +10,5 @@ export const Row = styled.div`
   max-width:1100px;
   margin:0 auto;
   box-sizing:border-box;
-  padding:0.5 rem 16px;
+  padding:0.5rem 16px;
 `;
