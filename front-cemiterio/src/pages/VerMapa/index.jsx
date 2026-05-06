@@ -15,6 +15,7 @@ import { GiCoffin } from "react-icons/gi";
 import { FaChartPie } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
 import { MdPets } from "react-icons/md";
+import { PiFlowerTulipLight, PiFlowerTulipBold } from "react-icons/pi";
 import {
     BtnAction,
     QuadraDropdown,
@@ -1268,19 +1269,21 @@ export default function VerMapa() {
                                 {isQuadraDropdownOpen ? "▲" : "▼"}
                             </DropdownIcon>
                         </QuadraSelectButton>
-                        {isQuadraDropdownOpen && (
-                            <QuadraDropdown>
-                                <GridQuadras
-                                    quadrasDesc={quadrasDesc}
-                                    value={selectedQuadraId}
-                                    onChange={(quadra) => {
-                                        handleGridChange(quadra);
-                                        setIsQuadraDropdownOpen(true);
-                                    }}
-                                    columnsMinWidth={40}
-                                />
-                            </QuadraDropdown>
-                        )}
+
+                        <QuadraDropdown
+                            $isOpen={isQuadraDropdownOpen}
+                            aria-hidden={!isQuadraDropdownOpen}>
+                            <GridQuadras
+                                quadrasDesc={quadrasDesc}
+                                value={selectedQuadraId}
+                                onChange={(quadra) => {
+                                    handleGridChange(quadra);
+                                    setIsQuadraDropdownOpen(true);
+                                }}
+                                columnsMinWidth={40}
+                            />
+                        </QuadraDropdown>
+
                     </QuadraDropdownWrapper>
                 </MapToolbar>
                 <QuadraWrapper key={quadraSelecionada.id || "preview"}>
@@ -1334,10 +1337,10 @@ export default function VerMapa() {
                                         borderWidth={(displayStatus === "reservada" || displayStatus === "particular_ocupada") ? 5 : undefined}
                                         $selected={String(selectedCova?.id) === String(cova.id)}
                                         onClick={() => handleClickCova(cova)}
-                                        title={`Cova ${cova.numero} - ${displayStatus} (⚰️ ${occupiedCount}/${capacidadeTotal}${petCount > 0 ? ` | 🐾 ${petCount}` : ""})`}
+                                        title={`Sepultura ${cova.numero} - ${displayStatus} (${occupiedCount}/${capacidadeTotal}${petCount > 0 ? ` | 🐾 ${petCount}` : ""})`}
                                     >
                                         <span className="cova-number" aria-hidden="true">{cova.numero}  </span>
-                                        <span className="cova-capacity" aria-hidden="true"><GiCoffin />{`${occupiedCount}/${capacidadeTotal}`}  </span>
+                                        <span className="cova-capacity" aria-hidden="true"><PiFlowerTulipBold />{`${occupiedCount}/${capacidadeTotal}`}  </span>
                                         {petCount > 0 && (
                                             <>
                                                 <span className="cova-divider" aria-hidden="true" />

@@ -143,41 +143,45 @@ export default function Header({ onMenuClick }) {
                         </span>
                         {isCemeteryDropdownOpen && selectedCemeteryId ? <FaChevronUp /> : <FaChevronDown />}                    </CemeteryButton>
 
-                    {isCemeteryDropdownOpen && (
-                        <CemeteryPanel role="listbox" aria-label="Selecionar cemitério">
-                            {loading && <CemeteryEmpty>Carregando cemitérios...</CemeteryEmpty>}
-                            {!loading && error && <CemeteryError>{error}</CemeteryError>}
-                            {!loading && !error && cemeteries.length === 0 && (
-                                <CemeteryEmpty>Nenhum cemitério cadastrado.</CemeteryEmpty>
-                            )}
 
-                            {!loading &&
-                                !error &&
-                                cemeteries.map((cemetery) => {
-                                    const isSelected =
-                                        String(cemetery.id) === String(selectedCemeteryId);
+                    <CemeteryPanel
+                        $isOpen={isCemeteryDropdownOpen}
+                        role="listbox"
+                        aria-label="Selecionar cemitério"
+                        aria-hidden={!isCemeteryDropdownOpen}>
+                        {loading && <CemeteryEmpty>Carregando cemitérios...</CemeteryEmpty>}
+                        {!loading && error && <CemeteryError>{error}</CemeteryError>}
+                        {!loading && !error && cemeteries.length === 0 && (
+                            <CemeteryEmpty>Nenhum cemitério cadastrado.</CemeteryEmpty>
+                        )}
 
-                                    return (
-                                        <CemeteryItem
-                                            key={cemetery.id}
-                                            type="button"
-                                            role="option"
-                                            aria-selected={isSelected}
-                                            data-selected={isSelected}
-                                            onClick={() => handleSelectCemetery(cemetery.id)}
-                                        >
-                                            <CemeteryMeta>
-                                                <CemeteryName>{cemetery.name}</CemeteryName>
-                                                <span>Fundação: {formatFoundation(cemetery.foundation)}</span>
-                                            </CemeteryMeta>
-                                            <CemeteryStatus data-active={cemetery.active !== false}>
-                                                {cemetery.active !== false ? "Ativo" : "Inativo"}
-                                            </CemeteryStatus>
-                                        </CemeteryItem>
-                                    );
-                                })}
-                        </CemeteryPanel>
-                    )}
+                        {!loading &&
+                            !error &&
+                            cemeteries.map((cemetery) => {
+                                const isSelected =
+                                    String(cemetery.id) === String(selectedCemeteryId);
+
+                                return (
+                                    <CemeteryItem
+                                        key={cemetery.id}
+                                        type="button"
+                                        role="option"
+                                        aria-selected={isSelected}
+                                        data-selected={isSelected}
+                                        onClick={() => handleSelectCemetery(cemetery.id)}
+                                    >
+                                        <CemeteryMeta>
+                                            <CemeteryName>{cemetery.name}</CemeteryName>
+                                            <span>Fundação: {formatFoundation(cemetery.foundation)}</span>
+                                        </CemeteryMeta>
+                                        <CemeteryStatus data-active={cemetery.active !== false}>
+                                            {cemetery.active !== false ? "Ativo" : "Inativo"}
+                                        </CemeteryStatus>
+                                    </CemeteryItem>
+                                );
+                            })}
+                    </CemeteryPanel>
+
                 </CemeterySwitcher>
             </HeaderCenter>
 
@@ -210,22 +214,23 @@ export default function Header({ onMenuClick }) {
                         </UserContainer>
                     </UserDropdownButton>
 
-                    {isUserDropdownOpen && (
-                        <UserDropdownMenu role="menu" aria-label="Conta do usuário">
-                            <UserDropdownHeader>
-                                <UserDropdownName>{displayName}</UserDropdownName>
-                                <UserDropdownNote>
-                                    {user?.email || user?.username || "Conta ativa"}
-                                </UserDropdownNote>
-                            </UserDropdownHeader>
+                    <UserDropdownMenu $isOpen={isUserDropdownOpen}
+                        role="menu"
+                        aria-label="Conta do usuário"
+                        aria-hidden={!isUserDropdownOpen}>
+                        <UserDropdownHeader>
+                            <UserDropdownName>{displayName}</UserDropdownName>
+                            <UserDropdownNote>
+                                {user?.email || user?.username || "Conta ativa"}
+                            </UserDropdownNote>
+                        </UserDropdownHeader>
 
-                            <UserAction type="button" onClick={handleLogout} role="menuitem">
-                                <FiLogOut />
-                                <span>Sair</span>
-                            </UserAction>
+                        <UserAction type="button" onClick={handleLogout} role="menuitem">
+                            <FiLogOut />
+                            <span>Sair</span>
+                        </UserAction>
 
-                        </UserDropdownMenu>
-                    )}
+                    </UserDropdownMenu>
                 </UserDropdown>
             </HeaderRight>
         </HeaderContainer>

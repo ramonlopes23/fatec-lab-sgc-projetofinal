@@ -698,6 +698,14 @@ export const QuadraDropdown = styled.div`
   min-width: 400px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   z-index: 999;
+  transition: all .5s ease;
+  opacity: ${props => props.$isOpen ? 1 : 0};
+  transform: ${props => props.$isOpen ? "scale(1) translateY(0)" : "scale(0.95) translateY(-10px)"};
+  visibility: ${props => props.$isOpen ? "visible" : "hidden"};
+  pointer-events: ${props => props.$isOpen ? "auto" : "none"};
+  transition: opacity 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0.24s cubic-bezier(0.4, 0, 0.2, 1);
 `;
 
 export const BtnAction = styled.button`

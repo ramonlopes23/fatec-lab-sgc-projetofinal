@@ -1,10 +1,21 @@
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { createGlobalStyle } from "styled-components";
 
 export const GlobalStyle = createGlobalStyle`
 *{
   font-family:"Inter", sans-serif;
 }
+`;
+
+const FadeInScale = keyframes`
+  from{
+  opacity: 0,
+  transform: scale(0.94) translateY(-8px);
+  }
+  to{
+  opacity:1;
+  transform: scale(1) translateY(0);
+  }
 `;
 
 export const HeaderContainer = styled.header`
@@ -93,6 +104,13 @@ export const CemeteryPanel = styled.div`
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.12);
   overflow: hidden;
   z-index: 1200;
+  opacity: ${props => props.$isOpen ? 1 : 0};
+  transform: ${props => props.$isOpen ? "scale(1) translateY(0)" : "scale(0.94) translateY(-8px)"};
+  visibility: ${props => props.$isOpen ? "visible" : "hidden"};
+  pointer-events: ${props => props.$isOpen ? "auto" : "none"};
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 `;
 
 export const CemeteryItem = styled.button`
@@ -234,6 +252,13 @@ export const UserDropdownMenu = styled.div`
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.12);
   overflow: hidden;
   z-index: 1300;
+  opacity: ${props => props.$isOpen ? 1 : 0};
+  transform: ${props => props.$isOpen ? "scale(1) translateY(0)" : "scale(0.94) translateY(-12px)"};
+  visibility: ${props => props.$isOpen ? "visible" : "hidden"};
+  pointer-events: ${props => props.$isOpen ? "auto" : "none"};
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 `;
 
 export const UserDropdownHeader = styled.div`
