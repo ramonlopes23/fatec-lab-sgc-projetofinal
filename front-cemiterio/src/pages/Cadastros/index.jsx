@@ -1,11 +1,12 @@
 import api from "../../services/index.js";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { BtnAction, BtnAction2, BtnPrimary, ColumnLeft, ColumnRight, Container, Field, FormActions, FormGrid, FormStyled, FormTop, Input, SelectTop, SmallLabel, Textarea, Title, TwoCols, InputCova, BtnClear, CheckboxInput, CheckboxLabel, CheckboxWrapper, SearchFieldWrapper, SearchResults, SearchResultItem, FilePreview, InlineFeedback } from "./styles";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import InputLabel from "@mui/material/InputLabel";
+import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
 import Select from "@mui/material/Select";
 import Autocomplete from "@mui/material/Autocomplete";
 import Dialog from "@mui/material/Dialog";
@@ -18,6 +19,14 @@ import { capitalizeWords } from "../../utils/text.js";
 import { isEmpty, validateForm, isValidDateRange, RULES_FALECIDO, RULES_RESPONSAVEL, RULES_SEPULTAMENTO, getFieldError, hasErrors } from "../../utils/validation"
 
 export default function Cadastros() {
+
+    const {
+        showSuccess,
+        showInfo,
+        showWarning,
+        showError,
+        ToastElement,
+    } = useToastFeedback();
 
 
     const falecido = {
@@ -147,7 +156,6 @@ export default function Cadastros() {
     const [loadingCep, setLoadingCep] = useState(false);
     const [quadras, setQuadras] = useState([]);
     const [covas, setCovas] = useState([]);
-    const [availableCovas, setAvailableCovas] = useState([]);
     const [fieldErrors, setFieldErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isIndigente, setIsIndigente] = useState(false);
@@ -294,9 +302,8 @@ export default function Cadastros() {
 
     const handleQuadraSepChange = (val) => {
         setForm(prev => ({ ...prev, quadra_sep: val, num_sepultura_sep: "" }));
-        setAvailableCovas(computeAvailableCovas(val, form.titulo_posse));
+        setAvailableCovas(computeAvailableCovas(covas, val, form.titulo_posse));
     };
-
 
     const handleProcessChange = (e) => {
         const val = e.target.value;
@@ -535,7 +542,7 @@ export default function Cadastros() {
         e.preventDefault();
 
         if (!validateBeforeSubmit()) {
-            alert("Por favor, corrija os erros no formulário");
+            showError("Por favor, corrija os erros no formulário");
             return
         }
 
@@ -545,97 +552,83 @@ export default function Cadastros() {
     const handleConfirmSubmit = async () => {
         setConfirmOpen(false);
         setIsSubmitting(true);
+
         try {
-
             if (processType === "Cadastro de falecido") {
-
                 const payload = {
                     ...form,
-                    data_nasc: form.data_nasc ? new Date(form.data_nasc).toISOString().split('T')[0] : "",
-                    dh_falec: form.dh_falec ? new Date(form.dh_falec).toISOString() : ""
+                    data_nasc: form.data_nasc ? new Date(form.data_nasc).toISOString().split("T")[0] : "",
+                    dh_falec: form.dh_falec ? new Date(form.dh_falec).toISOString() : "",
                 };
 
                 await api.post("/falecidos", payload);
-                alert("Falecido cadastrado");
+                showSuccess("Falecido cadastrado");
                 clearSavedState();
                 setForm(falecido);
                 setFieldErrors({});
                 setIsIndigente(false);
                 setCepResp("");
                 setBusca("");
-
+                return;
             }
 
-            else if (processType === "Cadastro de sepultamento") {
-
+            if (processType === "Cadastro de sepultamento") {
                 const payload = {
                     ...form,
-                    nome: searchFal || form.nome_sep || form.nome_fal
+                    nome: searchFal || form.nome_sep || form.nome_fal,
                 };
+
                 if (!payload.nome_sep && payload.falecido) {
-                    const f = falecidos.find(x => Number(x.id) === Number(payload.falecido));
+                    const f = falecidos.find((x) => Number(x.id) === Number(payload.falecido));
                     if (f) payload.nome_sep = f.nome_fal || f.nome;
                 }
 
                 payload.taxa_valor = Number(payload.taxa_valor ?? taxa_map[payload.taxa] ?? 0);
                 payload.taxa_label = taxa_label[payload.taxa] ?? "";
-
                 payload.foi_exumado = false;
 
+                const paramsCheck = { params: { quadra_cova: payload.quadra_sep, num_cova: payload.num_sepultura_sep } };
+                const rCheck = await api.get("/covas", paramsCheck).catch(() => null);
+                const foundCheck = rCheck && Array.isArray(rCheck.data) && rCheck.data.length ? rCheck.data[0] : null;
 
-                try {
-
-                    const paramsCheck = { params: { quadra_cova: payload.quadra_sep, num_cova: payload.num_sepultura_sep } }
-                    const rCheck = await api.get("/covas", paramsCheck).catch(() => null);
-                    const foundCheck = rCheck && Array.isArray(rCheck.data) && rCheck.data.length ? rCheck.data[0] : null;
-                    if (foundCheck && foundCheck.id == null) {
-                        alert("Sepultura não encontrada para a quadra selecionada.")
-                        return;
-
-                    }
-
-                    const cap = Number(foundCheck.capacidade ?? 0);
-
-                    if (cap <= 0) {
-                        await api.patch("/covas/" + foundCheck.id, { status: "lotada", capacidade: 0 }).catch(() => { });
-                        alert("A sepultura selecionada está lotada. Escolha outra sepultura. ");
-                        return;
-                    }
-
-                    const res = await api.post("/burial  ", payload);
-                    const created = res?.data ?? null;
-
-                    try {
-                        if (created)
-                            window.dispatchEvent(new CustomEvent("processoCriado", { detail: created }));
-
-                    } catch (e) {
-                        { e }
-                    }
-                    setRegistros(prev => ([...prev, { processType, data: payload }]));
-                    alert("Sepultamento cadastrado (pendente). Confirme na Dashboard para concluir.");
-                    clearSavedState();
-                    setForm(sepultamento);
-                    setFieldErrors({});
-                    setSearchFal("");
-
-                } catch (err) {
-                    console.warn(err)
-                    alert("Erro ao cadastrar processo" + processType)
+                if (foundCheck && foundCheck.id == null) {
+                    showWarning("Sepultura não encontrada para a quadra selecionada.");
+                    return;
                 }
 
-            }
-            else {
-                alert("Tipo de processo inválido")
+                const cap = Number(foundCheck.capacidade ?? 0);
+                if (cap <= 0) {
+                    await api.patch("/covas/" + foundCheck.id, { status: "lotada", capacidade: 0 }).catch(() => { });
+                    showError("A sepultura selecionada está lotada. Escolha outra sepultura.");
+                    return;
+                }
+
+                const res = await api.post("/burial", payload);
+                const created = res?.data ?? null;
+
+                try {
+                    if (created) window.dispatchEvent(new CustomEvent("processoCriado", { detail: created }));
+                } catch { 
+                    //
+                }
+
+                setRegistros((prev) => ([...prev, { processType, data: payload }]));
+                showSuccess("Sepultamento cadastrado (pendente). Confirme na Dashboard para concluir.");
+                clearSavedState();
+                setForm(sepultamento);
+                setFieldErrors({});
+                setSearchFal("");
+                return;
             }
 
-        }
-        catch (err) {
+            showError("Tipo de processo inválido");
+        } catch (err) {
             console.error(err);
-            alert(`Erro ao cadastrar processo ${processType}`);
-
+            showError(`Erro ao cadastrar processo ${processType}`);
+        } finally {
+            setIsSubmitting(false);
         }
-    }
+    };
 
 
     const handleFileChange = (e, fieldName) => {
@@ -654,7 +647,7 @@ export default function Cadastros() {
 
     };
 
-    const computeAvailableCovas = (quadraId, tituloPosse) => {
+    const computeAvailableCovas = (covas, quadraId, tituloPosse) => {
         if (!quadraId) return [];
         const list = covas.filter(c => {
             const key = String(c.quadra_cova ?? c.quadra ?? c.quadra_sep ?? "");
@@ -672,8 +665,7 @@ export default function Cadastros() {
         } else {
             out = list;
         }
-        out = out.filter(c => isCovaAvailable(c, tituloPosse));
-        return out;
+        return out = out.filter(c => isCovaAvailable(c, tituloPosse));
     };
 
     const normalizeCep = (v) => (String(v || "").replace(/\D/g, "").slice(0, 8));
@@ -697,7 +689,7 @@ export default function Cadastros() {
             if (found) {
                 setForm(prev => ({ ...prev, endereco_resp: found.formatted }));
             } else {
-                alert("CEP não encontrado. Verifique e tente novamente.");
+                showWarning("CEP não encontrado. Verifique e tente novamente.");
             }
         }
     };
@@ -711,9 +703,10 @@ export default function Cadastros() {
         }
     };
 
-    useEffect(() => {
-        setAvailableCovas(computeAvailableCovas(form.quadra_sep, form.titulo_posse));
-    }, [form.quadra_sep, form.titulo_posse, covas]);
+    const availableCovas = useMemo(()=>{
+        return computeAvailableCovas(covas, form.quadra_sep, form.titulo_posse);
+    }, [covas, form.quadra_sep, form.titulo_posse])
+
 
     const tipoCovaSelecionada = useMemo(() => {
         if (!form.quadra_sep || !form.num_sepultura_sep) return "";
@@ -778,7 +771,9 @@ export default function Cadastros() {
 
 
     return (
-        <div>
+
+        < >
+            {ToastElement}
             <Container>
                 <FormStyled onSubmit={handleSubmit}>
                     <CheckboxWrapper>
@@ -1603,7 +1598,7 @@ export default function Cadastros() {
                     </DialogActions>
                 </Dialog>
             </Container>
-        </div>
+        </ >
     )
 }
 
