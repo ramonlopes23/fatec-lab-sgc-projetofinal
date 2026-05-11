@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import {Paper} from "@mui/material"
 
 export const Container = styled.div`
   max-width: 1100px;
@@ -430,4 +431,89 @@ export const InlineFeedback = styled.small`
   display: inline-block;
   margin-top: 6px;
   color: #666;
+`;
+
+export const StepperWrap = styled.div`
+  margin-bottom: 20px;
+`;
+
+export const StepperCard = styled(Paper)`
+  && {
+    padding: 24px;
+    border-radius: 20px;
+    box-shadow: 0 12px 32px rgba(22, 28, 70, 0.08);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+  }
+`;
+
+export const SectionTitle = styled.h3`
+  margin: 0 0 6px;
+  font-size: 18px;
+  color: #191970;
+`;
+
+export const SectionHint = styled.p`
+  margin: 0 0 18px;
+  color: #6b6f85;
+  font-size: 14px;
+`;
+
+export const ReviewGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  @media (max-width: 880px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const ReviewItem = styled.div`
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f7f8fc;
+  border: 1px solid #e7eaf3;
+`;
+
+export const SummaryLabel = styled.div`
+  font-size: 12px;
+  color: #6b6f85;
+  margin-bottom: 4px;
+`;
+
+export const SummaryValue = styled.div`
+  font-size: 14px;
+  color: #1f2437;
+  font-weight: 500;
+  word-break: break-word;
+`;
+
+export const UploadBox = styled.label`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1.5px dashed #cdd3e4;
+  background: #fafbff;
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+
+  &:hover {
+    border-color: #191970;
+    background: #f5f7ff;
+    transform: translateY(-1px);
+  }
+`;
+
+export const UploadMeta = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+export const UploadFilename = styled.div`
+  font-size: 13px;
+  color: #1f2437;
+  font-weight: 500;
 `;
