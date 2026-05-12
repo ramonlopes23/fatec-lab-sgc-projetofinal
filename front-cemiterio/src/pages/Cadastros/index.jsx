@@ -20,6 +20,10 @@ import StepLabel from "@mui/material/StepLabel";
 import StepContent from "@mui/material/StepContent";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { applyMaskByFieldName } from "../../utils/masks.js";
 import { capitalizeWords } from "../../utils/text.js";
 import { isEmpty, validateForm, isValidDateRange, RULES_FALECIDO, RULES_RESPONSAVEL, RULES_SEPULTAMENTO, getFieldError, hasErrors } from "../../utils/validation"
@@ -159,8 +163,14 @@ export default function Cadastros() {
     const [falecidos, setFalecidos] = useState([]);
 
     const fieldSxStyle = {
+        "& .MuiInputBase-root": {
+            borderRadius: "4px"
+        },
         "& .MuiOutlinedInput-root": {
-            borderRadius: "24px"
+            borderRadius: "4px"
+        },
+        "& .MuiOutlinedInput-notchedOutline": {
+            borderRadius: "4px"
         },
         "& .MuiOutlinedInput-input": {
             fontSize: "14px"
@@ -179,7 +189,7 @@ export default function Cadastros() {
     };
 
     const selectSxStyle = {
-        borderRadius: "24px",
+        borderRadius: "4px",
         fontSize: "14px",
         "& .Mui-disabled": {
             opacity: isIndigente ? 0.5 : 1,
@@ -735,727 +745,761 @@ export default function Cadastros() {
                     <Title>CADASTRO DE PROCESSOS</Title>
 
                     <Box sx={{ mt: 3 }}>
-                        {processType === "Cadastro de sepultamento" ? (
-                            <Stepper activeStep={0} orientation="vertical">
-                                <Step>
-                                    <StepLabel>Sepultamento</StepLabel>
-                                    <StepContent>
-                                        <Grid container spacing={2}>
-                                            <Grid size={{ xs: 12 }}>
-                                                <SearchFieldWrapper>
-                                                    <TextField
-                                                        fullWidth
-                                                        variant="outlined"
-                                                        label="Nome do falecido"
-                                                        type="text"
-                                                        name="nome_fal"
-                                                        placeholder="Digite o nome do falecido..."
-                                                        error={!!fieldErrors.nome_fal}
-                                                        helperText={fieldErrors.nome_fal}
-                                                        value={searchFal}
-                                                        onChange={(e) => { setSearchFal(e.target.value); setShowFalList(true); validateFieldOnChange("nome_fal", e.target.value) }}
-                                                        onFocus={() => setShowFalList(true)}
-                                                        onBlur={() => setTimeout(() => setShowFalList(false), 150)}
-                                                        sx={fieldSxStyle}
-                                                        slotProps={{
-                                                            inputLabel: { sx: labelSxStyle }
-                                                        }}
-                                                    />
-                                                    {showFalList && filteredFalecidos.length > 0 && (
-                                                        <SearchResults>
-                                                            {filteredFalecidos.map((f) => (
-                                                                <SearchResultItem key={f.id}
-                                                                    onMouseDown={(ev) => {
-                                                                        ev.preventDefault();
-                                                                        handleSelectFalecido(String(f.id));
-                                                                        setSearchFal(f.nome_fal || f.nome || "");
-                                                                        setShowFalList(false);
-                                                                    }}>
-                                                                    {f.nome_fal || f.nome}
-                                                                </SearchResultItem>
-                                                            ))}
-                                                        </SearchResults>
-                                                    )}
-                                                </SearchFieldWrapper>
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="CPF do falecido"
-                                                    value={cpfDoFalecidoSelecionado}
-                                                    disabled
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <TextField fullWidth variant="outlined" type="date" name="data_obito_sep" label="Data do óbito" value={form.data_obito_sep} onChange={handleChange} error={!!fieldErrors.data_obito_sep} helperText={fieldErrors.data_obito_sep} disabled={isSubmitting} InputLabelProps={{ shrink: true }} sx={fieldSxStyle} slotProps={{ inputLabel: { sx: labelSxStyle } }} />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <TextField fullWidth variant="outlined" type="datetime-local" name="dh_sep" label="Data e hora do sepultamento" value={form.dh_sep} onChange={handleChange} error={!!fieldErrors.dh_sep} helperText={fieldErrors.dh_sep} placeholder="Sala" disabled={isSubmitting} InputLabelProps={{ shrink: true }} sx={fieldSxStyle} slotProps={{ inputLabel: { sx: labelSxStyle } }} />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <FormControl fullWidth error={!!fieldErrors.titulo_posse}>
-                                                    <InputLabel sx={labelSxStyle}>Possui título de posse?</InputLabel>
-                                                    <Select label="Possui título de posse?" name="titulo_posse" value={form.titulo_posse} onChange={handleChange} sx={selectSxStyle}>
-                                                        <MenuItem value="">Selecione a opção</MenuItem>
-                                                        <MenuItem value="Sim">Sim</MenuItem>
-                                                        <MenuItem value="Não">Não</MenuItem>
-                                                    </Select>
-                                                    {fieldErrors.titulo_posse && <FormHelperText>{fieldErrors.titulo_posse}</FormHelperText>}
-                                                </FormControl>
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <FormControl fullWidth error={!!fieldErrors.quadra_sep}>
-                                                    <InputLabel sx={labelSxStyle}>Quadra</InputLabel>
-                                                    <Select
-                                                        label="Quadra"
-                                                        name="quadra_sep"
-                                                        value={form.quadra_sep ?? ""}
-                                                        onChange={(e) => handleQuadraSepChange(e.target.value)}
-                                                        disabled={isSubmitting}
-                                                        sx={selectSxStyle}
-                                                    >
-                                                        <MenuItem value="">Selecione a quadra</MenuItem>
-                                                        {quadras.map(q => (
-                                                            <MenuItem key={String(q.id)} value={String(q.id)}>
-                                                                {q.num_quadra ? `Quadra ${q.num_quadra}` : q.nome || `Quadra ${q.id}`}
-                                                            </MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                    {fieldErrors.quadra_sep && <FormHelperText>{fieldErrors.quadra_sep}</FormHelperText>}
-                                                </FormControl>
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <FormControl fullWidth error={!!fieldErrors.num_sepultura_sep}>
-                                                    <InputLabel sx={labelSxStyle}>Nº da sepultura</InputLabel>
-                                                    <Select
-                                                        label="Nº da sepultura"
-                                                        name="num_sepultura_sep"
-                                                        value={form.num_sepultura_sep ?? ""}
-                                                        onChange={handleChange}
-                                                        disabled={isSubmitting}
-                                                        error={!!fieldErrors.num_sepultura_sep}
-                                                        sx={selectSxStyle}
-                                                    >
-                                                        <MenuItem value="">Selecione a sepultura</MenuItem>
-                                                        {availableCovas.map(c => {
-                                                            const val = String(c.num_cova ?? c.numero ?? c.num_sepultura ?? "");
-                                                            const isReserved = String(c.status ?? "").toLowerCase().includes("reserv");
-                                                            return (
-                                                                <MenuItem key={String(c.id ?? `${c.quadra_cova}-${c.num_cova}`)} value={val}>
-                                                                    {val}{isReserved ? "(Particular)" : ""}
-                                                                </MenuItem>
-                                                            )
-                                                        })}
-                                                    </Select>
-                                                    {fieldErrors.num_sepultura_sep && <FormHelperText>{fieldErrors.num_sepultura_sep}</FormHelperText>}
-                                                </FormControl>
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Tipo de sepultura"
-                                                    value={tipoCovaSelecionada || "-"}
-                                                    disabled
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <FormControl fullWidth error={!!fieldErrors.taxa}>
-                                                    <InputLabel sx={labelSxStyle}>Taxa de sepultamento</InputLabel>
-                                                    <Select
-                                                        label="Taxa de sepultamento"
-                                                        name="taxa"
-                                                        value={form.taxa}
-                                                        onChange={handleChange}
-                                                        disabled={isSubmitting}
-                                                        sx={selectSxStyle}
-                                                    >
-                                                        <MenuItem value="">Selecione o tipo de taxa</MenuItem>
-                                                        <MenuItem value="crianca">CRIANÇA - R$56,12</MenuItem>
-                                                        <MenuItem value="crianca_fora">CRIANÇA (FORA DO MUNICÍPIO) - R$224,54</MenuItem>
-                                                        <MenuItem value="adulto_terra">ADULTO (TERRA) - R$112,27</MenuItem>
-                                                        <MenuItem value="adulto_fora">ADULTO (FORA DO MUNICÍPIO) - R$430,42</MenuItem>
-                                                        <MenuItem value="adulto_laje">ADULTO LAJE - R$280,71</MenuItem>
-                                                        <MenuItem value="indigente">ISENÇÃO POR INDIGÊNCIA</MenuItem>
-                                                    </Select>
-                                                    {fieldErrors.taxa && <FormHelperText>{fieldErrors.taxa}</FormHelperText>}
-                                                </FormControl>
-                                            </Grid>
-                                            <Grid size={{ xs: 12 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Observações"
-                                                    name="obs_sep"
-                                                    value={form.obs_sep}
-                                                    onChange={handleChange}
-                                                    placeholder="Observações..."
-                                                    multiline
-                                                    rows={4}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                        </Grid>
-                                        <Box sx={{ mb: 2, mt: 3, display: 'flex', gap: 1 }}>
-                                            <BtnAction2 type="button" onClick={handleClearSepultamento} disabled={isSubmitting}>LIMPAR</BtnAction2>
-                                            <BtnAction type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>SALVAR</BtnAction>
-                                        </Box>
-                                    </StepContent>
-                                </Step>
-                            </Stepper>
-                        ) : (
-                            <Stepper activeStep={activeStep} orientation="vertical">
-
-                                <Step>
-                                    <StepLabel>{stepsDeceased[0]}</StepLabel>
-                                    <StepContent>
-                                        <Grid container spacing={2}>
-                                            <Grid size={{ xs: 12, md: 5 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Nome completo"
-                                                    name="nome_fal"
-                                                    value={form.nome_fal}
-                                                    onChange={handleChange}
-                                                    placeholder="Digite o nome do falecido"
-                                                    error={!!fieldErrors.nome_fal}
-                                                    helperText={fieldErrors.nome_fal}
-                                                    disabled={disabledFor('nome_fal')}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 1 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Idade"
-                                                    name="idade"
-                                                    value={form.idade}
-                                                    onChange={handleChange}
-                                                    error={!!fieldErrors.idade}
-                                                    helperText={fieldErrors.idade}
-                                                    disabled={disabledFor('idade')}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 2 }}>
-                                                <FormControl fullWidth error={!!fieldErrors.sexo}>
-                                                    <InputLabel sx={labelSxStyle}>Sexo</InputLabel>
-                                                    <Select
-                                                        label="Sexo"
-                                                        name="sexo"
-                                                        value={form.sexo}
-                                                        onChange={handleChange}
-                                                        disabled={disabledFor('sexo')}
-                                                        sx={selectSxStyle}
-                                                    >
-                                                        <MenuItem value="">Selecione</MenuItem>
-                                                        <MenuItem value="masculino">Masculino</MenuItem>
-                                                        <MenuItem value="feminino">Feminino</MenuItem>
-                                                    </Select>
-                                                    {fieldErrors.sexo && <FormHelperText>{fieldErrors.sexo}</FormHelperText>}
-                                                </FormControl>
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 2 }}>
-                                                <FormControl fullWidth error={!!fieldErrors.estado_civil}>
-                                                    <InputLabel sx={labelSxStyle}>Estado civil</InputLabel>
-                                                    <Select
-                                                        label="Estado civil"
-                                                        name="estado_civil"
-                                                        value={form.estado_civil}
-                                                        onChange={handleChange}
-                                                        disabled={disabledFor('estado_civil')}
-                                                        sx={selectSxStyle}
-                                                    >
-                                                        <MenuItem value="">Selecione o estado civil</MenuItem>
-                                                        <MenuItem value="Solteiro">Solteiro(a)</MenuItem>
-                                                        <MenuItem value="Casado">Casado(a)</MenuItem>
-                                                        <MenuItem value="Separado">Separado(a)</MenuItem>
-                                                        <MenuItem value="Divorciado">Divorciado(a)</MenuItem>
-                                                        <MenuItem value="Viúvo">Viúvo(a)</MenuItem>
-                                                    </Select>
-                                                    {fieldErrors.estado_civil && <FormHelperText>{fieldErrors.estado_civil}</FormHelperText>}
-                                                </FormControl>
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 2 }}>
-                                                <FormControl fullWidth error={!!fieldErrors.cor}>
-                                                    <InputLabel sx={labelSxStyle}>Cor</InputLabel>
-                                                    <Select
-                                                        label="Cor"
-                                                        name="cor"
-                                                        value={form.cor}
-                                                        onChange={handleChange}
-                                                        disabled={disabledFor('cor')}
-                                                        sx={selectSxStyle}
-                                                    >
-                                                        <MenuItem value="">Selecione a cor</MenuItem>
-                                                        <MenuItem value="Branca">Branca</MenuItem>
-                                                        <MenuItem value="Preta">Preta</MenuItem>
-                                                        <MenuItem value="Parda">Parda</MenuItem>
-                                                        <MenuItem value="Amarela">Amarela</MenuItem>
-                                                        <MenuItem value="Indígena">Indígena</MenuItem>
-                                                    </Select>
-                                                    {fieldErrors.cor && <FormHelperText>{fieldErrors.cor}</FormHelperText>}
-                                                </FormControl>
-                                            </Grid>
-
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    type="date"
-                                                    name="data_nasc"
-                                                    label="Data de nascimento"
-                                                    value={form.data_nasc}
-                                                    onChange={handleChange}
-                                                    error={!!fieldErrors.data_nasc}
-                                                    helperText={fieldErrors.data_nasc}
-                                                    disabled={disabledFor('data_nasc')}
-                                                    InputLabelProps={{ shrink: true }}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    type="datetime-local"
-                                                    name="dh_falec"
-                                                    label="Data e hora de falecimento"
-                                                    value={form.dh_falec}
-                                                    onChange={handleChange}
-                                                    error={!!fieldErrors.dh_falec}
-                                                    helperText={fieldErrors.dh_falec}
-                                                    disabled={disabledFor('dh_falec')}
-                                                    InputLabelProps={{ shrink: true }}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Filiação pai"
-                                                    name="filiacao_pai"
-                                                    value={form.filiacao_pai}
-                                                    onChange={handleChange}
-                                                    error={!!fieldErrors.filiacao_pai}
-                                                    helperText={fieldErrors.filiacao_pai}
-                                                    disabled={disabledFor('filiacao_pai')}
-                                                    placeholder="Digite o nome do pai"
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Filiação mãe"
-                                                    name="filiacao_mae"
-                                                    value={form.filiacao_mae}
-                                                    onChange={handleChange}
-                                                    error={!!fieldErrors.filiacao_mae}
-                                                    helperText={fieldErrors.filiacao_mae}
-                                                    disabled={disabledFor('filiacao_mae')}
-                                                    placeholder="Digite o nome da mãe"
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 4 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Profissão"
-                                                    name="profissao"
-                                                    value={form.profissao}
-                                                    onChange={handleChange}
-                                                    placeholder="Digite a profissão do falecido"
-                                                    error={!!fieldErrors.profissao}
-                                                    helperText={fieldErrors.profissao}
-                                                    disabled={disabledFor('profissao')}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 4 }}>
-                                                <Autocomplete
-                                                    fullWidth
-                                                    options={resultados}
-                                                    getOptionLabel={(option) => `${option.nome} - ${option?.microrregiao?.mesorregiao?.UF?.sigla || ''}`}
-                                                    inputValue={busca}
-                                                    onInputChange={(_, newInputValue) => {
-                                                        updateFieldByName('naturalidade', newInputValue)
-                                                        setBusca(newInputValue);
-                                                        validateFieldOnChange("naturalidade", newInputValue);
-                                                    }}
-                                                    onChange={(_, newValue) => {
-                                                        const displayValue = newValue ? `${newValue.nome} - ${newValue?.microrregiao?.mesorregiao?.UF?.sigla || ''}` : '';
-                                                        updateFieldByName('naturalidade', displayValue);
-                                                        validateFieldOnChange("naturalidade", displayValue);
-                                                    }}
-                                                    renderInput={(params) => (
+                        <LocalizationProvider dateAdapter={AdapterDateFns}>
+                            {processType === "Cadastro de sepultamento" ? (
+                                <Stepper activeStep={0} orientation="vertical">
+                                    <Step>
+                                        <StepLabel>Sepultamento</StepLabel>
+                                        <StepContent>
+                                            <Grid container spacing={2}>
+                                                <Grid size={{ xs: 12 }}>
+                                                    <SearchFieldWrapper>
                                                         <TextField
-                                                            {...params}
-                                                            label="Naturalidade"
-                                                            placeholder="Digite a naturalidade do falecido"
-                                                            error={!!fieldErrors.naturalidade}
-                                                            helperText={fieldErrors.naturalidade}
-                                                            disabled={disabledFor('naturalidade')}
+                                                            fullWidth
+                                                            variant="outlined"
+                                                            label="Nome do falecido"
+                                                            type="text"
+                                                            name="nome_fal"
+                                                            placeholder="Digite o nome do falecido..."
+                                                            error={!!fieldErrors.nome_fal}
+                                                            helperText={fieldErrors.nome_fal}
+                                                            value={searchFal}
+                                                            onChange={(e) => { setSearchFal(e.target.value); setShowFalList(true); validateFieldOnChange("nome_fal", e.target.value) }}
+                                                            onFocus={() => setShowFalList(true)}
+                                                            onBlur={() => setTimeout(() => setShowFalList(false), 150)}
                                                             sx={fieldSxStyle}
                                                             slotProps={{
                                                                 inputLabel: { sx: labelSxStyle }
                                                             }}
                                                         />
-                                                    )}
-                                                    noOptionsText="Nenhuma cidade encontrada"
-                                                    loadingText="Carregando..."
-                                                    disabled={isSubmitting}
-                                                />
+                                                        {showFalList && filteredFalecidos.length > 0 && (
+                                                            <SearchResults>
+                                                                {filteredFalecidos.map((f) => (
+                                                                    <SearchResultItem key={f.id}
+                                                                        onMouseDown={(ev) => {
+                                                                            ev.preventDefault();
+                                                                            handleSelectFalecido(String(f.id));
+                                                                            setSearchFal(f.nome_fal || f.nome || "");
+                                                                            setShowFalList(false);
+                                                                        }}>
+                                                                        {f.nome_fal || f.nome}
+                                                                    </SearchResultItem>
+                                                                ))}
+                                                            </SearchResults>
+                                                        )}
+                                                    </SearchFieldWrapper>
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="CPF do falecido"
+                                                        value={cpfDoFalecidoSelecionado}
+                                                        disabled
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <DatePicker
+                                                        label="Data do óbito"
+                                                        value={form.data_obito_sep ? new Date(form.data_obito_sep) : null}
+                                                        onChange={(newVal) => updateFieldByName('data_obito_sep', newVal ? newVal.toISOString().split('T')[0] : '')}
+                                                        disabled={isSubmitting}
+                                                        slotProps={{
+                                                            textField: {
+                                                                fullWidth: true,
+                                                                error: !!fieldErrors.data_obito_sep,
+                                                                helperText: fieldErrors.data_obito_sep,
+                                                                sx: fieldSxStyle,
+                                                                slotProps: { inputLabel: { sx: labelSxStyle } }
+                                                            },
+                                                            paper: {
+                                                                sx: { borderRadius: '12px' }
+                                                            }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <DateTimePicker
+                                                        label="Data e hora do sepultamento"
+                                                        value={form.dh_sep ? new Date(form.dh_sep) : null}
+                                                        onChange={(newVal) => updateFieldByName('dh_sep', newVal ? newVal.toISOString() : '')}
+                                                        disabled={isSubmitting}
+                                                        slotProps={{
+                                                            textField: {
+                                                                fullWidth: true,
+                                                                error: !!fieldErrors.dh_sep,
+                                                                helperText: fieldErrors.dh_sep,
+                                                                sx: fieldSxStyle,
+                                                                slotProps: { inputLabel: { sx: labelSxStyle } }
+                                                            }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <FormControl fullWidth error={!!fieldErrors.titulo_posse}>
+                                                        <InputLabel sx={labelSxStyle}>Possui título de posse?</InputLabel>
+                                                        <Select label="Possui título de posse?" name="titulo_posse" value={form.titulo_posse} onChange={handleChange} sx={selectSxStyle}>
+                                                            <MenuItem value="">Selecione a opção</MenuItem>
+                                                            <MenuItem value="Sim">Sim</MenuItem>
+                                                            <MenuItem value="Não">Não</MenuItem>
+                                                        </Select>
+                                                        {fieldErrors.titulo_posse && <FormHelperText>{fieldErrors.titulo_posse}</FormHelperText>}
+                                                    </FormControl>
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <FormControl fullWidth error={!!fieldErrors.quadra_sep}>
+                                                        <InputLabel sx={labelSxStyle}>Quadra</InputLabel>
+                                                        <Select
+                                                            label="Quadra"
+                                                            name="quadra_sep"
+                                                            value={form.quadra_sep ?? ""}
+                                                            onChange={(e) => handleQuadraSepChange(e.target.value)}
+                                                            disabled={isSubmitting}
+                                                            sx={selectSxStyle}
+                                                        >
+                                                            <MenuItem value="">Selecione a quadra</MenuItem>
+                                                            {quadras.map(q => (
+                                                                <MenuItem key={String(q.id)} value={String(q.id)}>
+                                                                    {q.num_quadra ? `Quadra ${q.num_quadra}` : q.nome || `Quadra ${q.id}`}
+                                                                </MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                        {fieldErrors.quadra_sep && <FormHelperText>{fieldErrors.quadra_sep}</FormHelperText>}
+                                                    </FormControl>
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <FormControl fullWidth error={!!fieldErrors.num_sepultura_sep}>
+                                                        <InputLabel sx={labelSxStyle}>Nº da sepultura</InputLabel>
+                                                        <Select
+                                                            label="Nº da sepultura"
+                                                            name="num_sepultura_sep"
+                                                            value={form.num_sepultura_sep ?? ""}
+                                                            onChange={handleChange}
+                                                            disabled={isSubmitting}
+                                                            error={!!fieldErrors.num_sepultura_sep}
+                                                            sx={selectSxStyle}
+                                                        >
+                                                            <MenuItem value="">Selecione a sepultura</MenuItem>
+                                                            {availableCovas.map(c => {
+                                                                const val = String(c.num_cova ?? c.numero ?? c.num_sepultura ?? "");
+                                                                const isReserved = String(c.status ?? "").toLowerCase().includes("reserv");
+                                                                return (
+                                                                    <MenuItem key={String(c.id ?? `${c.quadra_cova}-${c.num_cova}`)} value={val}>
+                                                                        {val}{isReserved ? "(Particular)" : ""}
+                                                                    </MenuItem>
+                                                                )
+                                                            })}
+                                                        </Select>
+                                                        {fieldErrors.num_sepultura_sep && <FormHelperText>{fieldErrors.num_sepultura_sep}</FormHelperText>}
+                                                    </FormControl>
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Tipo de sepultura"
+                                                        value={tipoCovaSelecionada || "-"}
+                                                        disabled
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <FormControl fullWidth error={!!fieldErrors.taxa}>
+                                                        <InputLabel sx={labelSxStyle}>Taxa de sepultamento</InputLabel>
+                                                        <Select
+                                                            label="Taxa de sepultamento"
+                                                            name="taxa"
+                                                            value={form.taxa}
+                                                            onChange={handleChange}
+                                                            disabled={isSubmitting}
+                                                            sx={selectSxStyle}
+                                                        >
+                                                            <MenuItem value="">Selecione o tipo de taxa</MenuItem>
+                                                            <MenuItem value="crianca">CRIANÇA - R$56,12</MenuItem>
+                                                            <MenuItem value="crianca_fora">CRIANÇA (FORA DO MUNICÍPIO) - R$224,54</MenuItem>
+                                                            <MenuItem value="adulto_terra">ADULTO (TERRA) - R$112,27</MenuItem>
+                                                            <MenuItem value="adulto_fora">ADULTO (FORA DO MUNICÍPIO) - R$430,42</MenuItem>
+                                                            <MenuItem value="adulto_laje">ADULTO LAJE - R$280,71</MenuItem>
+                                                            <MenuItem value="indigente">ISENÇÃO POR INDIGÊNCIA</MenuItem>
+                                                        </Select>
+                                                        {fieldErrors.taxa && <FormHelperText>{fieldErrors.taxa}</FormHelperText>}
+                                                    </FormControl>
+                                                </Grid>
+                                                <Grid size={{ xs: 12 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Observações"
+                                                        name="obs_sep"
+                                                        value={form.obs_sep}
+                                                        onChange={handleChange}
+                                                        placeholder="Observações..."
+                                                        multiline
+                                                        rows={4}
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
                                             </Grid>
-                                            <Grid size={{ xs: 12, md: 4 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Causa mortis"
-                                                    name="causa_mortis"
-                                                    value={form.causa_mortis}
-                                                    onChange={handleChange}
-                                                    placeholder="Digite a causa da morte"
-                                                    error={!!fieldErrors.causa_mortis}
-                                                    helperText={fieldErrors.causa_mortis}
-                                                    disabled={disabledFor('causa_mortis')}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Observações"
-                                                    name="obs_fal"
-                                                    value={form.obs_fal}
-                                                    onChange={handleChange}
-                                                    placeholder="Observações..."
-                                                    error={!!fieldErrors.obs_fal}
-                                                    helperText={fieldErrors.obs_fal}
-                                                    disabled={disabledFor('obs_fal')}
-                                                    multiline
-                                                    rows={4}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                        </Grid>
-                                        <Box sx={{ mb: 2, mt: 3 }}>
-                                            <BtnAction onClick={handleNextStep} disabled={isSubmitting}>PRÓXIMO</BtnAction>
-                                        </Box>
-                                    </StepContent>
-                                </Step>
+                                            <Box sx={{ mb: 2, mt: 3, display: 'flex', gap: 1 }}>
+                                                <BtnAction2 type="button" onClick={handleClearSepultamento} disabled={isSubmitting}>LIMPAR</BtnAction2>
+                                                <BtnAction type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>SALVAR</BtnAction>
+                                            </Box>
+                                        </StepContent>
+                                    </Step>
+                                </Stepper>
+                            ) : (
+                                <Stepper activeStep={activeStep} orientation="vertical">
 
-                                <Step>
-                                    <StepLabel>{stepsDeceased[1]}</StepLabel>
-                                    <StepContent>
-                                        <Grid container spacing={2}>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="CPF do falecido"
-                                                    name="cpf"
-                                                    value={form.cpf || ""}
-                                                    onChange={handleChange}
-                                                    error={!!fieldErrors.cpf}
-                                                    helperText={fieldErrors.cpf}
-                                                    disabled={disabledFor('cpf')}
-                                                    placeholder="000.000.000-00"
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="RG do falecido"
-                                                    name="rg"
-                                                    value={form.rg}
-                                                    onChange={handleChange}
-                                                    placeholder="00.000.000-0"
-                                                    error={!!fieldErrors.rg}
-                                                    helperText={fieldErrors.rg}
-                                                    disabled={disabledFor('rg')}
-                                                    maxLength={12}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Nome do médico responsável"
-                                                    name="nome_doutor"
-                                                    value={form.nome_doutor}
-                                                    onChange={handleChange}
-                                                    placeholder="Digite o nome do médico"
-                                                    error={!!fieldErrors.nome_doutor}
-                                                    helperText={fieldErrors.nome_doutor}
-                                                    disabled={disabledFor('nome_doutor')}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Comprovante de residência"
-                                                    type="file"
-                                                    accept="image/*"
-                                                    InputLabelProps={{ shrink: true }}
-                                                    onChange={e => handleFileChange(e, "residencia")}
-                                                    sx={fieldSxStyle}
-                                                />
-                                                {form.residencia_preview && (
-                                                    <FilePreview src={form.residencia_preview} alt="preview comprovante" />
-                                                )}
-                                            </Grid>
-                                            <Grid size={{ xs: 12 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Declaração de óbito"
-                                                    type="file"
-                                                    accept="image/*"
-                                                    InputLabelProps={{ shrink: true }}
-                                                    name="dec_obito"
-                                                    onChange={e => handleFileChange(e, "dec_obito")}
-                                                    sx={fieldSxStyle}
-                                                />
-                                                {form.dec_obito_preview && (
-                                                    <FilePreview src={form.dec_obito_preview} alt="preview declaração de óbito" />
-                                                )}
-                                            </Grid>
-                                        </Grid>
-                                        <Box sx={{ mb: 2, mt: 3, display: 'flex', gap: 1 }}>
-                                            <BtnAction2 onClick={handleBackStep} disabled={isSubmitting}>VOLTAR</BtnAction2>
-                                            <BtnAction onClick={handleNextStep} disabled={isSubmitting}>PRÓXIMO</BtnAction>
-                                        </Box>
-                                    </StepContent>
-                                </Step>
+                                    <Step>
+                                        <StepLabel>{stepsDeceased[0]}</StepLabel>
+                                        <StepContent>
+                                            <Grid container spacing={2}>
+                                                <Grid size={{ xs: 12, md: 5 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Nome completo"
+                                                        name="nome_fal"
+                                                        value={form.nome_fal}
+                                                        onChange={handleChange}
+                                                        placeholder="Digite o nome do falecido"
+                                                        error={!!fieldErrors.nome_fal}
+                                                        helperText={fieldErrors.nome_fal}
+                                                        disabled={disabledFor('nome_fal')}
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 1 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Idade"
+                                                        name="idade"
+                                                        value={form.idade}
+                                                        onChange={handleChange}
+                                                        error={!!fieldErrors.idade}
+                                                        helperText={fieldErrors.idade}
+                                                        disabled={disabledFor('idade')}
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 2 }}>
+                                                    <FormControl fullWidth error={!!fieldErrors.sexo}>
+                                                        <InputLabel sx={labelSxStyle}>Sexo</InputLabel>
+                                                        <Select
+                                                            label="Sexo"
+                                                            name="sexo"
+                                                            value={form.sexo}
+                                                            onChange={handleChange}
+                                                            disabled={disabledFor('sexo')}
+                                                            sx={selectSxStyle}
+                                                        >
+                                                            <MenuItem value="">Selecione</MenuItem>
+                                                            <MenuItem value="masculino">Masculino</MenuItem>
+                                                            <MenuItem value="feminino">Feminino</MenuItem>
+                                                        </Select>
+                                                        {fieldErrors.sexo && <FormHelperText>{fieldErrors.sexo}</FormHelperText>}
+                                                    </FormControl>
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 2 }}>
+                                                    <FormControl fullWidth error={!!fieldErrors.estado_civil}>
+                                                        <InputLabel sx={labelSxStyle}>Estado civil</InputLabel>
+                                                        <Select
+                                                            label="Estado civil"
+                                                            name="estado_civil"
+                                                            value={form.estado_civil}
+                                                            onChange={handleChange}
+                                                            disabled={disabledFor('estado_civil')}
+                                                            sx={selectSxStyle}
+                                                        >
+                                                            <MenuItem value="">Selecione o estado civil</MenuItem>
+                                                            <MenuItem value="Solteiro">Solteiro(a)</MenuItem>
+                                                            <MenuItem value="Casado">Casado(a)</MenuItem>
+                                                            <MenuItem value="Separado">Separado(a)</MenuItem>
+                                                            <MenuItem value="Divorciado">Divorciado(a)</MenuItem>
+                                                            <MenuItem value="Viúvo">Viúvo(a)</MenuItem>
+                                                        </Select>
 
-                                <Step>
-                                    <StepLabel>{stepsDeceased[2]}</StepLabel>
-                                    <StepContent>
-                                        <Grid container spacing={2}>
-                                            <Grid size={{ xs: 12 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Nome do familiar ou responsável"
-                                                    name="nome_resp"
-                                                    value={form.nome_resp}
-                                                    onChange={handleChange}
-                                                    placeholder="Digite o nome do responsável"
-                                                    error={!!fieldErrors.nome_resp}
-                                                    helperText={fieldErrors.nome_resp}
-                                                    disabled={disabledFor('nome_resp')}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="CPF do responsável"
-                                                    name="doc_resp"
-                                                    value={form.doc_resp || ""}
-                                                    onChange={handleChange}
-                                                    placeholder="000.000.000-00"
-                                                    error={!!fieldErrors.doc_resp}
-                                                    helperText={fieldErrors.doc_resp}
-                                                    disabled={disabledFor('doc_resp')}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Profissão do responsável"
-                                                    name="prof_resp"
-                                                    value={form.prof_resp || ""}
-                                                    onChange={handleChange}
-                                                    placeholder="Profissão do responsável"
-                                                    error={!!fieldErrors.prof_resp}
-                                                    helperText={fieldErrors.prof_resp}
-                                                    disabled={disabledFor('prof_resp')}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Contato do responsável"
-                                                    name="tel_resp"
-                                                    value={form.tel_resp}
-                                                    onChange={handleChange}
-                                                    placeholder="(XX)XXXXX-XXXX"
-                                                    error={!!fieldErrors.tel_resp}
-                                                    helperText={fieldErrors.tel_resp}
-                                                    disabled={disabledFor('tel_resp')}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, md: 6 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="CEP"
-                                                    name="cep_resp"
-                                                    value={cepResp ? (cepResp.length > 5 ? cepResp.replace(/^(\d{5})(\d{1,3})/, "$1-$2") : cepResp) : ""}
-                                                    onChange={handleCepChange}
-                                                    onBlur={handleCepBlur}
-                                                    placeholder="00000-000"
-                                                    error={!!fieldErrors.cep_resp}
-                                                    helperText={fieldErrors.cep_resp}
-                                                    disabled={disabledFor('cep_resp')}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                                {loadingCep && <InlineFeedback>Buscando...</InlineFeedback>}
-                                            </Grid>
-                                            <Grid size={{ xs: 12 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    variant="outlined"
-                                                    label="Endereço do responsável"
-                                                    name="endereco_resp"
-                                                    value={form.endereco_resp}
-                                                    onChange={handleChange}
-                                                    placeholder="Rua, bairro, cidade - UF"
-                                                    error={!!fieldErrors.endereco_resp}
-                                                    helperText={fieldErrors.endereco_resp}
-                                                    disabled={disabledFor('endereco_resp')}
-                                                    sx={fieldSxStyle}
-                                                    slotProps={{
-                                                        inputLabel: { sx: labelSxStyle }
-                                                    }}
-                                                />
-                                            </Grid>
-                                        </Grid>
-                                        <Box sx={{ mb: 2, mt: 3, display: 'flex', gap: 1 }}>
-                                            <BtnAction2 onClick={handleBackStep} disabled={isSubmitting}>VOLTAR</BtnAction2>
-                                            <BtnAction onClick={handleNextStep} disabled={isSubmitting}>PRÓXIMO</BtnAction>
-                                        </Box>
-                                    </StepContent>
-                                </Step>
+                                                        {fieldErrors.estado_civil && <FormHelperText>{fieldErrors.estado_civil}</FormHelperText>}
+                                                    </FormControl>
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 2 }}>
+                                                    <FormControl fullWidth error={!!fieldErrors.cor}>
+                                                        <InputLabel sx={labelSxStyle}>Cor/Raça</InputLabel>
+                                                        <Select
+                                                            label="Cor"
+                                                            name="cor"
+                                                            value={form.cor}
+                                                            onChange={handleChange}
+                                                            disabled={disabledFor('cor')}
+                                                            sx={selectSxStyle}
+                                                        >
+                                                            <MenuItem value="">Selecione a cor/raça</MenuItem>
+                                                            <MenuItem value="Branca">Branca</MenuItem>
+                                                            <MenuItem value="Preta">Preta</MenuItem>
+                                                            <MenuItem value="Parda">Parda</MenuItem>
+                                                            <MenuItem value="Amarela">Amarela</MenuItem>
+                                                            <MenuItem value="Indígena">Indígena</MenuItem>
+                                                        </Select>
+                                                        {fieldErrors.cor && <FormHelperText>{fieldErrors.cor}</FormHelperText>}
+                                                    </FormControl>
+                                                </Grid>
 
-                                <Step>
-                                    <StepLabel>{stepsDeceased[3]}</StepLabel>
-                                    <StepContent>
-                                        <Box sx={{ mb: 3, p: 2, backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <DatePicker
+                                                        label="Data de nascimento"
+                                                        value={form.data_nasc ? new Date(form.data_nasc) : null}
+                                                        onChange={(newVal) => updateFieldByName('data_nasc', newVal ? newVal.toISOString().split('T')[0] : '')}
+                                                        disabled={disabledFor('data_nasc')}
+                                                        slotProps={{
+                                                            textField: {
+                                                                fullWidth: true,
+                                                                error: !!fieldErrors.data_nasc,
+                                                                helperText: fieldErrors.data_nasc,
+                                                                sx: fieldSxStyle,
+                                                                slotProps: { inputLabel: { sx: labelSxStyle } }
+                                                            },
+
+                                                            paper: {
+                                                                sx: { borderRadius: '20px' }
+                                                            }
+                                                        }}
+                                                    />
+                                                </Grid>
+
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <DateTimePicker
+                                                        label="Data e hora de falecimento"
+                                                        value={form.dh_falec ? new Date(form.dh_falec) : null}
+                                                        onChange={(newVal) => updateFieldByName('dh_falec', newVal ? newVal.toISOString() : '')}
+                                                        disabled={disabledFor('dh_falec')}
+                                                        slotProps={{
+                                                            textField: {
+                                                                fullWidth: true,
+                                                                error: !!fieldErrors.dh_falec,
+                                                                helperText: fieldErrors.dh_falec,
+                                                                sx: fieldSxStyle,
+                                                                slotProps: { inputLabel: { sx: labelSxStyle } }
+                                                            }
+                                                        }}
+                                                    />
+                                                </Grid>
+
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Filiação pai"
+                                                        name="filiacao_pai"
+                                                        value={form.filiacao_pai}
+                                                        onChange={handleChange}
+                                                        error={!!fieldErrors.filiacao_pai}
+                                                        helperText={fieldErrors.filiacao_pai}
+                                                        disabled={disabledFor('filiacao_pai')}
+                                                        placeholder="Digite o nome do pai"
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Filiação mãe"
+                                                        name="filiacao_mae"
+                                                        value={form.filiacao_mae}
+                                                        onChange={handleChange}
+                                                        error={!!fieldErrors.filiacao_mae}
+                                                        helperText={fieldErrors.filiacao_mae}
+                                                        disabled={disabledFor('filiacao_mae')}
+                                                        placeholder="Digite o nome da mãe"
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 4 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Profissão"
+                                                        name="profissao"
+                                                        value={form.profissao}
+                                                        onChange={handleChange}
+                                                        placeholder="Digite a profissão do falecido"
+                                                        error={!!fieldErrors.profissao}
+                                                        helperText={fieldErrors.profissao}
+                                                        disabled={disabledFor('profissao')}
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 4 }}>
+                                                    <Autocomplete
+                                                        fullWidth
+                                                        options={resultados}
+                                                        getOptionLabel={(option) => `${option.nome} - ${option?.microrregiao?.mesorregiao?.UF?.sigla || ''}`}
+                                                        inputValue={busca}
+                                                        onInputChange={(_, newInputValue) => {
+                                                            updateFieldByName('naturalidade', newInputValue)
+                                                            setBusca(newInputValue);
+                                                            validateFieldOnChange("naturalidade", newInputValue);
+                                                        }}
+                                                        onChange={(_, newValue) => {
+                                                            const displayValue = newValue ? `${newValue.nome} - ${newValue?.microrregiao?.mesorregiao?.UF?.sigla || ''}` : '';
+                                                            updateFieldByName('naturalidade', displayValue);
+                                                            validateFieldOnChange("naturalidade", displayValue);
+                                                        }}
+                                                        renderInput={(params) => (
+                                                            <TextField
+                                                                {...params}
+                                                                label="Naturalidade"
+                                                                placeholder="Digite a naturalidade do falecido"
+                                                                error={!!fieldErrors.naturalidade}
+                                                                helperText={fieldErrors.naturalidade}
+                                                                disabled={disabledFor('naturalidade')}
+                                                                sx={fieldSxStyle}
+                                                                slotProps={{
+                                                                    inputLabel: { sx: labelSxStyle }
+                                                                }}
+                                                            />
+                                                        )}
+                                                        noOptionsText="Nenhuma cidade encontrada"
+                                                        loadingText="Carregando..."
+                                                        disabled={isSubmitting}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 4 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Causa mortis"
+                                                        name="causa_mortis"
+                                                        value={form.causa_mortis}
+                                                        onChange={handleChange}
+                                                        placeholder="Digite a causa da morte"
+                                                        error={!!fieldErrors.causa_mortis}
+                                                        helperText={fieldErrors.causa_mortis}
+                                                        disabled={disabledFor('causa_mortis')}
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Observações"
+                                                        name="obs_fal"
+                                                        value={form.obs_fal}
+                                                        onChange={handleChange}
+                                                        placeholder="Observações..."
+                                                        error={!!fieldErrors.obs_fal}
+                                                        helperText={fieldErrors.obs_fal}
+                                                        disabled={disabledFor('obs_fal')}
+                                                        multiline
+                                                        rows={4}
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                            </Grid>
+                                            <Box sx={{ mb: 2, mt: 3 }}>
+                                                <BtnAction onClick={handleNextStep} disabled={isSubmitting}>PRÓXIMO</BtnAction>
+                                            </Box>
+                                        </StepContent>
+                                    </Step>
+
+                                    <Step>
+                                        <StepLabel>{stepsDeceased[1]}</StepLabel>
+                                        <StepContent>
                                             <Grid container spacing={2}>
                                                 <Grid size={{ xs: 12, md: 6 }}>
-                                                    <strong>Nome:</strong> {form.nome_fal || '-'}
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="CPF do falecido"
+                                                        name="cpf"
+                                                        value={form.cpf || ""}
+                                                        onChange={handleChange}
+                                                        error={!!fieldErrors.cpf}
+                                                        helperText={fieldErrors.cpf}
+                                                        disabled={disabledFor('cpf')}
+                                                        placeholder="000.000.000-00"
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
                                                 </Grid>
                                                 <Grid size={{ xs: 12, md: 6 }}>
-                                                    <strong>Sexo:</strong> {form.sexo || '-'}
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="RG do falecido"
+                                                        name="rg"
+                                                        value={form.rg}
+                                                        onChange={handleChange}
+                                                        placeholder="00.000.000-0"
+                                                        error={!!fieldErrors.rg}
+                                                        helperText={fieldErrors.rg}
+                                                        disabled={disabledFor('rg')}
+                                                        maxLength={12}
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
                                                 </Grid>
-                                                <Grid size={{ xs: 12, md: 6 }}>
-                                                    <strong>Idade:</strong> {form.idade || '-'}
+                                                <Grid size={{ xs: 12 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Nome do médico responsável"
+                                                        name="nome_doutor"
+                                                        value={form.nome_doutor}
+                                                        onChange={handleChange}
+                                                        placeholder="Digite o nome do médico"
+                                                        error={!!fieldErrors.nome_doutor}
+                                                        helperText={fieldErrors.nome_doutor}
+                                                        disabled={disabledFor('nome_doutor')}
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
                                                 </Grid>
-                                                <Grid size={{ xs: 12, md: 6 }}>
-                                                    <strong>CPF:</strong> {form.cpf || '-'}
+                                                <Grid size={{ xs: 12 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Comprovante de residência"
+                                                        type="file"
+                                                        accept="image/*"
+                                                        InputLabelProps={{ shrink: true }}
+                                                        onChange={e => handleFileChange(e, "residencia")}
+                                                        sx={fieldSxStyle}
+                                                    />
+                                                    {form.residencia_preview && (
+                                                        <FilePreview src={form.residencia_preview} alt="preview comprovante" />
+                                                    )}
                                                 </Grid>
-                                                <Grid size={{ xs: 12, md: 6 }}>
-                                                    <strong>Data de Nascimento:</strong> {form.data_nasc || '-'}
-                                                </Grid>
-                                                <Grid size={{ xs: 12, md: 6 }}>
-                                                    <strong>Data e Hora de Falecimento:</strong> {form.dh_falec || '-'}
-                                                </Grid>
-                                                <Grid size={{ xs: 12, md: 6 }}>
-                                                    <strong>Responsável:</strong> {form.nome_resp || '-'}
-                                                </Grid>
-                                                <Grid size={{ xs: 12, md: 6 }}>
-                                                    <strong>Contato:</strong> {form.tel_resp || '-'}
+                                                <Grid size={{ xs: 12 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Declaração de óbito"
+                                                        type="file"
+                                                        accept="image/*"
+                                                        InputLabelProps={{ shrink: true }}
+                                                        name="dec_obito"
+                                                        onChange={e => handleFileChange(e, "dec_obito")}
+                                                        sx={fieldSxStyle}
+                                                    />
+                                                    {form.dec_obito_preview && (
+                                                        <FilePreview src={form.dec_obito_preview} alt="preview declaração de óbito" />
+                                                    )}
                                                 </Grid>
                                             </Grid>
-                                        </Box>
-                                        <Box sx={{ mb: 2, mt: 3, display: 'flex', gap: 1 }}>
-                                            <BtnAction2 type="button" onClick={handleClearFalecido} disabled={isSubmitting}>LIMPAR</BtnAction2>
-                                            <BtnAction2 onClick={handleBackStep} disabled={isSubmitting}>VOLTAR</BtnAction2>
-                                            <BtnAction type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>SALVAR</BtnAction>
-                                        </Box>
-                                    </StepContent>
-                                </Step>
-                            </Stepper>
-                        )}
+                                            <Box sx={{ mb: 2, mt: 3, display: 'flex', gap: 1 }}>
+                                                <BtnAction2 onClick={handleBackStep} disabled={isSubmitting}>VOLTAR</BtnAction2>
+                                                <BtnAction onClick={handleNextStep} disabled={isSubmitting}>PRÓXIMO</BtnAction>
+                                            </Box>
+                                        </StepContent>
+                                    </Step>
+
+                                    <Step>
+                                        <StepLabel>{stepsDeceased[2]}</StepLabel>
+                                        <StepContent>
+                                            <Grid container spacing={2}>
+                                                <Grid size={{ xs: 12 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Nome do familiar ou responsável"
+                                                        name="nome_resp"
+                                                        value={form.nome_resp}
+                                                        onChange={handleChange}
+                                                        placeholder="Digite o nome do responsável"
+                                                        error={!!fieldErrors.nome_resp}
+                                                        helperText={fieldErrors.nome_resp}
+                                                        disabled={disabledFor('nome_resp')}
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="CPF do responsável"
+                                                        name="doc_resp"
+                                                        value={form.doc_resp || ""}
+                                                        onChange={handleChange}
+                                                        placeholder="000.000.000-00"
+                                                        error={!!fieldErrors.doc_resp}
+                                                        helperText={fieldErrors.doc_resp}
+                                                        disabled={disabledFor('doc_resp')}
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Profissão do responsável"
+                                                        name="prof_resp"
+                                                        value={form.prof_resp || ""}
+                                                        onChange={handleChange}
+                                                        placeholder="Profissão do responsável"
+                                                        error={!!fieldErrors.prof_resp}
+                                                        helperText={fieldErrors.prof_resp}
+                                                        disabled={disabledFor('prof_resp')}
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Contato do responsável"
+                                                        name="tel_resp"
+                                                        value={form.tel_resp}
+                                                        onChange={handleChange}
+                                                        placeholder="(XX)XXXXX-XXXX"
+                                                        error={!!fieldErrors.tel_resp}
+                                                        helperText={fieldErrors.tel_resp}
+                                                        disabled={disabledFor('tel_resp')}
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 6 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="CEP"
+                                                        name="cep_resp"
+                                                        value={cepResp ? (cepResp.length > 5 ? cepResp.replace(/^(\d{5})(\d{1,3})/, "$1-$2") : cepResp) : ""}
+                                                        onChange={handleCepChange}
+                                                        onBlur={handleCepBlur}
+                                                        placeholder="00000-000"
+                                                        error={!!fieldErrors.cep_resp}
+                                                        helperText={fieldErrors.cep_resp}
+                                                        disabled={disabledFor('cep_resp')}
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                    {loadingCep && <InlineFeedback>Buscando...</InlineFeedback>}
+                                                </Grid>
+                                                <Grid size={{ xs: 12 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="outlined"
+                                                        label="Endereço do responsável"
+                                                        name="endereco_resp"
+                                                        value={form.endereco_resp}
+                                                        onChange={handleChange}
+                                                        placeholder="Rua, bairro, cidade - UF"
+                                                        error={!!fieldErrors.endereco_resp}
+                                                        helperText={fieldErrors.endereco_resp}
+                                                        disabled={disabledFor('endereco_resp')}
+                                                        sx={fieldSxStyle}
+                                                        slotProps={{
+                                                            inputLabel: { sx: labelSxStyle }
+                                                        }}
+                                                    />
+                                                </Grid>
+                                            </Grid>
+                                            <Box sx={{ mb: 2, mt: 3, display: 'flex', gap: 1 }}>
+                                                <BtnAction2 onClick={handleBackStep} disabled={isSubmitting}>VOLTAR</BtnAction2>
+                                                <BtnAction onClick={handleNextStep} disabled={isSubmitting}>PRÓXIMO</BtnAction>
+                                            </Box>
+                                        </StepContent>
+                                    </Step>
+
+                                    <Step>
+                                        <StepLabel>{stepsDeceased[3]}</StepLabel>
+                                        <StepContent>
+                                            <Box sx={{ mb: 3, p: 2, backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                                                <Grid container spacing={2}>
+                                                    <Grid size={{ xs: 12, md: 6 }}>
+                                                        <strong>Nome:</strong> {form.nome_fal || '-'}
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, md: 6 }}>
+                                                        <strong>Sexo:</strong> {form.sexo || '-'}
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, md: 6 }}>
+                                                        <strong>Idade:</strong> {form.idade || '-'}
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, md: 6 }}>
+                                                        <strong>CPF:</strong> {form.cpf || '-'}
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, md: 6 }}>
+                                                        <strong>Data de Nascimento:</strong> {form.data_nasc || '-'}
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, md: 6 }}>
+                                                        <strong>Data e Hora de Falecimento:</strong> {form.dh_falec || '-'}
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, md: 6 }}>
+                                                        <strong>Responsável:</strong> {form.nome_resp || '-'}
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, md: 6 }}>
+                                                        <strong>Contato:</strong> {form.tel_resp || '-'}
+                                                    </Grid>
+                                                </Grid>
+                                            </Box>
+                                            <Box sx={{ mb: 2, mt: 3, display: 'flex', gap: 1 }}>
+                                                <BtnAction2 type="button" onClick={handleClearFalecido} disabled={isSubmitting}>LIMPAR</BtnAction2>
+                                                <BtnAction2 onClick={handleBackStep} disabled={isSubmitting}>VOLTAR</BtnAction2>
+                                                <BtnAction type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>SALVAR</BtnAction>
+                                            </Box>
+                                        </StepContent>
+                                    </Step>
+                                </Stepper>
+                            )}
+                        </LocalizationProvider>
                     </Box>
                 </FormStyled>
                 <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
