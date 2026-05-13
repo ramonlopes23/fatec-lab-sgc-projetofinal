@@ -40,7 +40,9 @@ export default function AppRoutes() {
                 <Route path='/' element={<Navigate to="/home" />} />
                 <Route path='/home' element={<Home />} />
                 <Route path='/calendario' element={<Calendario />} />
-                <Route path='/cadastros' element={<Cadastros />} />
+                <Route path='/cadastros' element={<Navigate to="/cadastros/falecido" replace />} />
+                <Route path='/cadastros/falecido' element={<Cadastros />} />
+                <Route path='/cadastros/sepultamento' element={<Cadastros />} />
                 <Route path='/registros' element={<Registros />} />
                 <Route path='/vermapa' element={<VerMapa />} />
                 <Route path='/processselection' element={<ProcessSelection />} />

@@ -64,15 +64,26 @@ export const NavItem = styled.li`
   margin-bottom: 0.7rem;
 `;
 
+export const NestedList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0.35rem 0 0.2rem 2.2rem;
+
+  ${NavItem} {
+    margin-bottom: 0.25rem;
+  }
+`;
+
 export const StyledNavLink = styled(NavLink)`
   display: flex;
   align-items: center;
-  gap: 0.55 rem;
+  gap: 0.55rem;
   padding: 0.5rem 0rem;
   border-radius: 0.375rem;
   text-decoration: none;
   color: #191970;
   font-weight: 800;
+  transition: background-color 0.2s ease;
 
   &:hover {
     background-color: #f3f4f6;
@@ -82,4 +93,41 @@ export const StyledNavLink = styled(NavLink)`
     background-color: #e5e7eb;
     font-weight: 600;
   }
+`;
+
+export const DropdownToggle = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.55rem;
+  padding: 0.5rem 0rem;
+  border-radius: 0.375rem;
+  border: none;
+  background: transparent;
+  text-decoration: none;
+  color: #191970;
+  font-weight: 800;
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #f3f4f6;
+  }
+
+  ${props => props.isExpanded && `
+    background-color: #e5e7eb;
+  `}
+`;
+
+export const ChevronIcon = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+  ${props => props.isExpanded && `
+    transform: rotate(180deg);
+  `}
 `;
