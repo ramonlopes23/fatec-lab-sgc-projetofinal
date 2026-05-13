@@ -250,7 +250,7 @@ export const LegendItem = styled.div`
 
 export const SmallSelect = styled.select`
   padding: 8px 12px;
-  border-radius: 18px;
+  border-radius: 6px;
   border: 1px solid #d6d9e6;
   background: #fff;
   font-size: 14px;
@@ -390,7 +390,7 @@ const baseInput = `
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
-  border-radius: 18px;
+  border-radius: 6px;
   border: 1px solid #d6d9e6;
   background: #fff;
   outline: none;
