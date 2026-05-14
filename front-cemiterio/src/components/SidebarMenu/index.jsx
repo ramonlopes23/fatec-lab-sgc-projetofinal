@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { MdDashboard } from "react-icons/md";
 import { BsGrid3X3GapFill } from "react-icons/bs";
-import { GiArchiveRegister, GiGraveFlowers } from "react-icons/gi";
+import { GiGraveFlowers } from "react-icons/gi";
 import { PiFlowerTulip } from "react-icons/pi";
+import { AiFillFolderAdd } from "react-icons/ai";
 import { LuCalendarSearch, LuFileStack, LuChevronDown } from "react-icons/lu";
 import sgclogo1 from "../../assets/SGCv2.png";
 import {
@@ -26,15 +27,15 @@ export default function SidebarMenu() {
         { name: "HOME", icon: <MdDashboard size={20} />, path: "/home" },
         {
             name: "CADASTROS",
-            icon: <GiArchiveRegister size={25} />,
+            icon: <AiFillFolderAdd size={20} />,
             path: "/cadastros",
             children: [
-                { name: "FALECIDO", icon: <PiFlowerTulip size={25}/> , path: "/cadastros/falecido" },
-                { name: "SEPULTAMENTO", icon: <GiGraveFlowers size={25}/>, path: "/cadastros/sepultamento" },
+                { name: "FALECIDO", icon: <PiFlowerTulip size={20}/> , path: "/cadastros/falecido" },
+                { name: "SEPULTAMENTO", icon: <GiGraveFlowers size={20}/>, path: "/cadastros/sepultamento" },
             ],
         },
         { name: "SEPULTURAS", icon: <BsGrid3X3GapFill size={20} />, path: "/vermapa" },
-        { name: "CALENDARIO", icon: <LuCalendarSearch size={20} />, path: "/calendario" },
+        { name: "CALENDÁRIO", icon: <LuCalendarSearch size={20} />, path: "/calendario" },
         { name: "REGISTROS GERAIS", icon: <LuFileStack size={20} />, path: "/processselection" },
     ];
 
@@ -54,7 +55,6 @@ export default function SidebarMenu() {
             </LogoContainer>
 
             <NavContainer>
-                <NavTitle>Menu</NavTitle>
                 <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                     {menuItems.map((item) => (
                         <NavItem key={item.name}>
@@ -75,8 +75,8 @@ export default function SidebarMenu() {
                                 </StyledNavLink>
                             )}
 
-                            {item.children && expandedItems[item.name] && (
-                                <NestedList>
+                            {item.children && (
+                                <NestedList $isOpen={!!expandedItems[item.name]}>
                                     {item.children.map((child) => (
                                         <NavItem key={child.name}>
                                             <StyledNavLink to={child.path}>
