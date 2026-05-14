@@ -125,7 +125,7 @@ function SepultamentoProcess({
 
                         <Grid size={{ xs: 12, md: 6 }}>
                             <DatePicker
-                                label="Data do obito"
+                                label="Data do falecimento"
                                 format="dd/MM/yyyy"
                                 value={parseDateValue(form.data_obito_sep)}
                                 onChange={(newVal) => updateFieldByName("data_obito_sep", newVal ? formatDateKey(newVal) : "")}
@@ -164,7 +164,7 @@ function SepultamentoProcess({
 
                         <Grid size={{ xs: 12, md: 6 }}>
                             <FormControl fullWidth error={!!fieldErrors.titulo_posse}>
-                                <InputLabel sx={labelSxStyle}>Possui titulo de posse?</InputLabel>
+                                <InputLabel sx={labelSxStyle}>Possui título de posse?</InputLabel>
                                 <Select label="Possui titulo de posse?" name="titulo_posse" value={form.titulo_posse} onChange={handleChange} sx={selectSxStyle}>
                                     <MenuItem value="">Selecione a opcao</MenuItem>
                                     <MenuItem value="Sim">Sim</MenuItem>
@@ -198,9 +198,9 @@ function SepultamentoProcess({
 
                         <Grid size={{ xs: 12, md: 6 }}>
                             <FormControl fullWidth error={!!fieldErrors.num_sepultura_sep}>
-                                <InputLabel sx={labelSxStyle}>No. da sepultura</InputLabel>
+                                <InputLabel sx={labelSxStyle}>Nº da sepultura</InputLabel>
                                 <Select
-                                    label="No. da sepultura"
+                                    label="Nº da sepultura"
                                     name="num_sepultura_sep"
                                     value={form.num_sepultura_sep ?? ""}
                                     onChange={handleChange}
@@ -231,12 +231,12 @@ function SepultamentoProcess({
                                 <InputLabel sx={labelSxStyle}>Taxa de sepultamento</InputLabel>
                                 <Select label="Taxa de sepultamento" name="taxa" value={form.taxa} onChange={handleChange} disabled={isSubmitting} sx={selectSxStyle}>
                                     <MenuItem value="">Selecione o tipo de taxa</MenuItem>
-                                    <MenuItem value="crianca">CRIANCA - R$56,12</MenuItem>
-                                    <MenuItem value="crianca_fora">CRIANCA (FORA DO MUNICIPIO) - R$224,54</MenuItem>
+                                    <MenuItem value="crianca">CRIANÇA - R$56,12</MenuItem>
+                                    <MenuItem value="crianca_fora">CRIANÇA (FORA DO MUNICÍPIO) - R$224,54</MenuItem>
                                     <MenuItem value="adulto_terra">ADULTO (TERRA) - R$112,27</MenuItem>
-                                    <MenuItem value="adulto_fora">ADULTO (FORA DO MUNICIPIO) - R$430,42</MenuItem>
+                                    <MenuItem value="adulto_fora">ADULTO (FORA DO MUNICÍPIO) - R$430,42</MenuItem>
                                     <MenuItem value="adulto_laje">ADULTO LAJE - R$280,71</MenuItem>
-                                    <MenuItem value="indigente">ISENCAO POR INDIGENCIA</MenuItem>
+                                    <MenuItem value="indigente">ISENÇÃO POR INDIGÊNCIA</MenuItem>
                                 </Select>
                                 {fieldErrors.taxa && <FormHelperText>{fieldErrors.taxa}</FormHelperText>}
                             </FormControl>
@@ -246,11 +246,10 @@ function SepultamentoProcess({
                             <TextField
                                 fullWidth
                                 variant="outlined"
-                                label="Observacoes"
+                                label="Observações"
                                 name="obs_sep"
                                 value={form.obs_sep}
                                 onChange={handleChange}
-                                placeholder="Observacoes..."
                                 multiline
                                 rows={4}
                                 sx={fieldSxStyle}

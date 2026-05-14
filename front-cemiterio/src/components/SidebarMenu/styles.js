@@ -67,7 +67,8 @@ export const NavItem = styled.li`
 export const NestedList = styled.ul`
   list-style: none;
   padding: 0;
-  margin: 0.35rem 0 0.2rem 2.2rem;
+  font-size:14px;
+  margin: 0.35rem 0 0.2rem 1rem;
   overflow: hidden;
   max-height: ${props => (props.$isOpen ? "500px" : "0px")};
   opacity: ${props => (props.$isOpen ? 1 : 0)};

@@ -147,7 +147,7 @@ function FalecidoProcess({
                         <Grid size={{ xs: 12, md: 2 }}>
                             <FormControl fullWidth error={!!fieldErrors.sexo}>
                                 <InputLabel sx={labelSxStyle}>Sexo</InputLabel>
-                                <Select label="Sexo" name="sexo" value={form.sexo} onChange={handleChange} disabled={disabledFor("sexo")} sx={selectSxStyle}>
+                                <Select label="Sexo" name="sexo" value={form.sexo} onChange={handleChange} disabled={disabledFor("sexo")} sx={selectSxStyle} slotProps={{ input: { notched: true } }}>
                                     <MenuItem value="">Selecione</MenuItem>
                                     <MenuItem value="masculino">Masculino</MenuItem>
                                     <MenuItem value="feminino">Feminino</MenuItem>
@@ -158,7 +158,7 @@ function FalecidoProcess({
                         <Grid size={{ xs: 12, md: 2 }}>
                             <FormControl fullWidth error={!!fieldErrors.estado_civil}>
                                 <InputLabel sx={labelSxStyle}>Estado civil</InputLabel>
-                                <Select label="Estado civil" name="estado_civil" value={form.estado_civil} onChange={handleChange} disabled={disabledFor("estado_civil")} sx={selectSxStyle}>
+                                <Select label="Estado civil" name="estado_civil" value={form.estado_civil} onChange={handleChange} disabled={disabledFor("estado_civil")} sx={selectSxStyle} slotProps={{ input: { notched: true } }}>
                                     <MenuItem value="">Selecione</MenuItem>
                                     <MenuItem value="Solteiro">Solteiro(a)</MenuItem>
                                     <MenuItem value="Casado">Casado(a)</MenuItem>
@@ -172,7 +172,19 @@ function FalecidoProcess({
                         <Grid size={{ xs: 12, md: 2 }}>
                             <FormControl fullWidth error={!!fieldErrors.cor}>
                                 <InputLabel sx={labelSxStyle}>Cor/Raça</InputLabel>
-                                <Select label="Cor" name="cor" value={form.cor} onChange={handleChange} disabled={disabledFor("cor")} sx={selectSxStyle}>
+                                <Select 
+                                  label="Cor/Raça" 
+                                  name="cor" 
+                                  value={form.cor} 
+                                  onChange={handleChange} 
+                                  disabled={disabledFor("cor")} 
+                                  sx={selectSxStyle}
+                                  slotProps={{
+                                    input: {
+                                      notched: true
+                                    }
+                                  }}
+                                >
                                     <MenuItem value="">Selecione</MenuItem>
                                     <MenuItem value="Branca">Branca</MenuItem>
                                     <MenuItem value="Preta">Preta</MenuItem>

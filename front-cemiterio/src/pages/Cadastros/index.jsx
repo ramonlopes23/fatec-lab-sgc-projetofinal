@@ -121,11 +121,19 @@ export default function Cadastros() {
         },
     }), [isIndigente]);
 
-    const labelSxStyle = useMemo(() => ({ fontSize: "14px" }), []);
+    const labelSxStyle = useMemo(() => ({ 
+        fontSize: "14px",
+        backgroundColor: "white",
+        paddingX: "4px",
+        marginLeft: "-4px"
+    }), []);
 
     const selectSxStyle = useMemo(() => ({
         borderRadius: "4px",
         fontSize: "14px",
+        "& .MuiOutlinedInput-notchedOutline": {
+            top: "0px" 
+        },
         "& .Mui-disabled": {
             opacity: isIndigente ? 0.5 : 1,
             transition: "opacity 0.3s ease",
