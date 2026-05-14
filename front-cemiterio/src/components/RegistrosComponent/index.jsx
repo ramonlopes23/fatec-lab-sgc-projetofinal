@@ -12,6 +12,7 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
+import { formatDateDMY, formatDateTimeDMY, parseDateValue } from "../../utils/date";
 
 
 export default function RegistrosComponent() {
@@ -19,9 +20,9 @@ export default function RegistrosComponent() {
   const [registroSelecionado, setRegistroSelecionado] = useState(null);
   const [modalForm, setModalForm] = useState({});
   const [isEditing, setIsEditing] = useState(false);
-  const [falecidos, setFalecidos] = useState([]);
-  const [exumacoes, setExumacoes] = useState([]);
-  const [quadras, setQuadras] = useState([]);
+  const [, setFalecidos] = useState([]);
+  const [, setExumacoes] = useState([]);
+  const [, setQuadras] = useState([]);
   const [registros, setRegistros] = useState([]);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
@@ -231,19 +232,15 @@ export default function RegistrosComponent() {
   };
 
   const formatarData = (data) => {
-    if (!data) return "-";
-    const normalizado = data.length === 16 ? data + ":00" : data;
-    return new Date(normalizado).toLocaleString("pt-BR", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
+    return formatDateTimeDMY(data, "-");
   };
 
   const calcularVencimento = (dh_sep) => {
     if (!dh_sep) return "-";
-    const data = new Date(dh_sep);
-    data.setFullYear(data.getFullYear() + 3);
-    return data.toLocaleDateString("pt-BR");
+    const data = parseDateValue(dh_sep);
+    if (!data) return "-";
+    const dataVencimento = new Date(data.getFullYear() + 3, data.getMonth(), data.getDate());
+    return formatDateDMY(dataVencimento, "-");
   };
 
   const PAGE_SIZE = 10;
@@ -497,7 +494,7 @@ export default function RegistrosComponent() {
                   <Label>Idade: <Input value={modalForm.idade || ""} readOnly={!isEditing} onChange={(e) => handleChangeModal("idade", e.target.value)} style={{ width: "100%" }} /></Label>
                   <Label>Sexo: <Input value={modalForm.sexo || ""} readOnly={!isEditing} onChange={(e) => handleChangeModal("sexo", e.target.value)} style={{ width: "100%" }} /></Label>
                   <Label>Cor: <Input value={modalForm.cor || ""} readOnly={!isEditing} onChange={(e) => handleChangeModal("cor", e.target.value)} style={{ width: "100%" }} /></Label>
-                  <Label>Data de nascimento: <Input type="date" value={modalForm.data_nasc || ""} readOnly={!isEditing} onChange={(e) => handleChangeModal("data_nasc", e.target.value)} style={{ width: "100%" }} /></Label>
+                  <Label>Data de nascimento: <Input type="date" value={formatDateKey(modalForm.data_nasc, "")} readOnly={!isEditing} onChange={(e) => handleChangeModal("data_nasc", e.target.value)} style={{ width: "100%" }} /></Label>
                   <Label>Filiação pai: <Input value={modalForm.filiacao_pai || ""} readOnly={!isEditing} onChange={(e) => handleChangeModal("filiacao_pai", e.target.value)} style={{ width: "100%" }} /></Label>
                   <Label>Filiação mãe: <Input value={modalForm.filiacao_mae || ""} readOnly={!isEditing} onChange={(e) => handleChangeModal("filiacao_mae", e.target.value)} style={{ width: "100%" }} /></Label>
                   <Label>CPF: <Input value={modalForm.cpf || ""} readOnly={!isEditing} onChange={(e) => handleChangeModal("cpf", e.target.value)} style={{ width: "100%" }} /></Label>

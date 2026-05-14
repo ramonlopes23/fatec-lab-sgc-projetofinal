@@ -14,6 +14,7 @@ import Box from "@mui/material/Box";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LuChevronDown } from "react-icons/lu";
+import { formatDateKey, formatDateTimeKey, parseDateValue } from "../../utils/date";
 import { hasErrors } from "../../utils/validation"
 import {
     BtnAction,
@@ -125,8 +126,9 @@ function SepultamentoProcess({
                         <Grid size={{ xs: 12, md: 6 }}>
                             <DatePicker
                                 label="Data do obito"
-                                value={form.data_obito_sep ? new Date(form.data_obito_sep) : null}
-                                onChange={(newVal) => updateFieldByName("data_obito_sep", newVal ? newVal.toISOString().split("T")[0] : "")}
+                                format="dd/MM/yyyy"
+                                value={parseDateValue(form.data_obito_sep)}
+                                onChange={(newVal) => updateFieldByName("data_obito_sep", newVal ? formatDateKey(newVal) : "")}
                                 disabled={isSubmitting}
                                 slotProps={{
                                     textField: {
@@ -144,8 +146,9 @@ function SepultamentoProcess({
                         <Grid size={{ xs: 12, md: 6 }}>
                             <DateTimePicker
                                 label="Data e hora do sepultamento"
-                                value={form.dh_sep ? new Date(form.dh_sep) : null}
-                                onChange={(newVal) => updateFieldByName("dh_sep", newVal ? newVal.toISOString() : "")}
+                                format="dd/MM/yyyy HH:mm"
+                                value={parseDateValue(form.dh_sep)}
+                                onChange={(newVal) => updateFieldByName("dh_sep", newVal ? formatDateTimeKey(newVal) : "")}
                                 disabled={isSubmitting}
                                 slotProps={{
                                     textField: {

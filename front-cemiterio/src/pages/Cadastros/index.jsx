@@ -6,12 +6,11 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import api from "../../services/index.js";
 import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
 import { applyMaskByFieldName } from "../../utils/masks.js";
 import { capitalizeWords } from "../../utils/text.js";
+import { formatDateKey, formatDateTimeKey } from "../../utils/date";
 import {
     getFieldError,
     hasErrors,
@@ -94,7 +93,7 @@ export default function Cadastros() {
     ));
     const [processType, setProcessType] = useState(() => routeProcessType);
     const [activeStep, setActiveStep] = useState(0);
-    const [registros, setRegistros] = useState([]);
+    const [, setRegistros] = useState([]);
     const [searchFal, setSearchFal] = useState(() => (saved?.processType === routeProcessType ? saved?.searchFal || "" : ""));
     const [filteredFalecidos, setFilteredFalecidos] = useState([]);
     const [showFalList, setShowFalList] = useState(false);
@@ -478,8 +477,8 @@ export default function Cadastros() {
             if (processType === PROCESS_TYPES.falecido) {
                 const payload = {
                     ...form,
-                    data_nasc: form.data_nasc ? new Date(form.data_nasc).toISOString().split("T")[0] : "",
-                    dh_falec: form.dh_falec ? new Date(form.dh_falec).toISOString() : "",
+                    data_nasc: form.data_nasc ? formatDateKey(form.data_nasc) : "",
+                    dh_falec: form.dh_falec ? formatDateTimeKey(form.dh_falec) : "",
                 };
                 const response = await api.post("/falecidos", payload);
                 showSuccess("Falecido cadastrado. Continue com o sepultamento.");
@@ -583,59 +582,58 @@ export default function Cadastros() {
                     <Title>{isFalecidoProcess ? "CADASTRO DE FALECIDO" : "CADASTRO DE SEPULTAMENTO"}</Title>
 
                     <Box sx={{ mt: 3 }}>
-                        <LocalizationProvider dateAdapter={AdapterDateFns}>
-                            {isFalecidoProcess ? (
-                                <FalecidoProcess
-                                    form={form}
-                                    fieldErrors={fieldErrors}
-                                    activeStep={activeStep}
-                                    stepsDeceased={STEPS_DECEASED}
-                                    handleChange={handleChange}
-                                    handleNextStep={() => setActiveStep((prev) => prev + 1)}
-                                    handleBackStep={() => setActiveStep((prev) => (prev > 0 ? prev - 1 : 0))}
-                                    handleClearFalecido={handleClearFalecido}
-                                    updateFieldByName={updateFieldByName}
-                                    handleFileChange={handleFileChange}
-                                    handleCepChange={handleCepChange}
-                                    handleCepBlur={handleCepBlur}
-                                    disabledFor={disabledFor}
-                                    resultados={resultados}
-                                    busca={busca}
-                                    setBusca={setBusca}
-                                    validateFieldOnChange={validateFieldOnChange}
-                                    isSubmitting={isSubmitting}
-                                    cepResp={cepResp}
-                                    loadingCep={loadingCep}
-                                    fieldSxStyle={fieldSxStyle}
-                                    labelSxStyle={labelSxStyle}
-                                    selectSxStyle={selectSxStyle}
-                                />
-                            ) : (
-                                <SepultamentoProcess
-                                    form={form}
-                                    fieldErrors={fieldErrors}
-                                    searchFal={searchFal}
-                                    setSearchFal={setSearchFal}
-                                    showFalList={showFalList}
-                                    setShowFalList={setShowFalList}
-                                    filteredFalecidos={filteredFalecidos}
-                                    handleSelectFalecido={handleSelectFalecido}
-                                    cpfDoFalecidoSelecionado={cpfDoFalecidoSelecionado}
-                                    updateFieldByName={updateFieldByName}
-                                    isSubmitting={isSubmitting}
-                                    handleChange={handleChange}
-                                    handleQuadraSepChange={handleQuadraSepChange}
-                                    quadras={quadras}
-                                    availableCovas={availableCovas}
-                                    tipoCovaSelecionada={tipoCovaSelecionada}
-                                    handleClearSepultamento={handleClearSepultamento}
-                                    validateFieldOnChange={validateFieldOnChange}
-                                    fieldSxStyle={fieldSxStyle}
-                                    labelSxStyle={labelSxStyle}
-                                    selectSxStyle={selectSxStyle}
-                                />
-                            )}
-                        </LocalizationProvider>
+                        {isFalecidoProcess ? (
+                            <FalecidoProcess
+                                form={form}
+                                fieldErrors={fieldErrors}
+                                activeStep={activeStep}
+                                stepsDeceased={STEPS_DECEASED}
+                                handleChange={handleChange}
+                                handleNextStep={() => setActiveStep((prev) => prev + 1)}
+                                handleBackStep={() => setActiveStep((prev) => (prev > 0 ? prev - 1 : 0))}
+                                handleClearFalecido={handleClearFalecido}
+                                updateFieldByName={updateFieldByName}
+                                handleFileChange={handleFileChange}
+                                handleCepChange={handleCepChange}
+                                handleCepBlur={handleCepBlur}
+                                isIndigente={isIndigente}
+                                disabledFor={disabledFor}
+                                resultados={resultados}
+                                busca={busca}
+                                setBusca={setBusca}
+                                validateFieldOnChange={validateFieldOnChange}
+                                isSubmitting={isSubmitting}
+                                cepResp={cepResp}
+                                loadingCep={loadingCep}
+                                fieldSxStyle={fieldSxStyle}
+                                labelSxStyle={labelSxStyle}
+                                selectSxStyle={selectSxStyle}
+                            />
+                        ) : (
+                            <SepultamentoProcess
+                                form={form}
+                                fieldErrors={fieldErrors}
+                                searchFal={searchFal}
+                                setSearchFal={setSearchFal}
+                                showFalList={showFalList}
+                                setShowFalList={setShowFalList}
+                                filteredFalecidos={filteredFalecidos}
+                                handleSelectFalecido={handleSelectFalecido}
+                                cpfDoFalecidoSelecionado={cpfDoFalecidoSelecionado}
+                                updateFieldByName={updateFieldByName}
+                                isSubmitting={isSubmitting}
+                                handleChange={handleChange}
+                                handleQuadraSepChange={handleQuadraSepChange}
+                                quadras={quadras}
+                                availableCovas={availableCovas}
+                                tipoCovaSelecionada={tipoCovaSelecionada}
+                                handleClearSepultamento={handleClearSepultamento}
+                                validateFieldOnChange={validateFieldOnChange}
+                                fieldSxStyle={fieldSxStyle}
+                                labelSxStyle={labelSxStyle}
+                                selectSxStyle={selectSxStyle}
+                            />
+                        )}
                     </Box>
                 </FormStyled>
 

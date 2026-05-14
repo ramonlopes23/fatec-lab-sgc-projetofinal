@@ -27,6 +27,7 @@ import {
 import { MdPets } from "react-icons/md";
 import { RxUpdate } from "react-icons/rx";
 import { TiDelete } from "react-icons/ti";
+import { formatDateTimeKey, formatDateDMY, formatDateTimeDMY } from "../../utils/date";
 
 const makeInitialForm = (sep = null) => ({
     nome_pet: "",
@@ -169,7 +170,7 @@ export default function CovaPetsSection({
             especie: formPet.especie.trim(),
             raca: formPet.raca?.trim() || "",
             data_obito_pet: formPet.data_obito_pet || "",
-            dh_sep_pet: formPet.dh_sep_pet || new Date().toISOString().slice(0, 16),
+            dh_sep_pet: formPet.dh_sep_pet || formatDateTimeKey(new Date()),
             obs_pet: formPet.obs_pet || "",
             status: "concluido",
             confirmado: true,
@@ -260,8 +261,8 @@ export default function CovaPetsSection({
                                     <PetName>{pet.nome_pet || "Pet sem nome"}</PetName>
                                     <PetMeta>Espécie: {pet.especie || "-"}</PetMeta>
                                     <PetMeta>Raça: {pet.raca || "-"}</PetMeta>
-                                    <PetMeta>Data do óbito: {pet.data_obito_pet || "-"}</PetMeta>
-                                    <PetMeta>Data/Hora do sepultamento: {pet.dh_sep_pet || "-"}</PetMeta>
+                                    <PetMeta>Data do óbito: {pet.data_obito_pet ? formatDateDMY(pet.data_obito_pet) : "-"}</PetMeta>
+                                    <PetMeta>Data/Hora do sepultamento: {pet.dh_sep_pet ? formatDateTimeDMY(pet.dh_sep_pet) : "-"}</PetMeta>
                                     <PetMeta>Observações: {pet.obs_pet || "-"}</PetMeta>
                                     <PetMeta>Falecido(a)/família vinculado(a): {pet.nome_sep || "-"}</PetMeta>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import MainLayout from "../../layout/MainLayout";
 import Footer from "../../components/Footer";
 import { BtnPrimary, BtnPrimaryClose, BtnPrimarySave, ColumnLeft, ColumnRight, Container, Field, FormStyled, Label, ModalContent, ModalGrid, ModalOverlay, SearchBar, SearchIcon, SearchInput, SearchWrapper, SmallInput, SmallSelect, Title, TwoCols, IconBtn, TableWrapper, Table, Tr, THead, Td, TBody, Th } from "./styles"
@@ -9,6 +9,7 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select"
+import { formatDateKey, formatDateTimeDMY, formatDateDMY } from "../../utils/date";
 
 export default function RelatoriosComponent() {
 
@@ -25,7 +26,7 @@ export default function RelatoriosComponent() {
     const [exumacoes, setExumacoes] = useState([]);
     const [sepultamentos, setSepultamentos] = useState([]);
     const [page, setPage] = useState(1);
-    const [covas, setCovas] = useState([]);
+    const [, setCovas] = useState([]);
     const [quadras, setQuadras] = useState([])
     const PAGE_SIZE = 10;
     const [isLoading, setIsLoading] = useState(false);
@@ -85,12 +86,12 @@ export default function RelatoriosComponent() {
         return val > 0 ? "pago" : "gratuito";
     }
 
-    const matchesStatusFilter = (item) => {
+    const matchesStatusFilter = useCallback((item) => {
         const want = String(filters.status_taxa || "").trim().toLowerCase();
         if (!want) return true;
         const s = getStatusTaxa(item);
         return s === want;
-    }
+    }, [filters.status_taxa]);
 
     const loadData = async () => {
         setIsLoading(true);
@@ -113,14 +114,6 @@ export default function RelatoriosComponent() {
             setIsLoading(false);
         }
     };
-
-    const sepulturasForQuadra = useMemo(() => {
-        if (!filters.quadra) return [];
-        return covas
-            .filter(c => String(c.quadra_cova) === String(filters.quadra))
-            .sort((a, b) => (String(a.num_cova || a.num_cova) > String(b.num_cova || b.num_cova) ? 1 : -1));
-
-    }, [covas, filters.quadra]);
 
     const filtered = useMemo(() => {
         const s = String(search || "").trim().toLowerCase();
@@ -201,7 +194,7 @@ export default function RelatoriosComponent() {
             return true;
         })
 
-    }, [sepultamentos, search, filters]);
+    }, [sepultamentos, search, filters, matchesStatusFilter]);
 
 
     const totalPages = Math.max(1, Math.ceil((tipoLista === "exumacoes" ? filtered.length : sepFiltered.length) / PAGE_SIZE));
@@ -244,7 +237,7 @@ export default function RelatoriosComponent() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `exumacoes_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.download = `exumacoes_${formatDateKey(new Date(), "data")}.csv`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -496,7 +489,7 @@ As exumações têm como objetivo garantir a adequada gestão dos espaços do ce
                                             tipoLista === "exumacoes" ? (
                                                 <Tr key={e.id ?? `exu-${i}`} index={i}>
                                                     <Td>{e.nome_sep || "-"}</Td>
-                                                    <Td style={{ padding: "12px 16px" }}>{e.dh_exu ? new Date(e.dh_exu).toLocaleDateString() : "-"}</Td>
+                                                    <Td style={{ padding: "12px 16px" }}>{e.dh_exu ? formatDateTimeDMY(e.dh_exu) : "-"}</Td>
                                                     <Td style={{ padding: "12px 16px" }}>{`${e.quadra_sep ?? e.num_quadra ?? "-"} - ${e.num_sepultura_sep ?? ""}`}</Td>
                                                     <Td style={{ padding: "12px 16px" }}>{e.destino || "-"}</Td>
                                                     <Td style={{ padding: "12px 16px" }}>{e.coveiro || "-"}</Td>
@@ -510,7 +503,7 @@ As exumações têm como objetivo garantir a adequada gestão dos espaços do ce
                                             ) : (
                                                 <Tr key={e.id ?? `sep-${i}`} index={i}>
                                                     <Td style={{ padding: "12px 16px" }}>{e.nome_sep || "-"}</Td>
-                                                    <Td style={{ padding: "12px 16px" }}>{e.dh_sep ? new Date(e.dh_sep).toLocaleDateString() : "-"}</Td>
+                                                    <Td style={{ padding: "12px 16px" }}>{e.dh_sep ? formatDateTimeDMY(e.dh_sep) : "-"}</Td>
                                                     <Td style={{ padding: "12px 16px" }}>{e.taxa_label ?? "-"}</Td>
                                                     <Td style={{ padding: "12px 16px", textAlign: "center" }}>
                                                         <IconBtn type="button" onClick={() => handleView(e)}>
@@ -585,7 +578,7 @@ As exumações têm como objetivo garantir a adequada gestão dos espaços do ce
                             </Title>
                             <ModalGrid>
                                 <Label>Nome: <div>{modalForm.nome_sep || "-"}</div></Label>
-                                <Label>Data e hora: <div>{modalForm.dh_exu ? new Date(modalForm.dh_exu).toLocaleString() : "-"}</div></Label>
+                                <Label>Data e hora: <div>{modalForm.dh_exu ? formatDateTimeDMY(modalForm.dh_exu) : "-"}</div></Label>
                                 <Label>Quadra: <div>{modalForm.quadra_sep ?? "-"}</div></Label>
                                 <Label>Sepultura: <div>{modalForm.num_sepultura_sep || "-"}</div></Label>
                                 <Label>Destinação: <div>{modalForm.destino || "-"}</div></Label>

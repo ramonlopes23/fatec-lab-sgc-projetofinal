@@ -5,6 +5,7 @@ import { FiLogOut } from 'react-icons/fi';
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
 import { useCemeteryStore } from "../../stores/cemeteryStore";
+import { formatDateDMY } from "../../utils/date";
 import {
     CemeteryButton,
     CemeteryEmpty,
@@ -35,11 +36,7 @@ import {
 
 const formatFoundation = (foundation) => {
     if (!foundation) return "";
-
-    const date = new Date(`${foundation}T00:00:00`);
-    if (Number.isNaN(date.getTime())) return String(foundation);
-
-    return date.toLocaleDateString("pt-BR");
+    return formatDateDMY(foundation, String(foundation));
 };
 
 export default function Header({ onMenuClick }) {

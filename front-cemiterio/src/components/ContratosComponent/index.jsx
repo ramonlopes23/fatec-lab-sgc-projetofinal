@@ -11,6 +11,7 @@ import { FaTrash } from "react-icons/fa"
 import { RiDeleteBin2Line } from "react-icons/ri";
 import api from "../../services/index.js";
 import React, { useEffect, useMemo, useState } from "react"
+import { formatDateDMY, formatDateTimeKey } from "../../utils/date";
 
 const STATUS_OPTIONS = [
     { value: "ativo", label: "Ativo" },
@@ -28,10 +29,7 @@ const INITIAL_FORM = {
 };
 
 function formatDateBR(value) {
-    if (!value) return "-";
-    const [y, m, d] = String(value).split("-");
-    if (!y || !m || !d) return value;
-    return `${d}/${m}/${y}`;
+    return formatDateDMY(value, value || "-");
 }
 
 function statusLabel(status) {
@@ -134,7 +132,7 @@ export default function ContratosComponent() {
 
         setIsSubmitting(true);
         try {
-            const now = new Date().toISOString();
+            const now = formatDateTimeKey(new Date());
 
             const payload = {
                 nome_titular: form.nome_titular.trim(),

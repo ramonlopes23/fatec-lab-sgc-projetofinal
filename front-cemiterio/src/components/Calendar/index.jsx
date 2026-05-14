@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { formatDateDMY } from "../../utils/date";
 import { Card, CardHeader, CardBody, CalendarGrid, DayCell, DayButton, Btn, Title } from "./styles";
 
 
@@ -253,7 +254,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                                             {(s.data || s.horario) ? (
                                                 <div style={{ color: '#555' }}>
                                                     {s.tipo === "Exumação"
-                                                        ? `Data/Hora da exumação:${s.data ?? ''}${s.horario ? ' ' + s.horario : ''}`
+                                                        ? `Data/Hora da exumação: ${formatDateDMY(s.data, s.data ?? '')}${s.horario ? ' ' + s.horario : ''}`
                                                         : (s.horario ? `Horario do sepultamento: ${s.horario}` : null)}
                                                 </div>
                                             ) : null}

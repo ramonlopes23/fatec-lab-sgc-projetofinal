@@ -16,6 +16,7 @@ import { FaChartPie } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
 import { MdPets } from "react-icons/md";
 import { PiFlowerTulipLight, PiFlowerTulipBold } from "react-icons/pi";
+import { formatDateTimeKey } from "../../utils/date";
 import {
     BtnAction,
     QuadraDropdown,
@@ -123,7 +124,6 @@ export default function VerMapa() {
 
     const {
         showSuccess,
-        showInfo,
         showError,
         ToastElement,
     } = useToastFeedback();
@@ -367,7 +367,7 @@ export default function VerMapa() {
             nome_sep: sep.nome_sep,
             quadra_sep: String(quadraNum ?? ""),
             num_sepultura_sep: sep.num_sepultura_sep,
-            dh_exu: new Date().toISOString().slice(0, 16),
+            dh_exu: formatDateTimeKey(new Date()),
             motivo: "",
             destino: "",
             coveiro: "",
@@ -721,7 +721,7 @@ export default function VerMapa() {
                 };
             });
             console.log(finalBlocked)
-            showInfo(finalBlocked ? "Sepultura bloqueada por questão legal." : "Bloqueio legal removido");
+            notifyInfo(finalBlocked ? "Sepultura bloqueada por questão legal." : "Bloqueio legal removido");
         } catch (err) {
             console.error("Erro ao atualizar blocked da sepultura", err);
             alert(err?.response?.data?.message || err?.message || "Erro ao atualizar bloqueio legal.");

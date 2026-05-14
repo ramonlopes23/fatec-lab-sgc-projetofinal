@@ -15,7 +15,14 @@ import Box from "@mui/material/Box";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LuChevronDown } from "react-icons/lu";
-import { hasErrors } from "../../utils/validation";
+import { formatDateKey, formatDateTimeKey, formatDateDMY, formatDateTimeDMY, parseDateValue } from "../../utils/date";
+import {
+    getFieldError,
+    hasErrors,
+    isValidDateRange,
+    RULES_FALECIDO,
+    RULES_RESPONSAVEL,
+} from "../../utils/validation";
 import { BtnAction, BtnAction2, ChevronIcon, FilePreview, InlineFeedback, ReviewPanel, StepHeader } from "./styles";
 
 function FalecidoProcess({
@@ -37,6 +44,7 @@ function FalecidoProcess({
     setBusca,
     validateFieldOnChange,
     isSubmitting,
+    isIndigente,
     cepResp,
     loadingCep,
     fieldSxStyle,
@@ -71,9 +79,55 @@ function FalecidoProcess({
         slotProps: { inputLabel: { sx: labelSxStyle } },
     });
 
+    const isFieldValid = (fieldName, rule) => !getFieldError(fieldName, form[fieldName], rule || {});
+
+    const isStepComplete = (stepIndex) => {
+        const step0DefaultFields = [
+            "nome_fal",
+            "idade",
+            "sexo",
+            "cor",
+            "estado_civil",
+            "data_nasc",
+            "dh_falec",
+            "filiacao_pai",
+            "filiacao_mae",
+            "profissao",
+            "naturalidade",
+            "causa_mortis",
+        ];
+
+        const step0IndigenteFields = ["nome_fal", "sexo", "cor", "dh_falec", "causa_mortis"];
+        const step1Fields = ["cpf", "rg", "nome_doutor"];
+        const step2Fields = ["nome_resp", "tel_resp", "doc_resp", "cep_resp", "endereco_resp"];
+
+        if (stepIndex === 0) {
+            const fields = isIndigente ? step0IndigenteFields : step0DefaultFields;
+            const validFields = fields.every((field) => isFieldValid(field, RULES_FALECIDO[field]));
+            const validRange = isIndigente ? true : isValidDateRange(form.data_nasc, form.dh_falec);
+            return validFields && validRange;
+        }
+
+        if (stepIndex === 1) {
+            if (isIndigente) return true;
+            return step1Fields.every((field) => isFieldValid(field, RULES_FALECIDO[field]));
+        }
+
+        if (stepIndex === 2) {
+            if (isIndigente) return true;
+            return step2Fields.every((field) => isFieldValid(field, RULES_RESPONSAVEL[field]));
+        }
+
+        if (stepIndex === 3) {
+            return isStepComplete(0) && isStepComplete(1) && isStepComplete(2);
+        }
+
+        return false;
+    };
+
     return (
         <Stepper activeStep={activeStep} orientation="vertical">
-            <Step expanded={expandedSteps[0]}>
+            <Step expanded={expandedSteps[0]} completed={isStepComplete(0)}>
                 <StepLabel onClick={() => toggleStepExpanded(0)} sx={{ cursor: "pointer" }}>
                     <StepHeader>
                         <span>{stepsDeceased[0]}</span>
@@ -133,8 +187,9 @@ function FalecidoProcess({
                         <Grid size={{ xs: 12, md: 6 }}>
                             <DatePicker
                                 label="Data de nascimento"
-                                value={form.data_nasc ? new Date(form.data_nasc) : null}
-                                onChange={(newVal) => updateFieldByName("data_nasc", newVal ? newVal.toISOString().split("T")[0] : "")}
+                                format="dd/MM/yyyy"
+                                value={parseDateValue(form.data_nasc)}
+                                onChange={(newVal) => updateFieldByName("data_nasc", newVal ? formatDateKey(newVal) : "")}
                                 disabled={disabledFor("data_nasc")}
                                 slotProps={{ textField: { fullWidth: true, error: !!fieldErrors.data_nasc, helperText: fieldErrors.data_nasc, sx: fieldSxStyle, slotProps: { inputLabel: { sx: labelSxStyle } } } }}
                             />
@@ -142,8 +197,9 @@ function FalecidoProcess({
                         <Grid size={{ xs: 12, md: 6 }}>
                             <DateTimePicker
                                 label="Data e hora de falecimento"
-                                value={form.dh_falec ? new Date(form.dh_falec) : null}
-                                onChange={(newVal) => updateFieldByName("dh_falec", newVal ? newVal.toISOString() : "")}
+                                format="dd/MM/yyyy HH:mm"
+                                value={parseDateValue(form.dh_falec)}
+                                onChange={(newVal) => updateFieldByName("dh_falec", newVal ? formatDateTimeKey(newVal) : "")}
                                 disabled={disabledFor("dh_falec")}
                                 slotProps={{ textField: { fullWidth: true, error: !!fieldErrors.dh_falec, helperText: fieldErrors.dh_falec, sx: fieldSxStyle, slotProps: { inputLabel: { sx: labelSxStyle } } } }}
                             />
@@ -195,7 +251,7 @@ function FalecidoProcess({
                 </StepContent>
             </Step>
 
-            <Step expanded={expandedSteps[1]}>
+            <Step expanded={expandedSteps[1]} completed={isStepComplete(1)}>
                 <StepLabel onClick={() => toggleStepExpanded(1)} sx={{ cursor: "pointer" }}>
                     <StepHeader>
                         <span>{stepsDeceased[1]}</span>
@@ -231,7 +287,7 @@ function FalecidoProcess({
                 </StepContent>
             </Step>
 
-            <Step expanded={expandedSteps[2]}>
+            <Step expanded={expandedSteps[2]} completed={isStepComplete(2)}>
                 <StepLabel onClick={() => toggleStepExpanded(2)} sx={{ cursor: "pointer" }}>
                     <StepHeader>
                         <span>{stepsDeceased[2]}</span>
@@ -283,7 +339,7 @@ function FalecidoProcess({
                 </StepContent>
             </Step>
 
-            <Step expanded={expandedSteps[3]}>
+            <Step expanded={expandedSteps[3]} completed={isStepComplete(3)}>
                 <StepLabel onClick={() => toggleStepExpanded(3)} sx={{ cursor: "pointer" }}>
                     <StepHeader>
                         <span>{stepsDeceased[3]}</span>
@@ -298,11 +354,25 @@ function FalecidoProcess({
                             <Grid size={{ xs: 12, md: 6 }}><strong>Nome:</strong> {form.nome_fal || "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>Sexo:</strong> {form.sexo || "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>Idade:</strong> {form.idade || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>Estado Civil:</strong> {form.estado_civil || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>Cor/Raça:</strong> {form.cor || "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>CPF:</strong> {form.cpf || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Data de Nascimento:</strong> {form.data_nasc || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Data e Hora de Falecimento:</strong> {form.dh_falec || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>Filiação mãe:</strong> {form.filiacao_mae || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>Filiação pai:</strong> {form.filiacao_pai || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>Profissão:</strong> {form.profissao || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>Naturalidade:</strong> {form.naturalidade || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>Causa da morte:</strong> {form.causa_mortis || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>CPF:</strong> {form.cpf || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>RG:</strong> {form.rg || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>Nome do médico responsável:</strong> {form.nome_doutor || "-"}</Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><strong>Data de Nascimento:</strong> {form.data_nasc ? formatDateDMY(form.data_nasc) : "-"}</Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><strong>Data e Hora de Falecimento:</strong> {form.dh_falec ? formatDateTimeDMY(form.dh_falec) : "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>Responsavel:</strong> {form.nome_resp || "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>Contato:</strong> {form.tel_resp || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>CPF do responsável:</strong> {form.doc_resp || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>Profissão do responsável:</strong> {form.prof_resp || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>Endereço do responsável:</strong> {form.endereco_resp || "-"}</Grid>
+
                         </Grid>
                     </ReviewPanel>
                     <Box sx={{ mb: 2, mt: 3, display: "flex", gap: 1 }}>

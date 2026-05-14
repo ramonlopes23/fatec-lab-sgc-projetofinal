@@ -1,3 +1,5 @@
+import { parseDateValue } from "./date";
+
 export const isEmpty = (value) => {
     return value === undefined || value === null || (typeof value === "string" && value.trim() === "");
 }
@@ -26,13 +28,15 @@ export const isValidCPF = (value) => {
 
 export const isValidDate = (value) => {
     if (!value) return false;
-    const date = new Date(value);
-    return date instanceof Date && !isNaN(date);
+    return parseDateValue(value) !== null;
 };
 
 export const isValidDateRange = (dataNasc, dataFalec) => {
     if (isEmpty(dataNasc) || isEmpty(dataFalec)) return true;
-    return new Date(dataFalec) >= new Date(dataNasc);
+    const start = parseDateValue(dataNasc);
+    const end = parseDateValue(dataFalec);
+    if (!start || !end) return false;
+    return end.getTime() >= start.getTime();
 };
 
 export const isValidAge = (value) => {
