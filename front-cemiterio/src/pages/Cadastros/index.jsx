@@ -48,6 +48,7 @@ const processFromPath = (pathname) => (
 );
 
 export default function Cadastros() {
+
     const navigate = useNavigate();
     const location = useLocation();
     const routeProcessType = processFromPath(location.pathname);
@@ -69,13 +70,13 @@ export default function Cadastros() {
     const [showFalList, setShowFalList] = useState(false);
     const [busca, setBusca] = useState("");
     const [cidades, setCidades] = useState([]);
+    const [isIndigente, setIsIndigente] = useState(false);
     const { cep: cepResp, setCep: setCepResp, endereco: enderecoResp, setEndereco: setEnderecoResp, loading: loadingCep, handleCepChange, handleCepBlur } = useViacepLookup();
     const [quadras, setQuadras] = useState([]);
     const [covas, setCovas] = useState([]);
     const { availableCovas, tipoCovaSelecionada, handleQuadraSepChange } = useAvailableCovas(covas, form, setForm);
-    const { fieldErrors, validateFieldOnChange, validateBeforeSubmit, clearAllErrors } = useFormValidation(form, processType, isIndigente, searchFal);
+    const { fieldErrors, validateFieldOnChange, validateBeforeSubmit, clearAllErrors, clearErrorsExcept } = useFormValidation(form, processType, isIndigente, searchFal);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isIndigente, setIsIndigente] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [falecidos, setFalecidos] = useState([]);
 
@@ -91,7 +92,7 @@ export default function Cadastros() {
         },
     }), [isIndigente]);
 
-    const labelSxStyle = useMemo(() => ({ 
+    const labelSxStyle = useMemo(() => ({
         fontSize: "14px",
         backgroundColor: "white",
         paddingX: "4px",
@@ -102,7 +103,7 @@ export default function Cadastros() {
         borderRadius: "4px",
         fontSize: "14px",
         "& .MuiOutlinedInput-notchedOutline": {
-            top: "0px" 
+            top: "0px"
         },
         "& .Mui-disabled": {
             opacity: isIndigente ? 0.5 : 1,
@@ -333,7 +334,7 @@ export default function Cadastros() {
 
             const cap = Number(foundCheck.capacidade ?? 0);
             if (cap <= 0) {
-                await api.patch(`/covas/${foundCheck.id}`, { status: "lotada", capacidade: 0 }).catch(() => {});
+                await api.patch(`/covas/${foundCheck.id}`, { status: "lotada", capacidade: 0 }).catch(() => { });
                 showError("A sepultura selecionada esta lotada. Escolha outra sepultura.");
                 return;
             }
@@ -367,13 +368,7 @@ export default function Cadastros() {
                     });
                     return { ...prevForm, ...resets };
                 });
-                setFieldErrors((prevErrs) => {
-                    const out = { ...prevErrs };
-                    Object.keys(out).forEach((key) => {
-                        if (!ALLOWED_FAL_INDI.has(key)) delete out[key];
-                    });
-                    return out;
-                });
+                clearErrorsExcept(ALLOWED_FAL_INDI);
             }
             return next;
         });

@@ -48,7 +48,7 @@ export function useCreateCemetery({ onSuccess } = {}) {
 
             const payload = {
                 name: normalizedName,
-                foundation: normalizedFoundation, // LocalDate no backend
+                foundation: normalizedFoundation, 
                 active: normalizedActive,
             };
 

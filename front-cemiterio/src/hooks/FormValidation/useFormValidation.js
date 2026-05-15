@@ -102,6 +102,16 @@ export default function useFormValidation(form, processType, isIndigente, search
     setFieldErrors({});
   }, []);
 
+  const clearErrorsExcept = useCallback((fieldsToKeep) => {
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((key) => {
+        if (!fieldsToKeep.has(key)) delete next[key];
+      });
+      return next;
+    });
+  }, []);
+
   return {
     fieldErrors,
     setFieldErrors,
@@ -109,5 +119,6 @@ export default function useFormValidation(form, processType, isIndigente, search
     validateBeforeSubmit,
     clearFieldError,
     clearAllErrors,
+    clearErrorsExcept,
   };
 }
