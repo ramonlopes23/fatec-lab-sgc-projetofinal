@@ -36,6 +36,7 @@ import {
 } from "./constants";
 import useLocalStorage from "../../hooks/LocalStorage/useLocalStorage";
 import useViacepLookup from "../../hooks/ViaCepLookup/useViacepLookup";
+import useAvailableCovas from "../../hooks/AvailableCovas/useAvailableCovas";
 import {
     BtnClear,
     BtnPrimary,
@@ -80,6 +81,7 @@ export default function Cadastros() {
     const { cep: cepResp, setCep: setCepResp, endereco: enderecoResp, setEndereco: setEnderecoResp, loading: loadingCep, handleCepChange, handleCepBlur } = useViacepLookup();
     const [quadras, setQuadras] = useState([]);
     const [covas, setCovas] = useState([]);
+    const { availableCovas, tipoCovaSelecionada, handleQuadraSepChange } = useAvailableCovas(covas, form, setForm);
     const [fieldErrors, setFieldErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isIndigente, setIsIndigente] = useState(false);
@@ -254,49 +256,6 @@ export default function Cadastros() {
             updateFieldByName("taxa_valor", TAXA_MAP[maskedValue] ?? 0);
         }
     }, [updateFieldByName, validateFieldOnChange]);
-
-
-
-    const isCovaAvailable = (cova, tituloPosse = "") => {
-        const cap = Number(cova?.capacidade ?? 0);
-        if (cap <= 0) return false;
-
-        const status = String(cova?.status ?? "").toLowerCase();
-        const posse = String(tituloPosse ?? "").toLowerCase();
-        if (posse === "sim") {
-            return cova.concessao?.ativa === true && !status.includes("lotad") && !status.includes("indispon");
-        }
-        return !["lotad", "indispon", "reserv", "particular"].some((item) => status.includes(item));
-    };
-
-    const computeAvailableCovas = useCallback((covasList, quadraId, tituloPosse) => {
-        if (!quadraId) return [];
-        const sameQuadra = covasList.filter((cova) => String(cova.quadra_cova ?? cova.quadra ?? cova.quadra_sep ?? "") === String(quadraId));
-        const posse = String(tituloPosse ?? "").toLowerCase();
-        const filtered = posse === "sim"
-            ? sameQuadra.filter((cova) => !!cova.concessao?.ativa)
-            : sameQuadra.filter((cova) => !String(cova.status ?? "").toLowerCase().includes("reserv"));
-        return filtered.filter((cova) => isCovaAvailable(cova, tituloPosse));
-    }, []);
-
-    const availableCovas = useMemo(() => (
-        computeAvailableCovas(covas, form.quadra_sep, form.titulo_posse)
-    ), [computeAvailableCovas, covas, form.quadra_sep, form.titulo_posse]);
-
-    const tipoCovaSelecionada = useMemo(() => {
-        if (!form.quadra_sep || !form.num_sepultura_sep) return "";
-        const target = String(form.num_sepultura_sep);
-        const byNumber = (list) => list.find((cova) => String(cova.num_cova ?? cova.numero ?? cova.num_sepultura ?? "") === target);
-        const found = byNumber(availableCovas) || covas.find((cova) => (
-            String(cova.quadra_cova ?? cova.quadra ?? cova.quadra_sep ?? "") === String(form.quadra_sep)
-            && String(cova.num_cova ?? cova.numero ?? cova.num_sepultura ?? "") === target
-        ));
-        return found?.tipo_cova ?? "";
-    }, [availableCovas, covas, form.num_sepultura_sep, form.quadra_sep]);
-
-    const handleQuadraSepChange = (val) => {
-        setForm((prev) => ({ ...prev, quadra_sep: val, num_sepultura_sep: "" }));
-    };
 
     const handleSelectFalecido = (val) => {
         const raw = val === undefined || val === null ? "" : String(val).trim();
