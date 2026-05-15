@@ -28,6 +28,7 @@ import useLocalStorage from "../../hooks/LocalStorage/useLocalStorage";
 import useViacepLookup from "../../hooks/ViaCepLookup/useViacepLookup";
 import useAvailableCovas from "../../hooks/AvailableCovas/useAvailableCovas";
 import useFormValidation from "../../hooks/FormValidation/useFormValidation";
+import useFalecidoSearch from "../../hooks/FalecidoSearch/useFalecidoSearch";
 import {
     BtnClear,
     BtnPrimary,
@@ -65,8 +66,6 @@ export default function Cadastros() {
     const [processType, setProcessType] = useState(() => routeProcessType);
     const [activeStep, setActiveStep] = useState(0);
     const [, setRegistros] = useState([]);
-    const [searchFal, setSearchFal] = useState(() => (saved?.processType === routeProcessType ? saved?.searchFal || "" : ""));
-    const [filteredFalecidos, setFilteredFalecidos] = useState([]);
     const [showFalList, setShowFalList] = useState(false);
     const [busca, setBusca] = useState("");
     const [cidades, setCidades] = useState([]);
@@ -75,10 +74,11 @@ export default function Cadastros() {
     const [quadras, setQuadras] = useState([]);
     const [covas, setCovas] = useState([]);
     const { availableCovas, tipoCovaSelecionada, handleQuadraSepChange } = useAvailableCovas(covas, form, setForm);
-    const { fieldErrors, validateFieldOnChange, validateBeforeSubmit, clearAllErrors, clearErrorsExcept } = useFormValidation(form, processType, isIndigente, searchFal);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [falecidos, setFalecidos] = useState([]);
+    const { searchFal, setSearchFal, filteredFalecidos } = useFalecidoSearch(falecidos, processType, saved, setForm);
+    const { fieldErrors, validateFieldOnChange, validateBeforeSubmit, clearAllErrors, clearErrorsExcept } = useFormValidation(form, processType, isIndigente, searchFal);
 
     const fieldSxStyle = useMemo(() => ({
         "& .MuiInputBase-root": { borderRadius: "4px" },
@@ -162,23 +162,6 @@ export default function Cadastros() {
             });
         return () => { mounted = false; };
     }, []);
-
-    useEffect(() => {
-        if (!searchFal) {
-            setFilteredFalecidos([]);
-            if (processType === PROCESS_TYPES.sepultamento) {
-                setForm((prev) => ({ ...prev, falecido_id: "", falecido: "", nome_sep: "" }));
-            }
-            return;
-        }
-
-        const term = String(searchFal).toLowerCase();
-        setFilteredFalecidos(
-            (falecidos || [])
-                .filter((falecido) => ((falecido.nome_fal || falecido.nome) || "").toLowerCase().includes(term))
-                .slice(0, 10),
-        );
-    }, [falecidos, processType, searchFal]);
 
     useEffect(() => {
         setForm((prev) => ({ ...prev, cep_resp: cepResp, endereco_resp: enderecoResp }));
