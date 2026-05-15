@@ -1,21 +1,11 @@
-import api from "./index.js";
+import { createCrudService } from "./createCrudService.js";
 
-export const getBlocks = async () => {
-  const response = await api.get("/blocks");
-  return response.data;
-};
+const service = createCrudService("blocks");
 
-export const createBlock = async (payload) => {
-  const response = await api.post("/blocks", payload);
-  return response.data;
-};
+export const getBlocks = async (params) => service.list(params);
 
-export const updateBlock = async (id, payload) => {
-  const response = await api.put(`/blocks/${id}`, payload);
-  return response.data;
-};
+export const createBlock = async (payload) => service.create(payload);
 
-export const inactivateBlock = async (id) => {
-  const response = await api.patch(`/blocks/${id}/inactive`);
-  return response.data;
-};
+export const updateBlock = async (id, payload) => service.update(id, payload);
+
+export const inactivateBlock = async (id) => service.inactivate(id);

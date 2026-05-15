@@ -1,26 +1,13 @@
-import api from "./index.js";
+import { createCrudService } from "./createCrudService.js";
 
-export const getGrave = async () => {
-  const response = await api.get("/graves");
-  return response.data;
-};
+const service = createCrudService("graves");
 
-export const createGrave = async (payload) => {
-  const response = await api.post("/graves", payload);
-  return response.data;
-};
+export const getGrave = async (params) => service.list(params);
 
-export const updateGrave = async (id, payload) => {
-  const response = await api.put(`/graves/${id}`, payload);
-  return response.data;
-};
+export const createGrave = async (payload) => service.create(payload);
 
-export const inactivateGrave = async (id) => {
-  const response = await api.patch(`/graves/${id}/inactive`);
-  return response.data;
-}; 
+export const updateGrave = async (id, payload) => service.update(id, payload);
 
-export const patchGraveStatus = async (id, status) => {
-  const response = await api.put(`/graves/${id}`, { status });
-  return response.data;
-};  
+export const inactivateGrave = async (id) => service.inactivate(id);
+
+export const patchGraveStatus = async (id, status) => service.update(id, { status });
