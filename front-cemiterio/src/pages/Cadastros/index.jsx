@@ -35,6 +35,7 @@ import {
     TAXA_MAP,
 } from "./constants";
 import useLocalStorage from "../../hooks/LocalStorage/useLocalStorage";
+import useViacepLookup from "../../hooks/ViaCepLookup/useViacepLookup";
 import {
     BtnClear,
     BtnPrimary,
@@ -76,8 +77,7 @@ export default function Cadastros() {
     const [showFalList, setShowFalList] = useState(false);
     const [busca, setBusca] = useState("");
     const [cidades, setCidades] = useState([]);
-    const [cepResp, setCepResp] = useState(() => (saved?.processType === routeProcessType ? saved?.cepResp || "" : ""));
-    const [loadingCep, setLoadingCep] = useState(false);
+    const { cep: cepResp, setCep: setCepResp, endereco: enderecoResp, setEndereco: setEnderecoResp, loading: loadingCep, handleCepChange, handleCepBlur } = useViacepLookup();
     const [quadras, setQuadras] = useState([]);
     const [covas, setCovas] = useState([]);
     const [fieldErrors, setFieldErrors] = useState({});
@@ -186,6 +186,10 @@ export default function Cadastros() {
         );
     }, [falecidos, processType, searchFal]);
 
+    useEffect(() => {
+        setForm((prev) => ({ ...prev, cep_resp: cepResp, endereco_resp: enderecoResp }));
+    }, [cepResp, enderecoResp]);
+
     const resultados = useMemo(() => (
         cidades.filter((cidade) => cidade.nome.toLowerCase().includes((busca || "").toLowerCase()))
     ), [busca, cidades]);
@@ -251,50 +255,7 @@ export default function Cadastros() {
         }
     }, [updateFieldByName, validateFieldOnChange]);
 
-    const normalizeCep = (value) => String(value || "").replace(/\D/g, "").slice(0, 8);
 
-    const fetchViaCep = async (cepDigits) => {
-        if (!cepDigits || cepDigits.length !== 8) return null;
-        try {
-            setLoadingCep(true);
-            const res = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`);
-            const data = await res.json();
-            if (!data || data.erro) return null;
-
-            const formatted = `${data.logradouro || ""}${data.logradouro ? " - " : ""}${data.bairro || ""}${data.bairro && data.localidade ? " - " : ""}${data.localidade || ""}${data.uf ? ` - ${data.uf}` : ""}`.trim();
-            return { raw: data, formatted };
-        } catch (err) {
-            console.error("Erro fetch ViaCEP", err);
-            return null;
-        } finally {
-            setLoadingCep(false);
-        }
-    };
-
-    const handleCepChange = async (event) => {
-        const digits = normalizeCep(event.target.value);
-        setCepResp(digits);
-        setForm((prev) => ({ ...prev, cep_resp: digits }));
-        setFieldErrors((prev) => {
-            if (!prev.cep_resp) return prev;
-            const next = { ...prev };
-            delete next.cep_resp;
-            return next;
-        });
-
-        if (digits.length === 8) {
-            const found = await fetchViaCep(digits);
-            if (found) setForm((prev) => ({ ...prev, endereco_resp: found.formatted }));
-            else showWarning("CEP nao encontrado. Verifique e tente novamente.");
-        }
-    };
-
-    const handleCepBlur = async () => {
-        const digits = normalizeCep(cepResp);
-        if (!digits || digits.length !== 8) return;
-        const found = await fetchViaCep(digits);
-        if (found) setForm((prev) => ({ ...prev, endereco_resp: found.formatted }));
-    };
 
     const isCovaAvailable = (cova, tituloPosse = "") => {
         const cap = Number(cova?.capacidade ?? 0);
@@ -469,6 +430,7 @@ export default function Cadastros() {
                 showSuccess("Falecido cadastrado. Continue com o sepultamento.");
                 clearSaved();
                 setCepResp("");
+                setEnderecoResp("");
                 setBusca("");
                 setIsIndigente(false);
                 setFalecidos((prev) => [...prev, response?.data].filter(Boolean));
