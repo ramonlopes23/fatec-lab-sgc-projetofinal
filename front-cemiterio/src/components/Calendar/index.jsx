@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { formatDateDMY } from "../../utils/date";
+import { formatDateDMY, formatDateKey } from "../../utils/date";
 import { Card, CardHeader, CardBody, CalendarGrid, DayCell, DayButton, Btn, Title } from "./styles";
 
 
@@ -10,30 +10,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
     const [dataSelecionada, setDataSelecionada] = useState(null);
     const [sepultamentosDia, setSepultamentosDia] = useState([]);
 
-    const formatDateKey = (date) => {
-        if (!date) return null;
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, "0");
-        const d = String(date.getDate()).padStart(2, "0");
-        return `${y}-${m}-${d}`;
-    };
-
-    const parseToDateKey = (raw) => {
-        if (!raw) return null;
-        const s = String(raw).trim()
-        if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
-        if (/\d{2}\/\d{2}\/\d{4}/.test(s)) {
-            const datePart = s.split(' ')[0];
-            const [dd, mm, yyyy] = datePart.split('/');
-            if (dd && mm && yyyy) return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
-        }
-
-        const parsed = new Date(s);
-        if (!isNaN(parsed)) return formatDateKey(parsed);
-        return null;
-    }
-
-
+    
     const quadraMap = useMemo(() => {
         const m = {};
         (quadras || []).forEach(q => {
@@ -75,7 +52,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
 
         const mapped = allNormalized
             .map(item => {
-                const data = parseToDateKey(item.rawDate);
+                const data = formatDateKey(item.rawDate);
                 const horario = (() => {
                     const raw = item.rawDate || "";
                     if (!raw) return "";
@@ -240,7 +217,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200 }}>
                         <div style={{ width: 560, maxHeight: '80vh', overflowY: 'auto', background: '#fff', borderRadius: 8, padding: 16 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Title style={{ margin: 0 }}>Sepultamentos e exumações em {dataSelecionada}</Title>
+                                <Title style={{ margin: 0 }}>Sepultamentos e exumações em {formatDateDMY(dataSelecionada)}</Title>
                                 <Btn onClick={() => setOpen(false)}>Fechar</Btn>
                             </div>
                             <div style={{ marginTop: 12 }}>
@@ -249,7 +226,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                                 ) : sepultamentosDia.map(s => (
                                     <div style={{ marginTop: 8, padding: 8, background: "#f8f9fb", borderRadius: 6 }}>
 
-                                        <div key={s.id ?? s._id ?? `${dataSelecionada}-${s.quadra}-${s.cova}`} style={{ marginBottom: 12 }}>
+                                        <div key={s.id ?? s._id ?? `${formatDateDMY(dataSelecionada)}-${s.quadra}-${s.cova}`} style={{ marginBottom: 12 }}>
                                             <div style={{ fontWeight: 700 }}>{s.nomeFalecido}</div>
                                             {(s.data || s.horario) ? (
                                                 <div style={{ color: '#555' }}>
