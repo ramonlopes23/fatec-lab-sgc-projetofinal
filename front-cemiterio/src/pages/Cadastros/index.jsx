@@ -34,6 +34,7 @@ import {
     TAXA_LABEL,
     TAXA_MAP,
 } from "./constants";
+import useLocalStorage from "../../hooks/LocalStorage/useLocalStorage";
 import {
     BtnClear,
     BtnPrimary,
@@ -45,31 +46,7 @@ import {
     Title,
 } from "./styles";
 
-const loadSavedState = () => {
-    try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        return saved ? JSON.parse(saved) : null;
-    } catch (err) {
-        console.error("Erro ao carregar estado salvo:", err);
-        return null;
-    }
-};
 
-const saveState = (state) => {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch (err) {
-        console.error("Erro ao salvar estado:", err);
-    }
-};
-
-const clearSavedState = () => {
-    try {
-        localStorage.removeItem(STORAGE_KEY);
-    } catch (err) {
-        console.error("Erro ao limpar o estado salvo", err);
-    }
-};
 
 const processFromPath = (pathname) => (
     pathname.includes("/sepultamento")
@@ -81,7 +58,7 @@ export default function Cadastros() {
     const navigate = useNavigate();
     const location = useLocation();
     const routeProcessType = processFromPath(location.pathname);
-    const saved = useMemo(loadSavedState, []);
+    const [saved, setSaved, clearSaved] = useLocalStorage(STORAGE_KEY);
     const { showSuccess, showWarning, showError, ToastElement } = useToastFeedback();
 
     const [form, setForm] = useState(() => (
@@ -151,10 +128,10 @@ export default function Cadastros() {
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            saveState({ form, processType, cepResp, searchFal });
+            setSaved({ form, processType, cepResp, searchFal });
         }, 500);
         return () => clearTimeout(timer);
-    }, [form, processType, cepResp, searchFal]);
+    }, [form, processType, cepResp, searchFal, setSaved]);
 
     useEffect(() => {
         fetch("https://servicodados.ibge.gov.br/api/v1/localidades/municipios")
@@ -380,7 +357,7 @@ export default function Cadastros() {
         setBusca("");
         setSearchFal("");
         setIsIndigente(false);
-        clearSavedState();
+        clearSaved();
     };
 
     const handleClearSepultamento = () => {
@@ -391,7 +368,7 @@ export default function Cadastros() {
         setSearchFal("");
         setShowFalList(false);
         setIsIndigente(false);
-        clearSavedState();
+        clearSaved();
     };
 
     const handleFileChange = (event, fieldName) => {
@@ -490,7 +467,7 @@ export default function Cadastros() {
                 };
                 const response = await api.post("/falecidos", payload);
                 showSuccess("Falecido cadastrado. Continue com o sepultamento.");
-                clearSavedState();
+                clearSaved();
                 setCepResp("");
                 setBusca("");
                 setIsIndigente(false);
@@ -529,7 +506,7 @@ export default function Cadastros() {
 
             setRegistros((prev) => ([...prev, { processType, data: payload }]));
             showSuccess("Sepultamento cadastrado (pendente). Confirme na Dashboard para concluir.");
-            clearSavedState();
+            clearSaved();
             handleClearSepultamento();
         } catch (err) {
             console.error(err);
