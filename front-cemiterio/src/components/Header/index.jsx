@@ -34,11 +34,6 @@ import {
     UserDropdownNote
 } from "./styles";
 
-const formatFoundation = (foundation) => {
-    if (!foundation) return "";
-    return formatDateDMY(foundation, String(foundation));
-};
-
 export default function Header({ onMenuClick }) {
     const navigate = useNavigate();
     const user = useAuthStore((s) => s.user);
@@ -167,9 +162,9 @@ export default function Header({ onMenuClick }) {
                                         data-selected={isSelected}
                                         onClick={() => handleSelectCemetery(cemetery.id)}
                                     >
-                                        <CemeteryMeta>
+                                            <CemeteryMeta>
                                             <CemeteryName>{cemetery.name}</CemeteryName>
-                                            <span>Fundação: {formatFoundation(cemetery.foundation)}</span>
+                                            <span>Fundação: {formatDateDMY(cemetery.foundation, String(cemetery.foundation))}</span>
                                         </CemeteryMeta>
                                         <CemeteryStatus data-active={cemetery.active !== false}>
                                             {cemetery.active !== false ? "Ativo" : "Inativo"}
