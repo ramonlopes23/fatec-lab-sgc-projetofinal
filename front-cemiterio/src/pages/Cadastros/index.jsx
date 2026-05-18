@@ -9,7 +9,7 @@ import DialogActions from "@mui/material/DialogActions";
 import api from "../../services/index.js";
 import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
 import { applyMaskByFieldName } from "../../utils/masks.js";
-import { capitalizeWords } from "../../utils/text.js";
+import { capitalizeWords } from "../../utils/capitalize.js";
 import { formatDateKey, formatDateTimeKey } from "../../utils/date";
 import SepultamentoProcess from "../../components/SepultamentoProcess";
 import FalecidoProcess from "../../components/FalecidoProcess";

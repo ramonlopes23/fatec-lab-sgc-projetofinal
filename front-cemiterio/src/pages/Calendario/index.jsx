@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import Footer from "../../components/Footer";
-import MainLayout from "../../layout/MainLayout";
 import Calendar from "../../components/Calendar";
+import LoadingOverlay from "../../components/LoadingOverlay";
 
 export default function Calendario() {
   const [sepultamentos, setSepultamentos] = useState([]);
@@ -32,7 +31,7 @@ export default function Calendario() {
   return (
     <div>
         {loading ? (
-          <div>Carregando calendário...</div>
+          <LoadingOverlay open={loading} label="Carregando calendário..." />
         ) : error ? (
           <div>Erro ao carregar dados do calendário.</div>
         ) : (

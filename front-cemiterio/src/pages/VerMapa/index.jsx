@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useBlocks } from "../../hooks/Blocks/useBlocks";
-import sgcLogo from "../../assets/SGCv2.png";
 import { useCreateBlocks } from "../../hooks/Blocks/useCreateBlocks.js";
 import { useCreateGraves } from "../../hooks/Graves/useCreateGraves";
 import { useCreateCemetery } from "../../hooks/Cemetery/useCreateCemetery.js";
@@ -8,6 +7,7 @@ import { useCemeteryStore } from "../../stores/cemeteryStore.js";
 import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx"
 import api from "../../services/index.js";
 import { patchGraveStatus } from "../../services/graveService";
+import LoadingOverlay from "../../components/LoadingOverlay";
 import GridQuadras from "../../components/GridQuadras";
 import PieChartSepulturas from "../../components/PieChartSepulturas";
 import CovaPetsSection from "../../components/CovaPetsSection";
@@ -35,8 +35,6 @@ import {
     LegendRow,
     ActiveFilterPill,
     EmptyMapState,
-    LoaderCircle,
-    LoaderLogo,
     SmallSelect,
     BtnAdd,
     BtnActionCancel,
@@ -72,8 +70,6 @@ import {
     SepList,
     SepItemRow,
     SepToggle,
-    LoadingMap,
-    InnerLoadingMap,
     MapToolbar,
     ToolbarLabel,
     DropdownIcon,
@@ -1248,15 +1244,7 @@ export default function VerMapa() {
             <Container>
                 <Title>CONTROLE DE SEPULTURAS</Title>
 
-                {isMapLoading && (
-                    <LoadingMap>
-                        <InnerLoadingMap>
-                            <LoaderCircle data-loader="logo-circle">
-                                <LoaderLogo src={sgcLogo} alt="SGC" />
-                            </LoaderCircle>
-                        </InnerLoadingMap>
-                    </LoadingMap>
-                )}
+                <LoadingOverlay open={isMapLoading} />
 
                 <MapToolbar>
                     <ToolbarLabel>Quadra: </ToolbarLabel>

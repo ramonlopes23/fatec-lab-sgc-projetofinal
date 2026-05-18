@@ -1,4 +1,4 @@
-import styled, {keyframes} from "styled-components";
+import styled from "styled-components";
 
 export const Container = styled.div`
   max-width: 1100px;
@@ -15,67 +15,6 @@ export const Title = styled.h2`
   letter-spacing: 2px;
   margin-bottom: 18px;
   color: #191970;
-`;
-
-const spinCircle = keyframes`
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-`;
-
-export const LoadingMap = styled.div`
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(10, 14, 30, 0.36);
-  backdrop-filter: blur(2px);
-  display: grid;
-  place-items: center;
-  z-index: 20000;
-  pointer-events: all;
-`;
-
-export const InnerLoadingMap = styled.div`
-  width: 190px;
-  height: 190px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  display: grid;
-  place-items: center;
-`;
-
-export const LoaderCircle = styled.div`
-  width: 155px;
-  height: 155px;
-  position: relative;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border: 4px solid #191970;
-    border-top-color: transparent;
-    border-radius: 50%;
-    animation: ${spinCircle} 1s linear infinite;
-  }
-`;
-
-export const LoaderLogo = styled.img`
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
-  user-select: none;
-  pointer-events: none;
-  position: relative;
-  z-index: 1;
 `;
 
 export const QuadraWrapper = styled.div`
