@@ -70,7 +70,7 @@ function SepultamentoProcess({
                 </StepLabel>
                 <StepContent sx={{ display: expandedSteps[0] ? "block" : "none" }}>
                     <Grid container spacing={2}>
-                        <Grid size={{ xs: 12 }}>
+                        <Grid size={{ xs: 12, md:6 }}>
                             <SearchFieldWrapper>
                                 <TextField
                                     fullWidth
@@ -196,7 +196,7 @@ function SepultamentoProcess({
                             </FormControl>
                         </Grid>
 
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <FormControl fullWidth error={!!fieldErrors.num_sepultura_sep}>
                                 <InputLabel sx={labelSxStyle}>Nº da sepultura</InputLabel>
                                 <Select
@@ -222,11 +222,11 @@ function SepultamentoProcess({
                             </FormControl>
                         </Grid>
 
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <TextField fullWidth variant="outlined" label="Tipo de sepultura" value={tipoCovaSelecionada || "-"} disabled sx={fieldSxStyle} slotProps={{ inputLabel: { sx: labelSxStyle } }} />
                         </Grid>
 
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <FormControl fullWidth error={!!fieldErrors.taxa}>
                                 <InputLabel sx={labelSxStyle}>Taxa de sepultamento</InputLabel>
                                 <Select label="Taxa de sepultamento" name="taxa" value={form.taxa} onChange={handleChange} disabled={isSubmitting} sx={selectSxStyle}>

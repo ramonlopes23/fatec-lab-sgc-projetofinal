@@ -29,6 +29,10 @@ import useViacepLookup from "../../hooks/ViaCepLookup/useViacepLookup";
 import useAvailableCovas from "../../hooks/AvailableCovas/useAvailableCovas";
 import useFormValidation from "../../hooks/FormValidation/useFormValidation";
 import useFalecidoSearch from "../../hooks/FalecidoSearch/useFalecidoSearch";
+import useApiInitDataCad from "../../hooks/ApiInit/useApiInitDataCad.js";
+import useFormClear from "../../hooks/FormClear/useFormClear";
+import useFileUpload from "../../hooks/FileUpload/useFileUpload";
+import useCidadeBusca from "../../hooks/CidadeBusca/useCidadeBusca";
 import {
     BtnClear,
     BtnPrimary,
@@ -39,8 +43,6 @@ import {
     FormStyled,
     Title,
 } from "./styles";
-
-
 
 const processFromPath = (pathname) => (
     pathname.includes("/sepultamento")
@@ -67,18 +69,29 @@ export default function Cadastros() {
     const [activeStep, setActiveStep] = useState(0);
     const [, setRegistros] = useState([]);
     const [showFalList, setShowFalList] = useState(false);
-    const [busca, setBusca] = useState("");
-    const [cidades, setCidades] = useState([]);
     const [isIndigente, setIsIndigente] = useState(false);
     const { cep: cepResp, setCep: setCepResp, endereco: enderecoResp, setEndereco: setEnderecoResp, loading: loadingCep, handleCepChange, handleCepBlur } = useViacepLookup();
-    const [quadras, setQuadras] = useState([]);
-    const [covas, setCovas] = useState([]);
+    const { cidades, quadras, covas, falecidos, setFalecidos } = useApiInitDataCad();
     const { availableCovas, tipoCovaSelecionada, handleQuadraSepChange } = useAvailableCovas(covas, form, setForm);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
-    const [falecidos, setFalecidos] = useState([]);
+    const { busca, setBusca, resultados } = useCidadeBusca(cidades);
     const { searchFal, setSearchFal, filteredFalecidos } = useFalecidoSearch(falecidos, processType, saved, setForm);
     const { fieldErrors, validateFieldOnChange, validateBeforeSubmit, clearAllErrors, clearErrorsExcept } = useFormValidation(form, processType, isIndigente, searchFal);
+    const { handleFileChange } = useFileUpload(setForm);
+    const { clearFalecido, clearSepultamento, resetToSepultamento } = useFormClear({
+        clearAllErrors,
+        clearSaved,
+        setActiveStep,
+        setBusca,
+        setCepResp,
+        setEnderecoResp,
+        setForm,
+        setIsIndigente,
+        setSearchFal,
+        setShowFalList,
+        setProcessType,
+    });
 
     const fieldSxStyle = useMemo(() => ({
         "& .MuiInputBase-root": { borderRadius: "4px" },
@@ -128,48 +141,8 @@ export default function Cadastros() {
     }, [form, processType, cepResp, searchFal, setSaved]);
 
     useEffect(() => {
-        fetch("https://servicodados.ibge.gov.br/api/v1/localidades/municipios")
-            .then((res) => res.json())
-            .then(setCidades)
-            .catch((err) => console.error("Erro ao carregar cidades", err));
-    }, []);
-
-    useEffect(() => {
-        let mounted = true;
-        Promise.all([api.get("/quadras"), api.get("/covas")])
-            .then(([rq, rc]) => {
-                if (!mounted) return;
-                setQuadras(Array.isArray(rq.data) ? rq.data : []);
-                setCovas(Array.isArray(rc.data) ? rc.data : []);
-            })
-            .catch(() => {
-                if (mounted) {
-                    setQuadras([]);
-                    setCovas([]);
-                }
-            });
-        return () => { mounted = false; };
-    }, []);
-
-    useEffect(() => {
-        let mounted = true;
-        api.get("/falecidos")
-            .then((res) => {
-                if (mounted) setFalecidos(res.data || []);
-            })
-            .catch(() => {
-                if (mounted) setFalecidos([]);
-            });
-        return () => { mounted = false; };
-    }, []);
-
-    useEffect(() => {
         setForm((prev) => ({ ...prev, cep_resp: cepResp, endereco_resp: enderecoResp }));
     }, [cepResp, enderecoResp]);
-
-    const resultados = useMemo(() => (
-        cidades.filter((cidade) => cidade.nome.toLowerCase().includes((busca || "").toLowerCase()))
-    ), [busca, cidades]);
 
     const updateFieldByName = useCallback((name, value) => {
         if (!name.includes(".")) {
@@ -219,42 +192,6 @@ export default function Cadastros() {
         setForm((prev) => ({ ...prev, falecido_id: id, falecido: id, nome_sep: falecido ? (falecido.nome_fal || falecido.nome) : prev.nome_sep }));
     };
 
-    const handleClearFalecido = () => {
-        setForm(INITIAL_FALECIDO_FORM);
-        setActiveStep(0);
-        clearAllErrors();
-        setCepResp("");
-        setEnderecoResp("");
-        setBusca("");
-        setSearchFal("");
-        setIsIndigente(false);
-        clearSaved();
-    };
-
-    const handleClearSepultamento = () => {
-        setForm(INITIAL_SEPULTAMENTO_FORM);
-        setActiveStep(0);
-        clearAllErrors();
-        setBusca("");
-        setSearchFal("");
-        setShowFalList(false);
-        setIsIndigente(false);
-        clearSaved();
-    };
-
-    const handleFileChange = (event, fieldName) => {
-        const file = event.target.files?.[0];
-        const previewKey = fieldName === "residencia" ? "residencia_preview" : fieldName === "dec_obito" ? "dec_obito_preview" : `${fieldName}_preview`;
-        if (!file) {
-            setForm((prev) => ({ ...prev, [fieldName]: null, [previewKey]: "" }));
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = () => setForm((prev) => ({ ...prev, [fieldName]: file, [previewKey]: reader.result }));
-        reader.readAsDataURL(file);
-    };
-
     const handleSubmit = (event) => {
         event.preventDefault();
         if (!validateBeforeSubmit()) {
@@ -265,13 +202,7 @@ export default function Cadastros() {
     };
 
     const goToSepultamento = (falecidoCriado, fallbackNome) => {
-        const id = falecidoCriado?.id || "";
-        const nome = falecidoCriado?.nome_fal || falecidoCriado?.nome || fallbackNome || "";
-        setProcessType(PROCESS_TYPES.sepultamento);
-        setActiveStep(0);
-        clearAllErrors();
-        setSearchFal(nome);
-        setForm({ ...INITIAL_SEPULTAMENTO_FORM, falecido_id: id, falecido: id, nome_sep: nome });
+        resetToSepultamento(falecidoCriado, fallbackNome);
         navigate("/cadastros/sepultamento", { replace: true });
     };
 
@@ -329,7 +260,7 @@ export default function Cadastros() {
             setRegistros((prev) => ([...prev, { processType, data: payload }]));
             showSuccess("Sepultamento cadastrado (pendente). Confirme na Dashboard para concluir.");
             clearSaved();
-            handleClearSepultamento();
+            clearSepultamento();
         } catch (err) {
             console.error(err);
             showError(`Erro ao cadastrar processo ${processType}`);
@@ -376,7 +307,7 @@ export default function Cadastros() {
                     {isFalecidoProcess && (
                         <CheckboxWrapper>
                             <CheckboxInput checked={isIndigente} onChange={handleToggleIndigente} disabled={isSubmitting} />
-                            <CheckboxLabel>Nao identificado</CheckboxLabel>
+                            <CheckboxLabel>Não identificado</CheckboxLabel>
                         </CheckboxWrapper>
                     )}
 
@@ -392,7 +323,7 @@ export default function Cadastros() {
                                 handleChange={handleChange}
                                 handleNextStep={() => setActiveStep((prev) => prev + 1)}
                                 handleBackStep={() => setActiveStep((prev) => (prev > 0 ? prev - 1 : 0))}
-                                handleClearFalecido={handleClearFalecido}
+                                handleClearFalecido={clearFalecido}
                                 updateFieldByName={updateFieldByName}
                                 handleFileChange={handleFileChange}
                                 handleCepChange={handleCepChange}
@@ -428,7 +359,7 @@ export default function Cadastros() {
                                 quadras={quadras}
                                 availableCovas={availableCovas}
                                 tipoCovaSelecionada={tipoCovaSelecionada}
-                                handleClearSepultamento={handleClearSepultamento}
+                                handleClearSepultamento={clearSepultamento}
                                 validateFieldOnChange={validateFieldOnChange}
                                 fieldSxStyle={fieldSxStyle}
                                 labelSxStyle={labelSxStyle}
