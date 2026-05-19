@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from "react";
-import { formatDateDMY, formatDateTimeDMY } from "../../utils/date";
 import { DashboardWrapper, Card, CardHeader, CardBody, ProcessItem, ProcessInfo, ProcessAction, ProcessType, EmptyState, Btn } from "./styles";
 import { FaCross } from "react-icons/fa";
 import { FaSkullCrossbones } from "react-icons/fa";
@@ -15,6 +14,33 @@ export default function Dashboard() {
         Sepultamento: <FaCross />,
         Exumação: <FaSkullCrossbones />,
         Manutenção: <FaTools />
+    };
+
+    const isConfirmedSepultamento = (sep) => {
+        const confirmed = sep?.confirmado === true || String(sep?.confirmado).toLowerCase() === "true";
+        const concluded = String(sep?.status ?? "").toLowerCase().includes("concl");
+        return confirmed || concluded;
+    };
+
+    const resolveGraveBySep = async (quadra, num) => {
+        const rc = await api.get("/covas", { params: { blockId: quadra, number: num } }).catch(() => null);
+        if (rc && Array.isArray(rc.data) && rc.data.length) return rc.data[0];
+
+        const fallback = await api.get("/covas").catch(() => null);
+        const allGraves = Array.isArray(fallback?.data) ? fallback.data : [];
+        return allGraves.find((g) => String(g.blockId ?? g.quadra_cova ?? g.quadra ?? "") === String(quadra)
+            && String(g.number ?? g.num_cova ?? g.numero ?? "") === String(num)) ?? null;
+    };
+
+    const getActiveConfirmedSepsCount = async (quadra, num) => {
+        const rS = await api.get("/sepultamentos").catch(() => null);
+        const seps = Array.isArray(rS?.data) ? rS.data : [];
+        return seps.filter((s) => {
+            const sameQuadra = String(s.quadra_sep ?? s.quadra ?? "") === String(quadra);
+            const sameNum = String(s.num_sepultura_sep ?? s.num_sepultura ?? s.numero ?? "") === String(num);
+            const active = s.foi_exumado !== true;
+            return sameQuadra && sameNum && active && isConfirmedSepultamento(s);
+        }).length;
     };
 
     const loadProcessos = async () => {
@@ -88,14 +114,14 @@ export default function Dashboard() {
         const onCreated = (ev) => {
             const item = ev?.detail;
             if (!item) return;
-            setProcessos(prev => [item, ...prev]);
+            loadProcessos();
 
         }
 
         const onLocal = (ev) => {
             const item = ev?.detail;
             if (!item) return;
-            setProcessos(prev => [item, ...prev]);
+            loadProcessos();
         };
 
         window.addEventListener("processoCriado", onCreated);
@@ -135,18 +161,12 @@ export default function Dashboard() {
         return isNaN(parsed) ? null : parsed;
     };
 
-    const isSameDay = (a, b = new Date()) => {
-        if (!a) return false;
-        const da = new Date(a);
-        const db = new Date(b);
-        return da.getFullYear() === db.getFullYear()
-            && da.getMonth() === db.getMonth()
-            && da.getDate() === db.getDate();
-    };
-
-    const processosHoje = processos.filter(p => {
-        const d = getScheduledDate(p);
-        return d && isSameDay(d);
+    const processosPendentes = [...processos].sort((a, b) => {
+        const da = getScheduledDate(a);
+        const db = getScheduledDate(b);
+        const ta = da ? da.getTime() : Number.MAX_SAFE_INTEGER;
+        const tb = db ? db.getTime() : Number.MAX_SAFE_INTEGER;
+        return ta - tb;
     });
 
     const handleConfirm = async (item) => {
@@ -163,32 +183,17 @@ export default function Dashboard() {
                     const rSep = await api.get(`/sepultamentos/${item.id}`).catch(() => null);
                     const sep = rSep?.data ?? null;
                     if (sep) {
-                        const quadra = sep.quadra_sep;
-                        const num = sep.num_sepultura_sep;
+                        const quadra = sep.quadra_sep ?? sep.quadra;
+                        const num = sep.num_sepultura_sep ?? sep.num_sepultura ?? sep.numero;
                         if (quadra != null && num != null) {
-                            const rc = await api.get("/covas", { params: { quadra_cova: quadra, num_cova: num } }).catch(() => null);
-                            const found = rc && Array.isArray(rc.data) && rc.data.length ? rc.data[0] : null;
+                            const found = await resolveGraveBySep(quadra, num);
                             if (found && found.id != null) {
-                                const curCap = Number(found.capacidade ?? 0);
+                                const curCap = Number(found.bodyCapacity ?? found.capacidade ?? 0);
                                 const newCap = Math.max(0, curCap - 1);
-                                let newStatus;
+                                const activeConfirmedSeps = await getActiveConfirmedSepsCount(quadra, num);
+                                const newStatus = activeConfirmedSeps > 0 ? "OCCUPIED" : "AVAILABLE";
 
-                                try {
-                                    const rS = await api.get("/sepultamentos", { params: { quadra_sep: quadra, num_sepultura_sep: num } }).catch(() => null);
-                                    const seps = rS?.data ?? [];
-                                    const activeSeps = (seps || []).filter(s => !(s.foi_exumado === true || String(s.status ?? "").toLowerCase() === "exumado"));
-
-                                    if (activeSeps.length === 0) {
-                                        newStatus = newCap > 0 ? "disponível" : "lotada";
-                                    } else {
-                                        newStatus = newCap <= 0 ? "lotada" : "ocupada";
-                                    }
-                                } catch (e) {
-                                    newStatus = newCap <= 0 ? "lotada" : "ocupada";
-                                    { e }
-                                }
-
-                                await api.patch(`/covas/${found.id}`, { capacidade: newCap, status: newStatus }).catch(() => { });
+                                await api.patch(`/covas/${found.id}`, { bodyCapacity: newCap, status: newStatus }).catch(() => { });
                                 try { window.dispatchEvent(new CustomEvent("covaCapacidadeAlterada", { detail: { covaId: found.id, capacidade: newCap } })); } catch (e) { e }
                             }
                         }
@@ -215,28 +220,15 @@ export default function Dashboard() {
                             const quadra = sep.quadra_sep ?? sep.quadra;
                             const num = sep.num_sepultura_sep ?? sep.num_sepultura ?? sep.numero;
                             if (quadra != null && num != null) {
-                                const rc = await api.get("/covas", { params: { quadra_cova: quadra, num_cova: num } }).catch(() => null);
-                                const found = rc && Array.isArray(rc.data) && rc.data.length ? rc.data[0] : null;
+                                const found = await resolveGraveBySep(quadra, num);
                                 if (found && found.id != null) {
-                                    const curCap = Number(found.capacidade ?? 0);
+                                    const curCap = Number(found.bodyCapacity ?? found.capacidade ?? 0);
                                     const newCap = curCap + 1;
 
-                                    let newStatus;
-                                    try {
-                                        const rS = await api.get("/sepultamentos", { params: { quadra_sep: quadra, num_sepultura_sep: num } }).catch(() => null);
-                                        const seps = rS?.data ?? [];
-                                        const activeSeps = (seps || []).filter(s => !(s.foi_exumado === true || String(s.status ?? "").toLowerCase() === "exumado"));
-                                        if (activeSeps.length === 0) {
-                                            newStatus = newCap > 0 ? "disponível" : "lotada";
-                                        } else {
-                                            newStatus = newCap <= 0 ? "lotada" : "ocupada";
-                                        }
-                                    } catch (e) {
-                                        newStatus = newCap > 0 ? "disponível" : "lotada";
-                                        { e };
-                                    }
+                                    const activeConfirmedSeps = await getActiveConfirmedSepsCount(quadra, num);
+                                    const newStatus = activeConfirmedSeps > 0 ? "OCCUPIED" : "AVAILABLE";
 
-                                    await api.patch(`/covas/${found.id}`, { capacidade: newCap, status: newStatus }).catch(() => { });
+                                    await api.patch(`/covas/${found.id}`, { bodyCapacity: newCap, status: newStatus }).catch(() => { });
                                     try { window.dispatchEvent(new CustomEvent("covaCapacidadeAlterada", { detail: { covaId: found.id, capacidade: newCap } })); } catch (e) { e }
                                 }
                             }
@@ -267,7 +259,7 @@ export default function Dashboard() {
             <Card>
                 <CardHeader>PRÓXIMOS PROCESSOS</CardHeader>
                 <CardBody>
-                    {processosHoje.length ? processosHoje.map((p) => (
+                    {processosPendentes.length ? processosPendentes.map((p) => (
                         <ProcessItem key={`${p._type}-${p.id}`}>
                             <ProcessInfo>
                                 <strong>{p.nome_fal || p.nome}</strong>
@@ -290,7 +282,7 @@ export default function Dashboard() {
                                 <Btn onClick={() => handleConfirm(p)}>Confirmar conclusão</Btn>
                             </ProcessAction>
                         </ProcessItem>
-                    )) : <EmptyState>Nenhum evento agendado para hoje.</EmptyState>}                </CardBody>
+                    )) : <EmptyState>Nenhum processo pendente.</EmptyState>}                </CardBody>
             </Card>
         </DashboardWrapper>
 

@@ -12,19 +12,19 @@ export function useCreateBlocks({ onSuccess }={}) {
     try {
 
       const parsedNumber = Number(number);
-      const parsedCemeteryId = Number(cemeteryId);
+      const parsedCemeteryId = cemeteryId == null ? "" : String(cemeteryId).trim();
 
       if(!Number.isInteger(parsedNumber) || parsedNumber <=0){
         throw new Error("Número de quadra inválido")
       }
 
-      if(!Number.isInteger(parsedCemeteryId) || parsedCemeteryId <=0){
+      if(!parsedCemeteryId){
         throw new Error("Cemitério inválido")
       }
 
       const existingBlocks = await getBlocks();
 
-      const alreadyExists = Array.isArray(existingBlocks) && existingBlocks.some((block)=> Number(block.number) === parsedNumber && Number(block.cemeteryId) === parsedCemeteryId);
+      const alreadyExists = Array.isArray(existingBlocks) && existingBlocks.some((block)=> Number(block.number) === parsedNumber && String(block.cemeteryId) === parsedCemeteryId);
 
       if(alreadyExists){
         throw new Error("Já existe quadra com esse número neste cemitério.")

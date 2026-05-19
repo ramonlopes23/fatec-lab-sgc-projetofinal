@@ -20,7 +20,7 @@ export function useCreateGraves({ onSuccess } = {}) {
         try {
             const parsedNumber = Number(number);
             const parsedBodyCapacity = Number(bodyCapacity);
-            const parsedBlockId = Number(blockId);
+            const parsedBlockId = blockId == null ? "" : String(blockId).trim();
 
             if (!Number.isInteger(parsedNumber) || parsedNumber <= 0) {
                 throw new Error("Número da sepultura inválido.");
@@ -38,7 +38,7 @@ export function useCreateGraves({ onSuccess } = {}) {
                 throw new Error("Tipo de área inválido.");
             }
 
-            if (!Number.isInteger(parsedBlockId) || parsedBlockId <= 0) {
+            if (!parsedBlockId) {
                 throw new Error("Quadra inválida.");
             }
 
@@ -48,7 +48,7 @@ export function useCreateGraves({ onSuccess } = {}) {
 
             const existingGraves = await getGrave();
 
-            const alreadyExists = Array.isArray(existingGraves) && existingGraves.some((grave) => Number(grave.number) === parsedNumber && Number(grave.blockId) === parsedBlockId);
+            const alreadyExists = Array.isArray(existingGraves) && existingGraves.some((grave) => Number(grave.number) === parsedNumber && String(grave.blockId) === parsedBlockId);
 
             if (alreadyExists) {
                 throw new Error("Já existe uma sepultura com esse número nesta quadra. ");

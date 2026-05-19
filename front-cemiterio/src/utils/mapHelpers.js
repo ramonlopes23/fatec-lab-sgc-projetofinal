@@ -23,6 +23,9 @@ export const getSepultadosCount = (sepultamentosAll = [], quadraOrId) => {
   const ids = new Set();
   (sepultamentosAll || []).forEach((s) => {
     if (s.foi_exumado) return;
+    const confirmed = s.confirmado === true || String(s.confirmado).toLowerCase() === "true";
+    const concluded = String(s.status ?? "").toLowerCase().includes("concl");
+    if (!confirmed && !concluded) return;
     const sQ = s.quadra_sep ?? s.quadra ?? "";
     if (String(sQ) === qStr) {
       const id = s.id ?? s._id ?? null;
@@ -42,6 +45,9 @@ export const getSepultadosCountBySep = (cova, quadraId, sepultamentosAll = []) =
   const ids = new Set();
   (sepultamentosAll || []).forEach((s) => {
     if (s.foi_exumado) return;
+    const confirmed = s.confirmado === true || String(s.confirmado).toLowerCase() === "true";
+    const concluded = String(s.status ?? "").toLowerCase().includes("concl");
+    if (!confirmed && !concluded) return;
     const sQuadra = String(s.quadra_sep ?? "");
     const sNum = String(s.num_sepultura_sep ?? "");
     if (sQuadra === quadraKey && sNum === numero) {
@@ -105,10 +111,10 @@ export const getCovaDisplayMeta = (cova, quadraSelecionada = {}, sepultamentosAl
 };
 
 export const getVisibleBlocks = (blocks = [], selectedCemeteryId) => {
-  const selectedId = Number(selectedCemeteryId);
-  if (!Number.isInteger(selectedId) || selectedId <= 0) return [];
+  const selectedId = selectedCemeteryId == null ? "" : String(selectedCemeteryId).trim();
+  if (!selectedId) return [];
 
-  return (blocks || []).filter((block) => Number(block.cemeteryId) === selectedId);
+  return (blocks || []).filter((block) => String(block.cemeteryId) === selectedId);
 };
 
 export const buildQuadrasFromData = (visibleBlocks = [], covasData = [], sepultamentosAll = []) => {
@@ -156,6 +162,10 @@ export const buildQuadrasFromData = (visibleBlocks = [], covasData = [], sepulta
   });
 
   visibleSepData.forEach((sep) => {
+    const confirmed = sep.confirmado === true || String(sep.confirmado).toLowerCase() === "true";
+    const sepIsConcluded = confirmed || String(sep.status ?? "").toLowerCase().includes("concl");
+    if (!sepIsConcluded) return;
+
     const qKey = String(sep.quadra_sep ?? sep.quadra ?? "0");
     if (!quadraMap.has(qKey)) {
       quadraMap.set(qKey, {
@@ -171,8 +181,6 @@ export const buildQuadrasFromData = (visibleBlocks = [], covasData = [], sepulta
     const quadraObj = quadraMap.get(qKey);
     const numero = sep.num_sepultura_sep || sep.num_sepultura || sep.numero || "";
     const titulo_posse = String(sep.titulo_posse ?? "").toLowerCase() === "sim";
-    const confirmed = sep.confirmado === true || String(sep.confirmado).toLowerCase() === "true";
-    const sepIsConcluded = confirmed || String(sep.status ?? "").toLowerCase().includes("concl");
 
     const existing = quadraObj.covas.find((c) => String(c.numero) === String(numero));
 
@@ -205,6 +213,9 @@ export const getSepCountsByQuadra = (sepultamentosAll = [], covasData = []) => {
   const tmp = {};
   const visibleSepData = (sepultamentosAll || []).filter((sep) => !sep.foi_exumado);
   visibleSepData.forEach((sep) => {
+    const confirmed = sep.confirmado === true || String(sep.confirmado).toLowerCase() === "true";
+    const concluded = String(sep.status ?? "").toLowerCase().includes("concl");
+    if (!confirmed && !concluded) return;
     const sepId = sep.id ?? sep._id ?? null;
     const quadraKey = String(
       sep.quadra_sep ?? sep.quadra ?? covaIdToQuadra[String(sep.graveId ?? sep.grave_id ?? sep.covaId ?? sep.cova ?? "")] ?? "0"

@@ -109,8 +109,7 @@ export default function VerMapa() {
 
     const {
         blocks,
-        loadBlocks,
-        setBlocks
+        loadBlocks
     } = useBlocks();
 
     const {
@@ -121,11 +120,7 @@ export default function VerMapa() {
 
     const { handleCreateBlock, loading: creatingBlock } = useCreateBlocks({
         onSuccess: async (created) => {
-            setBlocks((prev) => {
-                if (!Array.isArray(prev)) return [created];
-                const exists = prev.some((b) => String(b.id) === String(created.id));
-                return exists ? prev : [...prev, created];
-            })
+            await loadBlocks();
             setSelectedQuadraId(created.id);
             setModalAddQuadraOpen(false);
             showSuccess("Quadra criada")
@@ -217,6 +212,13 @@ export default function VerMapa() {
             setSelectedQuadraId(visibleBlocks[0].id);
         }
     }, [visibleBlocks, selectedQuadraId]);
+
+    // Load cemeteries on component mount
+    useEffect(() => {
+        loadCemeteries().catch(err => {
+            console.error("Erro ao carregar cemitérios:", err);
+        });
+    }, [loadCemeteries]);
 
     const location = useLocation();
 
@@ -472,8 +474,9 @@ export default function VerMapa() {
     const handleCreateQuadra = async (e) => {
         if (e?.preventDefault) e.preventDefault();
 
-        const cemeteryId = Number(selectedCemeteryId);
-        if (!Number.isInteger(cemeteryId) || cemeteryId <= 0) {
+        const cemeteryId = selectedCemeteryId;
+        if (cemeteryId == null || cemeteryId === "") {
+            console.error("selectedCemeteryId:", selectedCemeteryId);
             showError("Selecione um cemitério antes de criar a quadra.");
             return;
         }
@@ -655,8 +658,8 @@ export default function VerMapa() {
             return;
         }
 
-        const parsedBlockId = Number(quadra);
-        if (!Number.isInteger(parsedBlockId) || parsedBlockId <= 0) {
+        const parsedBlockId = String(quadra).trim();
+        if (!parsedBlockId) {
             showError("Quadra inválida");
             return;
         }
@@ -729,7 +732,7 @@ export default function VerMapa() {
 
             const normalizedCovasData = gravesData.map((grave) => ({
                 id: grave?.id,
-                quadra_cova: String(Number(mapHelpers.resolveBlockId(grave?.blockId ?? grave?.block)) || 0),
+                quadra_cova: String(mapHelpers.resolveBlockId(grave?.blockId ?? grave?.block) || ""),
                 num_cova: grave?.number ?? "",
                 tipo_cova: String(grave?.graveType || "").toUpperCase() === "MAUSOLEUM" ? "gaveta" : "cova",
                 capacidade: grave?.bodyCapacity === null || grave?.bodyCapacity === undefined ? "" : Number(grave.bodyCapacity),
@@ -803,8 +806,8 @@ export default function VerMapa() {
                         }
                     }
 
-                    const qid = Number(sep.quadra_sep ?? sep.quadra);
-                    if (!Number.isNaN(qid)) setSelectedQuadraId(qid);
+                    const qid = sep.quadra_sep ?? sep.quadra;
+                    if (qid != null && qid !== "") setSelectedQuadraId(qid);
 
                     setSelectedCova({
                         id: sep.id,
@@ -856,7 +859,8 @@ export default function VerMapa() {
         const onConfirmado = (ev) => {
             const detail = ev?.detail;
             if (!detail) return;
-            if (String(detail.type).toLowerCase().includes("exum")) {
+            const type = String(detail.type || "").toLowerCase();
+            if (type.includes("sepult") || type.includes("exum")) {
                 const exId = detail.id;
                 setExumacoesPending(prev => {
                     const clone = { ...prev };
@@ -1510,7 +1514,7 @@ export default function VerMapa() {
                 {exumacoesModalIsOpen && exumacoesForm && (
                     <ModalOverlay>
                         <ModalSurface as="form" onSubmit={submitExumacao} $width="520px">
-                            <ModalTitle>Iniciar exumacao</ModalTitle>
+                            <ModalTitle>Iniciar exumação</ModalTitle>
                             <ModalGrid>
                                 <div>
                                     <Label>Quadra</Label>

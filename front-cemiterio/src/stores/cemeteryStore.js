@@ -42,12 +42,8 @@ export const useCemeteryStore = create(
             },
 
             setSelectedCemeteryId: (selectedCemeteryId) => {
-                const normalizedId =
-                    selectedCemeteryId == null || selectedCemeteryId === ""
-                        ? null
-                        : Number(selectedCemeteryId);
-
-                set({ selectedCemeteryId: Number.isNaN(normalizedId) ? null : normalizedId });
+                const normalizedId = selectedCemeteryId == null || selectedCemeteryId === "" ? null : selectedCemeteryId;
+                set({ selectedCemeteryId: normalizedId });
             },
         }),
         {

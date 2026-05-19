@@ -1,6 +1,47 @@
 import { useEffect, useState } from "react";
 import api from "../../services/index.js";
 
+const normalizeQuadra = (quadra) => ({
+  ...quadra,
+  id: quadra?.id,
+  num_quadra: quadra?.num_quadra ?? quadra?.number ?? "",
+  nome: quadra?.nome ?? (quadra?.number != null ? `Quadra ${quadra.number}` : `Quadra ${quadra?.id ?? ""}`),
+});
+
+const normalizeCova = (cova) => {
+  const areaType = String(cova?.areaType ?? cova?.area_type ?? "").toUpperCase();
+  const graveType = String(cova?.graveType ?? cova?.tipo_cova ?? "").toUpperCase();
+  const backendStatus = String(cova?.status ?? "").toUpperCase();
+  const blocked = Boolean(cova?.blocked);
+  const status = blocked
+    ? "indisponivel"
+    : backendStatus === "MAINTENANCE"
+      ? "indisponivel"
+      : backendStatus === "OCCUPIED"
+        ? "ocupada"
+        : areaType === "PERPETUAL"
+          ? "reservada"
+          : "disponivel";
+
+  return {
+    ...cova,
+    id: cova?.id,
+    quadra_cova: String(cova?.quadra_cova ?? cova?.blockId ?? cova?.block ?? cova?.quadra ?? cova?.quadra_sep ?? ""),
+    num_cova: cova?.num_cova ?? cova?.number ?? cova?.numero ?? cova?.num_sepultura ?? "",
+    tipo_cova:
+      cova?.tipo_cova ??
+      (graveType === "MAUSOLEUM" ? "gaveta" : "cova"),
+    capacidade: cova?.capacidade ?? cova?.bodyCapacity ?? 0,
+    status,
+    blocked,
+    areaType,
+    concessao: {
+      ...(cova?.concessao ?? {}),
+      ativa: cova?.concessao?.ativa ?? areaType === "PERPETUAL",
+    },
+  };
+};
+
 export default function useApiInitDataCad() {
   const [cidades, setCidades] = useState([]);
   const [quadras, setQuadras] = useState([]);
@@ -18,8 +59,10 @@ export default function useApiInitDataCad() {
     Promise.all([api.get("/quadras"), api.get("/covas")])
       .then(([rq, rc]) => {
         if (!mounted) return;
-        setQuadras(Array.isArray(rq.data) ? rq.data : []);
-        setCovas(Array.isArray(rc.data) ? rc.data : []);
+        const quadrasData = Array.isArray(rq.data) ? rq.data.map(normalizeQuadra) : [];
+        const covasData = Array.isArray(rc.data) ? rc.data.map(normalizeCova) : [];
+        setQuadras(quadrasData);
+        setCovas(covasData);
       })
       .catch(() => { if (mounted) { setQuadras([]); setCovas([]); } });
 

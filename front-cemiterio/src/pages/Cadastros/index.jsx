@@ -238,7 +238,7 @@ export default function Cadastros() {
                 foi_exumado: false,
             };
 
-            const rCheck = await api.get("/covas", { params: { quadra_cova: payload.quadra_sep, num_cova: payload.num_sepultura_sep } }).catch(() => null);
+            const rCheck = await api.get("/covas", { params: { blockId: payload.quadra_sep, number: payload.num_sepultura_sep } }).catch(() => null);
             const foundCheck = rCheck && Array.isArray(rCheck.data) && rCheck.data.length ? rCheck.data[0] : null;
 
             if (!foundCheck?.id) {
@@ -246,14 +246,14 @@ export default function Cadastros() {
                 return;
             }
 
-            const cap = Number(foundCheck.capacidade ?? 0);
+            const cap = Number(foundCheck.bodyCapacity ?? foundCheck.capacidade ?? 0);
             if (cap <= 0) {
-                await api.patch(`/covas/${foundCheck.id}`, { status: "lotada", capacidade: 0 }).catch(() => { });
+                await api.patch(`/covas/${foundCheck.id}`, { status: "OCCUPIED", bodyCapacity: 0 }).catch(() => { });
                 showError("A sepultura selecionada esta lotada. Escolha outra sepultura.");
                 return;
             }
 
-            const res = await api.post("/burial", payload);
+            const res = await api.post("/sepultamentos", payload);
             const created = res?.data ?? null;
             if (created) window.dispatchEvent(new CustomEvent("processoCriado", { detail: created }));
 
@@ -317,6 +317,7 @@ export default function Cadastros() {
                         {isFalecidoProcess ? (
                             <FalecidoProcess
                                 form={form}
+                                cidades={cidades}
                                 fieldErrors={fieldErrors}
                                 activeStep={activeStep}
                                 stepsDeceased={STEPS_DECEASED}

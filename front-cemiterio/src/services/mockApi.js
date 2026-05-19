@@ -10,20 +10,16 @@ const clone = (value) => {
 const database = clone(seedDb);
 
 
-const aliasMap = {
-    blocks: "quadras",
-    graves: "covas",
-};
-
-const resolveCollectionName = (name) => aliasMap[name] || name;
+const resolveCollectionName = (name) => name;
 
 for (const collectionName of [
+    "blocks",
+    "cemeteries",
     "contratos",
-    "covas",
     "exumacoes",
     "falecidos",
+    "graves",
     "pets",
-    "quadras",
     "sepultamentos",
     "velorios",
 ]) {

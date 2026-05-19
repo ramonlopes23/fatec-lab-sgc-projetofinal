@@ -1,0 +1,95 @@
+@startuml
+
+class Exumacao {
+  +id
+  +dataSolicitacao
+  +dataExecucao
+  +motivo
+  +status
+
+  +solicitarExumacao()
+  +aprovarExumacao()
+  +executarExumacao()
+  +cancelarExumacao()
+}
+
+class Falecido {
+  +id
+  +nome
+  +dataObito
+  +status
+
+  +buscarFalecido()
+  +filtrarFalecidos()
+}
+
+class Grave {
+  +id
+  +numero
+  +status
+
+  +createGrave()
+  +updateGrave()
+  +patchGraveStatus()
+  +inactivateGrave()
+  +getGrave()
+}
+
+class Block {
+  +id
+  +nome
+
+  +createBlock()
+  +updateBlock()
+  +inactivateBlock()
+  +getBlocks()
+  +loadBlocks()
+  +deactivateBlock()
+}
+
+class Cemetery {
+  +id
+  +nome
+
+  +listarCemiterios()
+  +buscarCemiterio()
+}
+
+class Responsavel {
+  +id
+  +nome
+  +cpf
+
+  +validarResponsavel()
+  +vincularContrato()
+}
+
+class Contrato {
+  +id
+  +numero
+  +status
+
+  +validarContrato()
+  +verificarStatus()
+}
+
+class Usuario {
+  +id
+  +nome
+  +cargo
+
+  +autorizarExumacao()
+  +registrarAcao()
+}
+
+Exumacao --> Falecido
+Exumacao --> Grave
+Exumacao --> Responsavel
+Exumacao --> Contrato
+Exumacao --> Usuario
+
+
+Grave --> Block
+Block --> Cemetery
+
+@enduml

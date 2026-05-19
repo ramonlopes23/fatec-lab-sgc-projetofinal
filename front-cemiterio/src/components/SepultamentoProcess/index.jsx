@@ -188,7 +188,7 @@ function SepultamentoProcess({
                                     <MenuItem value="">Selecione a quadra</MenuItem>
                                     {quadras.map((quadra) => (
                                         <MenuItem key={String(quadra.id)} value={String(quadra.id)}>
-                                            {quadra.num_quadra ? `Quadra ${quadra.num_quadra}` : quadra.nome || `Quadra ${quadra.id}`}
+                                            {`Quadra número ${quadra.num_quadra ?? quadra.number ?? quadra.nome ?? quadra.id}`}
                                         </MenuItem>
                                     ))}
                                 </Select>
@@ -209,7 +209,7 @@ function SepultamentoProcess({
                                 >
                                     <MenuItem value="">Selecione a sepultura</MenuItem>
                                     {availableCovas.map((cova) => {
-                                        const val = String(cova.num_cova ?? cova.numero ?? cova.num_sepultura ?? "");
+                                        const val = String(cova.num_cova ?? cova.number ?? cova.numero ?? cova.num_sepultura ?? "");
                                         const isReserved = String(cova.status ?? "").toLowerCase().includes("reserv");
                                         return (
                                             <MenuItem key={String(cova.id ?? `${cova.quadra_cova}-${cova.num_cova}`)} value={val}>

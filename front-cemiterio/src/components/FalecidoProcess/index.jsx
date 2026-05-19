@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useState } from "react";
+import React, { memo, useEffect, useMemo, useState } from "react";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
@@ -27,6 +27,7 @@ import { BtnAction, BtnAction2, ChevronIcon, FilePreview, InlineFeedback, Review
 
 function FalecidoProcess({
     form,
+    cidades,
     fieldErrors,
     activeStep,
     stepsDeceased,
@@ -52,6 +53,14 @@ function FalecidoProcess({
     selectSxStyle,
 }) {
     const [expandedSteps, setExpandedSteps] = useState({ 0: true, 1: false, 2: false, 3: false });
+    const selectedNaturalidade = useMemo(() => {
+        if (!form.naturalidade) return null;
+
+        return (cidades || []).find((cidade) => {
+            const cidadeLabel = `${cidade.nome} - ${cidade?.microrregiao?.mesorregiao?.UF?.sigla || ""}`;
+            return cidadeLabel === form.naturalidade;
+        }) || null;
+    }, [cidades, form.naturalidade]);
 
     const toggleStepExpanded = (stepIndex) => {
         setExpandedSteps((prev) => ({
@@ -229,19 +238,27 @@ function FalecidoProcess({
                         <Grid size={{ xs: 12, md: 4 }}>
                             <Autocomplete
                                 fullWidth
+                                value={selectedNaturalidade}
                                 options={resultados}
                                 getOptionLabel={(option) => `${option.nome} - ${option?.microrregiao?.mesorregiao?.UF?.sigla || ""}`}
-                                inputValue={busca}
-                                onInputChange={(_, newInputValue) => {
-                                    updateFieldByName("naturalidade", newInputValue);
-                                    setBusca(newInputValue);
-                                    validateFieldOnChange("naturalidade", newInputValue);
+                                onInputChange={(_, newInputValue, reason) => {
+                                    if (reason === "input") {
+                                        setBusca(newInputValue);
+                                    }
+
+                                    if (reason === "clear") {
+                                        setBusca("");
+                                        updateFieldByName("naturalidade", "");
+                                        validateFieldOnChange("naturalidade", "");
+                                    }
                                 }}
                                 onChange={(_, newValue) => {
                                     const displayValue = newValue ? `${newValue.nome} - ${newValue?.microrregiao?.mesorregiao?.UF?.sigla || ""}` : "";
                                     updateFieldByName("naturalidade", displayValue);
+                                    setBusca(newValue ? newValue.nome : "");
                                     validateFieldOnChange("naturalidade", displayValue);
                                 }}
+                                isOptionEqualToValue={(option, value) => option?.nome === value?.nome && option?.microrregiao?.mesorregiao?.UF?.sigla === value?.microrregiao?.mesorregiao?.UF?.sigla}
                                 renderInput={(params) => (
                                     <TextField {...params} label="Naturalidade" placeholder="Digite a naturalidade do falecido" error={!!fieldErrors.naturalidade} helperText={fieldErrors.naturalidade} sx={fieldSxStyle} slotProps={{ inputLabel: { sx: labelSxStyle } }} />
                                 )}
