@@ -235,6 +235,12 @@ export const BtnClose = styled.button`
   font-weight: 600;
   box-shadow: 0 6px 16px rgba(15,13,58,0.18);
   &:hover { opacity: 0.7; transform: translateY(-1px); }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
+  }
 `;
 
 export const LegendButton = styled.button`
@@ -339,8 +345,9 @@ const baseInput = `
 
 export const Input = styled.input`
   ${baseInput}
+  border-color: ${({ $invalid }) => ($invalid ? "#b42318" : "#d6d9e6")};
   &:focus {
-    border-color: #7b63ff;
+    border-color: ${({ $invalid }) => ($invalid ? "#b42318" : "#7b63ff")};
     box-shadow: 0 2px 8px rgba(123,99,255,0.08);
   }
 `;
@@ -352,14 +359,23 @@ export const Label = styled.label`
 
 export const Textarea = styled.textarea`
   ${baseInput}
+  border-color: ${({ $invalid }) => ($invalid ? "#b42318" : "#d6d9e6")};
   min-height: 82px;
   border-radius: 12px;
   resize: vertical;
   padding-top: 10px;
   &:focus {
-    border-color: #191970;
+    border-color: ${({ $invalid }) => ($invalid ? "#b42318" : "#191970")};
     box-shadow: 0 2px 8px rgba(123,99,255,0.08);
   }
+`;
+
+export const FieldErrorText = styled.small`
+  display: block;
+  margin: 5px 0 0 5px;
+  color: #b42318;
+  font-size: 12px;
+  line-height: 1.35;
 `;
 
 export const FormStyled = styled.form`
@@ -495,6 +511,11 @@ export const DrawerCloseButton = styled.button`
 
   &:hover {
     background: #e2e7ff;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
   }
 `;
 
@@ -826,6 +847,7 @@ export const ModalGridFull = styled.div`
 
 export const SelectMedium = styled(SmallSelect)`
   width: 200px;
+  border-color: ${({ $invalid }) => ($invalid ? "#b42318" : "#d6d9e6")};
 `;
 
 export const SelectSmall = styled(SmallSelect)`

@@ -20,7 +20,9 @@ for (const collectionName of [
     "falecidos",
     "graves",
     "pets",
+    "ossarios",
     "sepultamentos",
+    "taxas",
     "velorios",
 ]) {
     if (!Array.isArray(database[collectionName])) {

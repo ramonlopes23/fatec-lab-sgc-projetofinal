@@ -24,6 +24,8 @@ import {
     TAXA_LABEL,
     TAXA_MAP,
 } from "./constants";
+import useTaxas from "../../hooks/Taxas/useTaxas";
+import { findTaxaByCodigo } from "../../utils/taxas";
 import useLocalStorage from "../../hooks/LocalStorage/useLocalStorage";
 import useViacepLookup from "../../hooks/ViaCepLookup/useViacepLookup";
 import useAvailableCovas from "../../hooks/AvailableCovas/useAvailableCovas";
@@ -77,6 +79,7 @@ export default function Cadastros() {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const { busca, setBusca, resultados } = useCidadeBusca(cidades);
     const { searchFal, setSearchFal, filteredFalecidos } = useFalecidoSearch(falecidos, processType, saved, setForm);
+    const { taxas, taxaOptions } = useTaxas({ onlyActive: true });
     const { fieldErrors, validateFieldOnChange, validateBeforeSubmit, clearAllErrors, clearErrorsExcept } = useFormValidation(form, processType, isIndigente, searchFal);
     const { handleFileChange } = useFileUpload(setForm);
     const { clearFalecido, clearSepultamento, resetToSepultamento } = useFormClear({
@@ -176,9 +179,11 @@ export default function Cadastros() {
         validateFieldOnChange(name, maskedValue);
 
         if (name === "taxa") {
-            updateFieldByName("taxa_valor", TAXA_MAP[maskedValue] ?? 0);
+            const selectedTaxa = findTaxaByCodigo(taxas, maskedValue);
+            updateFieldByName("taxa_valor", selectedTaxa?.valor ?? TAXA_MAP[maskedValue] ?? 0);
+            updateFieldByName("taxa_id", selectedTaxa?.id ?? "");
         }
-    }, [updateFieldByName, validateFieldOnChange]);
+    }, [taxas, updateFieldByName, validateFieldOnChange]);
 
     const handleSelectFalecido = (val) => {
         const raw = val === undefined || val === null ? "" : String(val).trim();
@@ -229,12 +234,14 @@ export default function Cadastros() {
                 return;
             }
 
+            const selectedTaxa = findTaxaByCodigo(taxas, form.taxa);
             const payload = {
                 ...form,
                 nome: searchFal || form.nome_sep || form.nome_fal,
                 nome_sep: form.nome_sep || searchFal || form.nome_fal,
-                taxa_valor: Number(form.taxa_valor ?? TAXA_MAP[form.taxa] ?? 0),
-                taxa_label: TAXA_LABEL[form.taxa] ?? "",
+                taxa_id: selectedTaxa?.id ?? form.taxa_id ?? "",
+                taxa_valor: Number(selectedTaxa?.valor ?? form.taxa_valor ?? TAXA_MAP[form.taxa] ?? 0),
+                taxa_label: selectedTaxa?.label ?? TAXA_LABEL[form.taxa] ?? "",
                 foi_exumado: false,
             };
 
@@ -362,6 +369,7 @@ export default function Cadastros() {
                                 tipoCovaSelecionada={tipoCovaSelecionada}
                                 handleClearSepultamento={clearSepultamento}
                                 validateFieldOnChange={validateFieldOnChange}
+                                taxaOptions={taxaOptions}
                                 fieldSxStyle={fieldSxStyle}
                                 labelSxStyle={labelSxStyle}
                                 selectSxStyle={selectSxStyle}

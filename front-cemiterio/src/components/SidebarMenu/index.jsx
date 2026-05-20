@@ -4,7 +4,11 @@ import { BsGrid3X3GapFill } from "react-icons/bs";
 import { GiGraveFlowers } from "react-icons/gi";
 import { PiFlowerTulip } from "react-icons/pi";
 import { AiFillFolderAdd } from "react-icons/ai";
+import { FaHouse } from "react-icons/fa6";
+import { RiArchiveDrawerFill } from "react-icons/ri";
 import { LuCalendarSearch, LuFileStack, LuChevronDown } from "react-icons/lu";
+import { FaCross, FaMoneyBillWave } from "react-icons/fa";
+
 import sgclogo1 from "../../assets/SGCv2.png";
 import {
     GlobalStyle,
@@ -30,11 +34,21 @@ export default function SidebarMenu() {
             icon: <AiFillFolderAdd size={20} />,
             path: "/cadastros",
             children: [
-                { name: "FALECIDO", icon: <PiFlowerTulip size={20}/> , path: "/cadastros/falecido" },
-                { name: "SEPULTAMENTO", icon: <GiGraveFlowers size={20}/>, path: "/cadastros/sepultamento" },
+                { name: "FALECIDO", icon: <PiFlowerTulip size={20} />, path: "/cadastros/falecido" },
+                { name: "SEPULTAMENTO", icon: <FaCross size={20} />, path: "/cadastros/sepultamento" },
+                { name: "TAXAS", icon: <FaMoneyBillWave size={20} />, path: "/cadastros/taxas" },
             ],
         },
-        { name: "SEPULTURAS", icon: <BsGrid3X3GapFill size={20} />, path: "/vermapa" },
+        {
+            name: "SEPULTURAS",
+            icon: <GiGraveFlowers size={20} />,
+            path: "/sepulturas",
+            children: [
+                { name: "MAPA", icon: <BsGrid3X3GapFill size={20} />, path: "/vermapa" },
+                { name: "CEMITÉRIO", icon: <FaHouse size={20} />, path: "/sepulturas/cemiterio" },
+                { name: "OSSÁRIO", icon: <RiArchiveDrawerFill size={20} />, path: "/sepulturas/ossario" },
+            ],
+        },
         { name: "CALENDÁRIO", icon: <LuCalendarSearch size={20} />, path: "/calendario" },
         { name: "REGISTROS GERAIS", icon: <LuFileStack size={20} />, path: "/processselection" },
     ];

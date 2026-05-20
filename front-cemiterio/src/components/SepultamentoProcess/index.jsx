@@ -45,6 +45,7 @@ function SepultamentoProcess({
     tipoCovaSelecionada,
     handleClearSepultamento,
     validateFieldOnChange,
+    taxaOptions,
     fieldSxStyle,
     labelSxStyle,
     selectSxStyle,
@@ -231,12 +232,11 @@ function SepultamentoProcess({
                                 <InputLabel sx={labelSxStyle}>Taxa de sepultamento</InputLabel>
                                 <Select label="Taxa de sepultamento" name="taxa" value={form.taxa} onChange={handleChange} disabled={isSubmitting} sx={selectSxStyle}>
                                     <MenuItem value="">Selecione o tipo de taxa</MenuItem>
-                                    <MenuItem value="crianca">CRIANÇA - R$56,12</MenuItem>
-                                    <MenuItem value="crianca_fora">CRIANÇA (FORA DO MUNICÍPIO) - R$224,54</MenuItem>
-                                    <MenuItem value="adulto_terra">ADULTO (TERRA) - R$112,27</MenuItem>
-                                    <MenuItem value="adulto_fora">ADULTO (FORA DO MUNICÍPIO) - R$430,42</MenuItem>
-                                    <MenuItem value="adulto_laje">ADULTO LAJE - R$280,71</MenuItem>
-                                    <MenuItem value="indigente">ISENÇÃO POR INDIGÊNCIA</MenuItem>
+                                    {(taxaOptions || []).map((taxa) => (
+                                        <MenuItem key={String(taxa.id ?? taxa.codigo)} value={taxa.codigo}>
+                                            {taxa.label}
+                                        </MenuItem>
+                                    ))}
                                 </Select>
                                 {fieldErrors.taxa && <FormHelperText>{fieldErrors.taxa}</FormHelperText>}
                             </FormControl>

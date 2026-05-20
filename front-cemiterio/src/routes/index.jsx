@@ -8,6 +8,9 @@ import VerMapa from "../pages/VerMapa";
 import Calendario from "../pages/Calendario";
 import Relatorios from "../pages/Relatorios";
 import Contratos from "../pages/Contratos";
+import Cemiterios from "../pages/Cemiterios";
+import Ossarios from "../pages/Ossarios";
+import Taxas from "../pages/Taxas";
 import ProcessSelection from "../pages/ProcessSelection";
 import NotFound from "../pages/NotFound";
 import Login from "../pages/Login";
@@ -43,6 +46,10 @@ export default function AppRoutes() {
                 <Route path='/cadastros' element={<Navigate to="/cadastros/falecido" replace />} />
                 <Route path='/cadastros/falecido' element={<Cadastros />} />
                 <Route path='/cadastros/sepultamento' element={<Cadastros />} />
+                <Route path='/cadastros/taxas' element={<Taxas />} />
+                <Route path='/sepulturas' element={<Navigate to="/sepulturas/cemiterio" replace />} />
+                <Route path='/sepulturas/cemiterio' element={<Cemiterios />} />
+                <Route path='/sepulturas/ossario' element={<Ossarios />} />
                 <Route path='/registros' element={<Registros />} />
                 <Route path='/vermapa' element={<VerMapa />} />
                 <Route path='/processselection' element={<ProcessSelection />} />

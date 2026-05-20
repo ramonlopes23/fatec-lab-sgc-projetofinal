@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useBlocks } from "../../hooks/Blocks/useBlocks";
 import { useCreateBlocks } from "../../hooks/Blocks/useCreateBlocks.js";
 import { useCreateGraves } from "../../hooks/Graves/useCreateGraves";
-import { useCreateCemetery } from "../../hooks/Cemetery/useCreateCemetery.js";
 import { useCemeteryStore } from "../../stores/cemeteryStore.js";
 import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx"
 import api from "../../services/index.js";
@@ -19,9 +18,7 @@ import { PiFlowerTulipLight, PiFlowerTulipBold } from "react-icons/pi";
 import { formatDateTimeKey } from "../../utils/date";
 import {
     BtnAction,
-    QuadraDropdown,
     QuadraDropdownWrapper,
-    QuadraSelectButton,
     Container,
     CovaGrid,
     CovaItem,
@@ -39,7 +36,6 @@ import {
     BtnAdd,
     BtnActionCancel,
     BtnClose,
-    BtnPrimaryClose,
     Input,
     Label,
     ModalOverlay,
@@ -74,16 +70,12 @@ import {
     ToolbarLabel,
     DropdownIcon,
     LegendActions,
-    CemeteryForm,
-    CompactField,
-    InlineCheckLabel,
-    CompactButton,
-    CompactCancelButton,
     ModalSurface,
     ModalTitle,
     ModalActions,
     ModalGrid,
     ModalGridFull,
+    FieldErrorText,
     SelectMedium,
     SelectSmall,
     InputTiny,
@@ -97,13 +89,54 @@ import {
     ChartArea,
     ChartLegend,
     ToggleStatusRow,
-    ToggleStatusText
+    ToggleStatusText,
+    QuadraSelectButton,
+    QuadraDropdown,
 } from "./styles";
 
 import * as mapHelpers from "../../utils/mapHelpers";
 
+const EXUMACAO_REQUIRED_FIELDS = {
+    motivo: "Motivo",
+    destino: "Destino",
+    coveiro: "Coveiro",
+};
+
+const isBlank = (value) => value === undefined || value === null || String(value).trim() === "";
+
+const getExumacaoValidationErrors = (form) => {
+    const errors = {};
+
+    if (!form?.sepultamentoId) {
+        errors.sepultamentoId = "Sepultamento inválido para iniciar a exumação.";
+    }
+
+    Object.entries(EXUMACAO_REQUIRED_FIELDS).forEach(([field, label]) => {
+        if (isBlank(form?.[field])) {
+            errors[field] = `${label} é obrigatório.`;
+        }
+    });
+
+    return errors;
+};
+
+const getExumacaoSubmitErrorMessage = (err) => {
+    const status = err?.response?.status;
+    const data = err?.response?.data;
+    const backendMessage = data?.message || data?.error || data?.detail;
+
+    if (backendMessage) return backendMessage;
+    if (status === 400) return "Revise os dados informados para cadastrar a exumação.";
+    if (status === 401 || status === 403) return "Você não tem permissão para cadastrar exumação.";
+    if (status === 404) return "Sepultamento ou destino não encontrado.";
+    if (status === 409) return "Já existe uma exumação pendente para este registro.";
+    if (status >= 500) return "Servidor indisponível ao cadastrar exumação. Tente novamente em instantes.";
+    if (err?.message) return err.message;
+    return "Erro ao cadastrar exumação.";
+};
+
 export default function VerMapa() {
-    const { selectedCemeteryId, loadCemeteries, setSelectedCemeteryId } = useCemeteryStore();
+    const { selectedCemeteryId, loadCemeteries } = useCemeteryStore();
 
     const FIXED_CEMETERY_ID = 1;
 
@@ -129,20 +162,13 @@ export default function VerMapa() {
 
     const { handleCreateGrave, loading: creatingGrave } = useCreateGraves();
 
-    const { handleCreateCemetery, loading: creatingCemetery } = useCreateCemetery();
-
-    const [formCemetery, setFormCemetery] = useState({
-        name: "",
-        foundation: "",
-        active: true,
-    })
-
     const [formQuadra, setFormQuadra] = useState({
         num_quadra: "",
         descricao: "",
     });
 
     const [covasData, setCovasData] = useState([]);
+    const [ossariosAll, setOssariosAll] = useState([]);
     const [petsAll, setPetsAll] = useState([]);
     const [isMapLoading, setIsMapLoading] = useState(true);
     const [sepultamentosAll, setSepultamentosAll] = useState([]);
@@ -160,6 +186,8 @@ export default function VerMapa() {
     const [modalExpandedIndex, setModalExpandedIndex] = useState(null);
     const [exumacoesPending, setExumacoesPending] = useState({});
     const [exumacoesModalIsOpen, setExumacoesModalIsOpen] = useState(false);
+    const [exumacoesErrors, setExumacoesErrors] = useState({});
+    const [isSubmittingExumacao, setIsSubmittingExumacao] = useState(false);
     const [exumacoesForm, setExumacoesForm] = useState({
         sepultamentoId: null,
         nome_sep: "",
@@ -236,6 +264,7 @@ export default function VerMapa() {
         const key = String(sep.id);
         if (exumacoesPending[key]) {
             showError("Já existe uma exumação para esse registro");
+            return;
         }
 
         const sepQuadraKey = sep.quadra_sep ?? sep.quadra ?? (selectedCova?.cova?.quadra_cova ?? selectedCova?.quadra_cova) ?? selectedQuadraId ?? "";
@@ -262,12 +291,24 @@ export default function VerMapa() {
             confirmacao: false,
             origem: "frontend"
         })
+        setExumacoesErrors({});
         setExumacoesModalIsOpen(true);
     }
 
 
     const handleExumacaoField = (name, value) => {
         setExumacoesForm(prev => ({ ...prev, [name]: value }));
+        setExumacoesErrors(prev => {
+            if (!prev[name]) return prev;
+            const next = { ...prev };
+            delete next[name];
+            return next;
+        });
+    }
+
+    const closeExumacaoForm = () => {
+        setExumacoesModalIsOpen(false);
+        setExumacoesErrors({});
     }
 
     const submitExumacao = async (e) => {
@@ -277,11 +318,27 @@ export default function VerMapa() {
         const key = String(exumacoesForm.sepultamentoId)
         if (exumacoesPending[key]) return showError("Já existe uma exumação pendente para este registro.");
 
+        const validationErrors = getExumacaoValidationErrors(exumacoesForm);
+        if (Object.keys(validationErrors).length > 0) {
+            setExumacoesErrors(validationErrors);
+            showError("Preencha os campos obrigatórios da exumação.");
+            return;
+        }
+
         try {
-            const payload = { ...exumacoesForm, status: "pendente", confirmado: false };
+            setIsSubmittingExumacao(true);
+            const payload = {
+                ...exumacoesForm,
+                motivo: String(exumacoesForm.motivo || "").trim(),
+                destino: String(exumacoesForm.destino || "").trim(),
+                coveiro: String(exumacoesForm.coveiro || "").trim(),
+                obs_exu: String(exumacoesForm.obs_exu || "").trim(),
+                status: "pendente",
+                confirmado: false
+            };
             const res = await api.post("/exumacoes", payload);
             const created = res?.data ?? null;
-            if (!created) throw new Error("Resposta inválida do servidot ao criar exumação");
+            if (!created) throw new Error("Resposta inválida do servidor ao criar exumação");
 
 
             setExumacoesPending(prev => ({ ...prev, [key]: created }));
@@ -293,11 +350,13 @@ export default function VerMapa() {
                 console.warn("Erro ao dispatch processoCriado", evErr);
             };
 
-            setExumacoesModalIsOpen(false);
+            closeExumacaoForm();
             showSuccess("Exumação cadastrada e aguardando confirmação. ");
         } catch (err) {
             console.error("Erro ao enviar exumação", err);
-            showError("Erro ao cadastrar exumação" + (err?.message || ""));
+            showError(getExumacaoSubmitErrorMessage(err));
+        } finally {
+            setIsSubmittingExumacao(false);
         }
     }
 
@@ -429,46 +488,6 @@ export default function VerMapa() {
         const { name, value, type, checked } = e.target;
         const incoming = type === "checkbox" ? checked : value;
         updateFieldByName(name, incoming);
-    };
-
-    const handleCemeteryChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        const incoming = type === "checkbox" ? checked : value;
-        setFormCemetery((prev) => ({ ...prev, [name]: incoming }));
-    };
-
-    const handleCreateCemeterySubmit = async (e) => {
-        if (e?.preventDefault) e.preventDefault();
-
-        const name = String(formCemetery.name || "").trim();
-        const foundation = String(formCemetery.foundation || "").trim();
-        const active = Boolean(formCemetery.active);
-
-        if (!name) {
-            showError("Informe o nome do cemitério.");
-            return;
-        }
-
-        if (!foundation) {
-            showError("Informe a data de fundação.");
-            return;
-        }
-
-        try {
-            const created = await handleCreateCemetery({ name, foundation, active });
-            if (created?.id != null) {
-                setSelectedCemeteryId(created.id);
-            }
-            await loadCemeteries().catch(() => { });
-            showSuccess("Cemitério criado com sucesso.");
-            setFormCemetery({
-                name: "",
-                foundation: "",
-                active: true,
-            });
-        } catch (err) {
-            showError(err?.message || "Erro ao criar cemitério.");
-        }
     };
 
     const handleCreateQuadra = async (e) => {
@@ -745,10 +764,11 @@ export default function VerMapa() {
 
             setCovasData(normalizedCovasData);
 
-            const [rSep, rExu, rPets] = await Promise.allSettled([
+            const [rSep, rExu, rPets, rOss] = await Promise.allSettled([
                 api.get("/sepultamentos"),
                 api.get("/exumacoes"),
                 api.get("/pets"),
+                api.get("/ossarios"),
             ]);
 
             const sepData =
@@ -763,9 +783,14 @@ export default function VerMapa() {
                 rPets.status === "fulfilled" && Array.isArray(rPets.value?.data)
                     ? rPets.value.data
                     : [];
+            const ossariosData =
+                rOss.status === "fulfilled" && Array.isArray(rOss.value?.data)
+                    ? rOss.value.data
+                    : [];
 
             setSepultamentosAll(sepData);
             setPetsAll(petsData);
+            setOssariosAll(ossariosData);
 
             const pendingMap = {};
             exuData.forEach((ex) => {
@@ -1134,44 +1159,6 @@ export default function VerMapa() {
 
                 </LegendRow>
 
-                <CemeteryForm onSubmit={handleCreateCemeterySubmit}>
-                    <CompactField $minWidth="220px">
-                        <Label>Nome do cemitério</Label>
-                        <Input
-                            name="name"
-                            value={formCemetery.name}
-                            onChange={handleCemeteryChange}
-                            placeholder="Ex.: Cemitério do Cambiri"
-                        />
-                    </CompactField>
-
-                    <CompactField $minWidth="180px">
-                        <Label>Data de fundação</Label>
-                        <Input
-                            type="date"
-                            name="foundation"
-                            value={formCemetery.foundation}
-                            onChange={handleCemeteryChange}
-                        />
-                    </CompactField>
-
-                    <CompactField>
-                        <InlineCheckLabel>
-                            Ativo?
-                            <input
-                                type="checkbox"
-                                name="active"
-                                checked={!!formCemetery.active}
-                                onChange={handleCemeteryChange}
-                            />
-                        </InlineCheckLabel>
-                    </CompactField>
-
-                    <CompactButton type="submit" disabled={creatingCemetery}>
-                        {creatingCemetery ? "Salvando..." : "Salvar cemitério"}
-                    </CompactButton>
-                </CemeteryForm>
-
                 {isPieChartOpen && (
                     <ModalOverlay onMouseDown={(e) => {
                         if (e.target === e.currentTarget) setIsPieChartOpen(false);
@@ -1485,7 +1472,7 @@ export default function VerMapa() {
                                                                         {exumacoesPending[String(s.id)] ? (
                                                                             <BtnDanger type="button" onClick={() => cancelExumacao(s)}>Cancelar exumação</BtnDanger>
                                                                         ) : (
-                                                                            <BtnAdd type="button" onClick={() => { openExumacaoForm(s); closeCovaDrawer(); }}>Iniciar exumação</BtnAdd>
+                                                                            <BtnAdd type="button" onClick={() => openExumacaoForm(s)}>Iniciar exumação</BtnAdd>
                                                                         )}
                                                                     </SepDetailPanel>
                                                                 ) : null}
@@ -1512,61 +1499,96 @@ export default function VerMapa() {
                 )}
 
                 {exumacoesModalIsOpen && exumacoesForm && (
-                    <ModalOverlay>
-                        <ModalSurface as="form" onSubmit={submitExumacao} $width="520px">
-                            <ModalTitle>Iniciar exumação</ModalTitle>
-                            <ModalGrid>
-                                <div>
-                                    <Label>Quadra</Label>
-                                    <Input readOnly value={exumacoesForm.quadra_sep || ""} />
-                                </div>
+                    <DrawerOverlay style={{ zIndex: 1300 }}>
+                        <CovaDrawer style={{ width: "min(520px, 100vw)" }}>
+                            <DrawerHeader>
+                                <DrawerTitle>
+                                    <strong>Iniciar exumação</strong>
+                                    <span>{`Quadra ${exumacoesForm.quadra_sep || "-"} · Sepultura ${exumacoesForm.num_sepultura_sep || "-"}`}</span>
+                                </DrawerTitle>
+                                <DrawerCloseButton type="button" onClick={closeExumacaoForm} disabled={isSubmittingExumacao}>
+                                    Fechar
+                                </DrawerCloseButton>
+                            </DrawerHeader>
 
-                                <div>
-                                    <Label>Sepultura</Label>
-                                    <Input readOnly value={exumacoesForm.num_sepultura_sep || ""} />
-                                </div>
+                            <DrawerBody>
+                                <DrawerSection>
+                                    <DrawerSectionTitle>Dados da exumação</DrawerSectionTitle>
+                                    <ModalGrid>
+                                        <div>
+                                            <Label>Quadra</Label>
+                                            <Input readOnly value={exumacoesForm.quadra_sep || ""} />
+                                        </div>
 
-                                <ModalGridFull>
-                                    <Label>Nome do sepultado</Label>
-                                    <Input readOnly value={exumacoesForm.nome_sep || ""} />
-                                </ModalGridFull>
+                                        <div>
+                                            <Label>Sepultura</Label>
+                                            <Input readOnly value={exumacoesForm.num_sepultura_sep || ""} />
+                                        </div>
 
-                                <div>
-                                    <Label>Data e hora</Label>
-                                    <Input type="datetime-local" value={exumacoesForm.dh_exu || ""} onChange={(ev) => handleExumacaoField("dh_exu", ev.target.value)} />
-                                </div>
+                                        <ModalGridFull>
+                                            <Label>Nome do sepultado</Label>
+                                            <Input readOnly value={exumacoesForm.nome_sep || ""} />
+                                        </ModalGridFull>
 
-                                <div>
-                                    <Label>Motivo</Label>
-                                    <Input value={exumacoesForm.motivo || ""} onChange={(ev) => handleExumacaoField("motivo", ev.target.value)} />
-                                </div>
+                                        <div>
+                                            <Label>Data e hora</Label>
+                                            <Input type="datetime-local" value={exumacoesForm.dh_exu || ""} onChange={(ev) => handleExumacaoField("dh_exu", ev.target.value)} />
+                                        </div>
 
-                                <div>
-                                    <Label>Destino</Label>
-                                    <Input value={exumacoesForm.destino || ""} onChange={(ev) => handleExumacaoField("destino", ev.target.value)} />
-                                </div>
+                                        <div>
+                                            <Label>Motivo</Label>
+                                            <Input
+                                                value={exumacoesForm.motivo || ""}
+                                                onChange={(ev) => handleExumacaoField("motivo", ev.target.value)}
+                                                $invalid={!!exumacoesErrors.motivo}
+                                                aria-invalid={!!exumacoesErrors.motivo}
+                                            />
+                                            {exumacoesErrors.motivo && <FieldErrorText>{exumacoesErrors.motivo}</FieldErrorText>}
+                                        </div>
 
-                                <div>
-                                    <Label>Coveiro</Label>
-                                    <Input value={exumacoesForm.coveiro || ""} onChange={(ev) => handleExumacaoField("coveiro", ev.target.value)} />
-                                </div>
+                                        <div>
+                                            <Label>Destino</Label>
+                                            <SelectMedium
+                                                value={exumacoesForm.destino || ""}
+                                                onChange={(ev) => handleExumacaoField("destino", ev.target.value)}
+                                                $invalid={!!exumacoesErrors.destino}
+                                                aria-invalid={!!exumacoesErrors.destino}
+                                            >
+                                                <option value="">Selecione o ossário</option>
+                                                {ossariosAll.map((ossario) => (
+                                                    <option key={String(ossario.id)} value={String(ossario.numero ?? ossario.id ?? "")}>{`Ossário ${ossario.numero ?? ossario.id} - ${String(ossario.tipo || "-").replace(/_/g, " ")} - ${String(ossario.status || "-")}`}</option>
+                                                ))}
+                                            </SelectMedium>
+                                            {exumacoesErrors.destino && <FieldErrorText>{exumacoesErrors.destino}</FieldErrorText>}
+                                        </div>
 
-                                <div>
-                                    <Label>Observações</Label>
-                                    <Textarea value={exumacoesForm.obs_exu || ""} onChange={(ev) => handleExumacaoField("obs_exu", ev.target.value)} />
-                                </div>
-                            </ModalGrid>
+                                        <div>
+                                            <Label>Coveiro</Label>
+                                            <Input
+                                                value={exumacoesForm.coveiro || ""}
+                                                onChange={(ev) => handleExumacaoField("coveiro", ev.target.value)}
+                                                $invalid={!!exumacoesErrors.coveiro}
+                                                aria-invalid={!!exumacoesErrors.coveiro}
+                                            />
+                                            {exumacoesErrors.coveiro && <FieldErrorText>{exumacoesErrors.coveiro}</FieldErrorText>}
+                                        </div>
 
+                                        <ModalGridFull>
+                                            <Label>Observações</Label>
+                                            <Textarea value={exumacoesForm.obs_exu || ""} onChange={(ev) => handleExumacaoField("obs_exu", ev.target.value)} />
+                                        </ModalGridFull>
+                                    </ModalGrid>
+                                </DrawerSection>
 
-                            <ModalActions>
-                                <BtnClose type="button" onClick={() => setExumacoesModalIsOpen(false)}>Cancelar</BtnClose>
-                                <BtnAdd type="submit">Confirmar</BtnAdd>
-                            </ModalActions>
-
-                        </ModalSurface>
-                    </ModalOverlay>
-
-
+                                <ModalActions>
+                                    <BtnClose type="button" onClick={closeExumacaoForm} disabled={isSubmittingExumacao}>Voltar</BtnClose>
+                                    <BtnAdd type="submit" onClick={submitExumacao} disabled={isSubmittingExumacao}>
+                                        {isSubmittingExumacao ? "Enviando..." : "Confirmar"}
+                                    </BtnAdd>
+                                </ModalActions>
+                            </DrawerBody>
+                        </CovaDrawer>
+                    </DrawerOverlay>
                 )}
 
             </Container >
