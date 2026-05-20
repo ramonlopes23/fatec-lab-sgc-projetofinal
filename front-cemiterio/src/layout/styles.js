@@ -40,6 +40,8 @@ export const SidebarContainer = styled.div`
   flex-direction:column;
   border-right: 0.5px solid var(--app-border);
   position:fixed;
+  top:0;
+  left:0;
   transform:${({isOpen})=> (isOpen ?"translate(0)":"translate(-100%)")};
   transition:transform 0.3s ease;
   z-index:1000;

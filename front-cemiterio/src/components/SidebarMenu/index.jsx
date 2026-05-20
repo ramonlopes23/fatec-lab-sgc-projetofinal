@@ -9,13 +9,14 @@ import { RiArchiveDrawerFill } from "react-icons/ri";
 import { LuCalendarSearch, LuFileStack, LuChevronDown } from "react-icons/lu";
 import { FaCross, FaMoneyBillWave } from "react-icons/fa";
 
-import sgclogo1 from "../../assets/SGCv2.png";
+import sgclogo1 from "../../assets/logoSGCwhite.png";
 import {
     GlobalStyle,
     LogoContainer,
     LogoImage,
     NavContainer,
     NavItem,
+    NavList,
     NavTitle,
     NestedList,
     StyledNavLink,
@@ -66,11 +67,11 @@ export default function SidebarMenu() {
             <GlobalStyle />
             <LogoContainer>
                 <LogoImage src={sgclogo1} alt="Logo Memo" />
-                <Title>SISTEMA DE GERENCIAMENTO DE CEMITERIOS</Title>
+                <Title>SISTEMA DE GERENCIAMENTO DE CEMITÉRIOS</Title>
             </LogoContainer>
 
             <NavContainer>
-                <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                <NavList>
                     {menuItems.map((item) => (
                         <NavItem key={item.name}>
                             {item.children ? (
@@ -103,7 +104,7 @@ export default function SidebarMenu() {
                             )}
                         </NavItem>
                     ))}
-                </ul>
+                </NavList>
             </NavContainer>
         </>
     );
