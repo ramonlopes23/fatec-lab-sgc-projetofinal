@@ -43,29 +43,29 @@ export const INITIAL_SEPULTAMENTO_FORM = {
     coveiro_sep: "",
     obs_sep: "",
     taxa: "",
+    taxa_id: "",
     taxa_valor: 0,
     foi_exumado: false,
     falecido_id: "",
     falecido: "",
 };
 
-export const TAXA_MAP = {
-    crianca: 56.12,
-    crianca_fora: 224.54,
-    adulto_terra: 112.27,
-    adulto_fora: 430.42,
-    adulto_laje: 280.71,
-    indigente: 0,
-};
+export const DEFAULT_TAXAS = [
+    { id: "taxa-crianca", codigo: "crianca", descricao: "CRIANÇA", valor: 56.12, tipo: "sepultamento", active: true, isencao: false, vigencia_inicio: "", vigencia_fim: "" },
+    { id: "taxa-crianca-fora", codigo: "crianca_fora", descricao: "CRIANÇA (FORA DO MUNICIPIO)", valor: 224.54, tipo: "sepultamento", active: true, isencao: false, vigencia_inicio: "", vigencia_fim: "" },
+    { id: "taxa-adulto-terra", codigo: "adulto_terra", descricao: "ADULTO (TERRA)", valor: 112.27, tipo: "sepultamento", active: true, isencao: false, vigencia_inicio: "", vigencia_fim: "" },
+    { id: "taxa-adulto-fora", codigo: "adulto_fora", descricao: "ADULTO (FORA DO MUNICIPIO)", valor: 430.42, tipo: "sepultamento", active: true, isencao: false, vigencia_inicio: "", vigencia_fim: "" },
+    { id: "taxa-adulto-laje", codigo: "adulto_laje", descricao: "ADULTO LAJE", valor: 280.71, tipo: "sepultamento", active: true, isencao: false, vigencia_inicio: "", vigencia_fim: "" },
+    { id: "taxa-indigente", codigo: "indigente", descricao: "ISENÇÃO POR INDIGÊNCIA", valor: 0, tipo: "sepultamento", active: true, isencao: true, vigencia_inicio: "", vigencia_fim: "" },
+];
 
-export const TAXA_LABEL = {
-    crianca: "CRIANCA - R$56,12",
-    crianca_fora: "CRIANCA (FORA DO MUNICIPIO) - R$224,54",
-    adulto_terra: "ADULTO (TERRA) - R$112,27",
-    adulto_fora: "ADULTO (FORA DO MUNICIPIO) - R$430,42",
-    adulto_laje: "ADULTO LAJE - R$280,71",
-    indigente: "ISENCAO POR INDIGENCIA",
-};
+export const TAXA_MAP = DEFAULT_TAXAS.reduce((acc, taxa) => ({ ...acc, [taxa.codigo]: taxa.valor }), {});
+
+export const TAXA_LABEL = DEFAULT_TAXAS.reduce((acc, taxa) => {
+    const valor = Number(taxa.valor || 0);
+    const valorLabel = taxa.isencao ? "" : ` - R$${valor.toFixed(2).replace(".", ",")}`;
+    return { ...acc, [taxa.codigo]: `${taxa.descricao}${valorLabel}` };
+}, {});
 
 export const NAME_CASE_FIELDS = new Set([
     "nome_fal",
