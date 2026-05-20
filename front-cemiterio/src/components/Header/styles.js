@@ -61,7 +61,8 @@ export const MenuButton = styled.button`
 
 export const CemeterySwitcher = styled.div`
   display: flex;
-  justify-content: center;
+  justify-content: left;
+  right:100px;
   align-items: center;
   width: 100%;
   max-width: 720px;

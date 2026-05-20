@@ -44,6 +44,7 @@ import {
     Field,
     FormStyled,
     ColumnLeft,
+    Subtitle,
     ColumnRight,
     ButtonsRow,
     TwoCols,
@@ -92,6 +93,9 @@ import {
     ToggleStatusText,
     QuadraSelectButton,
     QuadraDropdown,
+    CompactCancelButton,
+    CompactButton,
+    CompactField,
 } from "./styles";
 
 import * as mapHelpers from "../../utils/mapHelpers";
@@ -1023,7 +1027,8 @@ export default function VerMapa() {
         <>
             {ToastElement}
             <Container>
-                <Title>CONTROLE DE SEPULTURAS</Title>
+                <Title>Controle de Sepulturas</Title>
+                <Subtitle>Controle e visualização das quadras e sepulturas do cemitério vigente.</Subtitle>
 
                 <LoadingOverlay open={isMapLoading} />
 

@@ -28,29 +28,30 @@ export default function SidebarMenu() {
     const [expandedItems, setExpandedItems] = useState({});
 
     const menuItems = [
-        { name: "HOME", icon: <MdDashboard size={20} />, path: "/home" },
+        { name: "Home", icon: <MdDashboard size={20} />, path: "/home" },
         {
-            name: "CADASTROS",
-            icon: <AiFillFolderAdd size={20} />,
+            name: "Sepultamento",
+            icon: <FaCross size={20} />,
             path: "/cadastros",
             children: [
-                { name: "FALECIDO", icon: <PiFlowerTulip size={20} />, path: "/cadastros/falecido" },
-                { name: "SEPULTAMENTO", icon: <FaCross size={20} />, path: "/cadastros/sepultamento" },
-                { name: "TAXAS", icon: <FaMoneyBillWave size={20} />, path: "/cadastros/taxas" },
+                { name: "Falecido", icon: <PiFlowerTulip size={20} />, path: "/cadastros/falecido" },
+                { name: "Cadastrar Sepultamento", icon: <FaCross size={20} />, path: "/cadastros/sepultamento" },
+
             ],
         },
         {
-            name: "SEPULTURAS",
+            name: "Sepulturas",
             icon: <GiGraveFlowers size={20} />,
             path: "/sepulturas",
             children: [
-                { name: "MAPA", icon: <BsGrid3X3GapFill size={20} />, path: "/vermapa" },
-                { name: "CEMITÉRIO", icon: <FaHouse size={20} />, path: "/sepulturas/cemiterio" },
-                { name: "OSSÁRIO", icon: <RiArchiveDrawerFill size={20} />, path: "/sepulturas/ossario" },
+                { name: "Mapa", icon: <BsGrid3X3GapFill size={20} />, path: "/vermapa" },
+                { name: "Cemitério", icon: <FaHouse size={20} />, path: "/sepulturas/cemiterio" },
+                { name: "Ossário", icon: <RiArchiveDrawerFill size={20} />, path: "/sepulturas/ossario" },
             ],
         },
-        { name: "CALENDÁRIO", icon: <LuCalendarSearch size={20} />, path: "/calendario" },
-        { name: "REGISTROS GERAIS", icon: <LuFileStack size={20} />, path: "/processselection" },
+        { name: "Calendário", icon: <LuCalendarSearch size={20} />, path: "/calendario" },
+        { name: "Registros Gerais", icon: <LuFileStack size={20} />, path: "/processselection" },
+        { name: "Taxas", icon: <FaMoneyBillWave size={20} />, path: "/cadastros/taxas" },
     ];
 
     const toggleExpanded = (itemName) => {

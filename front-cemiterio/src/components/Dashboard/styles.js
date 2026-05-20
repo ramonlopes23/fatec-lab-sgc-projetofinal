@@ -17,12 +17,14 @@ export const Card = styled.div`
 `;
 
 export const CardHeader = styled.h2`
-  font-size: 1.25rem;
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 1rem;
-  color:#191970;
-  padding-bottom: 0.5rem;
+  margin: 0;
+  font-size: 20px;
+  text-align:center;
+  margin-bottom:5px;
+  line-height: 1.15;
+  font-weight: 800;
+  color: #191970;
+  letter-spacing: -0.02em;
 `;
 
 export const CardBody = styled.div`

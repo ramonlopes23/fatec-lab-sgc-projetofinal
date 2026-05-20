@@ -26,6 +26,7 @@ export const INITIAL_FALECIDO_FORM = {
     dec_obito: "",
     dec_obito_preview: "",
     nome_resp: "",
+    parentesco: "",
     doc_resp: "",
     prof_resp: "",
     tel_resp: "",

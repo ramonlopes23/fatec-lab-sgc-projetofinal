@@ -8,12 +8,19 @@ export const Card = styled.div`
 `;
 
 export const CardHeader = styled.div`
-  padding: 12px 16px;
-  font-weight: 700;
-  align-items:center;
-  color: #1b1b4a;
-  border-bottom: 1px solid #f0f0f5;
-  background: linear-gradient(180deg, rgba(246,246,252,0.6), transparent);
+  margin: 15px ;
+  font-size: 29px;
+  line-height: 1.15;
+  font-weight: 800;
+  color: #191970;
+  letter-spacing: -0.02em;
+`;
+
+export const Subtitle = styled.p`
+  margin: 15px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6c7293;
 `;
 
 export const Title = styled.h3`

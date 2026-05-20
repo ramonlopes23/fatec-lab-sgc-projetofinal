@@ -108,7 +108,7 @@ function FalecidoProcess({
 
         const step0IndigenteFields = ["nome_fal", "sexo", "cor", "dh_falec", "causa_mortis"];
         const step1Fields = ["cpf", "rg", "nome_doutor"];
-        const step2Fields = ["nome_resp", "tel_resp", "doc_resp", "cep_resp", "endereco_resp"];
+        const step2Fields = ["nome_resp", "tel_resp", "parentesco", "doc_resp", "cep_resp", "endereco_resp"];
 
         if (stepIndex === 0) {
             const fields = isIndigente ? step0IndigenteFields : step0DefaultFields;
@@ -181,18 +181,18 @@ function FalecidoProcess({
                         <Grid size={{ xs: 12, md: 2 }}>
                             <FormControl fullWidth error={!!fieldErrors.cor}>
                                 <InputLabel sx={labelSxStyle}>Cor/Raça</InputLabel>
-                                <Select 
-                                  label="Cor/Raça" 
-                                  name="cor" 
-                                  value={form.cor} 
-                                  onChange={handleChange} 
-                                  disabled={disabledFor("cor")} 
-                                  sx={selectSxStyle}
-                                  slotProps={{
-                                    input: {
-                                      notched: true
-                                    }
-                                  }}
+                                <Select
+                                    label="Cor/Raça"
+                                    name="cor"
+                                    value={form.cor}
+                                    onChange={handleChange}
+                                    disabled={disabledFor("cor")}
+                                    sx={selectSxStyle}
+                                    slotProps={{
+                                        input: {
+                                            notched: true
+                                        }
+                                    }}
                                 >
                                     <MenuItem value="">Selecione</MenuItem>
                                     <MenuItem value="Branca">Branca</MenuItem>
@@ -330,10 +330,13 @@ function FalecidoProcess({
                         <Grid size={{ xs: 12 }}>
                             <TextField fullWidth variant="outlined" label="Nome do familiar ou responsável" name="nome_resp" placeholder="Digite o nome do responsavel" {...textFieldProps("nome_resp")} />
                         </Grid>
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                            <TextField fullWidth variant="outlined" label="Parentesco" name="parentesco" {...textFieldProps("parentesco")} />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <TextField fullWidth variant="outlined" label="CPF do responsável" name="doc_resp" placeholder="000.000.000-00" {...textFieldProps("doc_resp")} />
                         </Grid>
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <TextField fullWidth variant="outlined" label="Profissão do responsável" name="prof_resp" placeholder="Profissao do responsavel" {...textFieldProps("prof_resp")} />
                         </Grid>
                         <Grid size={{ xs: 12, md: 6 }}>
@@ -394,9 +397,10 @@ function FalecidoProcess({
                             <Grid size={{ xs: 12, md: 6 }}><strong>CPF:</strong> {form.cpf || "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>RG:</strong> {form.rg || "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>Nome do médico responsável:</strong> {form.nome_doutor || "-"}</Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><strong>Data de Nascimento:</strong> {form.data_nasc ? formatDateDMY(form.data_nasc) : "-"}</Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><strong>Data e Hora de Falecimento:</strong> {form.dh_falec ? formatDateTimeDMY(form.dh_falec) : "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>Data de Nascimento:</strong> {form.data_nasc ? formatDateDMY(form.data_nasc) : "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>Data e Hora de Falecimento:</strong> {form.dh_falec ? formatDateTimeDMY(form.dh_falec) : "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>Responsavel:</strong> {form.nome_resp || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>Parentesco:</strong> {form.parentesco || "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>Contato:</strong> {form.tel_resp || "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>CPF do responsável:</strong> {form.doc_resp || "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>Profissão do responsável:</strong> {form.prof_resp || "-"}</Grid>

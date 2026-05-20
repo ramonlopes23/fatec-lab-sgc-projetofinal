@@ -90,12 +90,14 @@ export const CardAction = styled.button`
 `;
 
 export const CardHeader = styled.h2`
-  font-size: 1.25rem;
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 1rem;
-  color:#191970;
-  padding-bottom: 0.5rem;
+  margin: 0;
+  font-size: 25px;
+  margin-bottom:5px;
+  text-align:center;
+  line-height: 1.15;
+  font-weight: 800;
+  color: #191970;
+  letter-spacing: -0.02em;
 `;
 
 export const CardBody = styled.div`
@@ -136,20 +138,11 @@ export const ProcessItem = styled.div`
 `;
 
 export const ProcessInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  margin: 0;
   text-align:center;
-
-  strong {
-    font-size: 1rem;
-    color: #191970;
-  }
-
-  span {
-    font-size: 0.875rem;
-    color: #191970;
-  }
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6c7293;
 `;
 
 export const ProcessAction = styled.div`

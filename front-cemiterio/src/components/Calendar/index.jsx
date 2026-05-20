@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { formatDateDMY, formatDateKey } from "../../utils/date";
-import { Card, CardHeader, CardBody, CalendarGrid, DayCell, DayButton, Btn, Title } from "./styles";
+import { Card, Subtitle, CardHeader, CardBody, CalendarGrid, DayCell, DayButton, Btn, Title } from "./styles";
 
 
 export default function Calendar({ sepultamentos = [], quadras = [], exumacoes = [] }) {
@@ -169,7 +169,8 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
 
     return (
         <Card style={{ marginTop: 16 }}>
-            <CardHeader>CALENDÁRIO DE SEPULTAMENTOS E EXUMAÇÕES</CardHeader>
+            <CardHeader>Calendário</CardHeader>
+            <Subtitle>Registros de sepultamentos e exumações realizadas.</Subtitle>
             <CardBody>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

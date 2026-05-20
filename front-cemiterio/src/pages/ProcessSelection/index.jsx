@@ -9,21 +9,21 @@ import { TbReportAnalytics } from "react-icons/tb";
 const OPTIONS = [
     {
         id: "contratos",
-        title: "CONTRATOS",
+        title: "Contratos",
         desc: "Gerenciamento de contratos e títulos de posse.",
         route: "/contratos",
         icon: LiaFileContractSolid,
     },
     {
         id: "relatorios",
-        title: "RELATÓRIOS",
+        title: "Relatórios",
         desc: "Visualização de dados operacionais do cemitério, sepultamentos, exumações e taxas.",
         route: "/relatorios",
         icon: TbReportAnalytics,
     },
     {
         id: "registros",
-        title: "REGISTROS",
+        title: "Registros",
         desc: "Gerenciamento e consulta de dados dos falecidos.",
         route: "/registros",
         icon: GiArchiveResearch,
@@ -37,7 +37,7 @@ export default function ProcessSelection() {
             <Container>
                 <DashboardWrapper>
                     <Card>
-                        <CardHeader>SELEÇÃO DE PROCESSOS </CardHeader>
+                        <CardHeader>Seleção de Processos </CardHeader>
                         <CardBody>
                             <ProcessInfo>
                                 Selecione o tipo de processo que deseja visualizar:

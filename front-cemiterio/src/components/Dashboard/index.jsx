@@ -257,7 +257,7 @@ export default function Dashboard() {
     return (
         <DashboardWrapper>
             <Card>
-                <CardHeader>PRÓXIMOS PROCESSOS</CardHeader>
+                <CardHeader>Próximos processos</CardHeader>
                 <CardBody>
                     {processosPendentes.length ? processosPendentes.map((p) => (
                         <ProcessItem key={`${p._type}-${p.id}`}>

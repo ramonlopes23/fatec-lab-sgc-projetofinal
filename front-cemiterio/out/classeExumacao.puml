@@ -1,95 +1,109 @@
 @startuml
+title Diagrama de Classes - Exumacao
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
 
 class Exumacao {
   +id
-  +dataSolicitacao
-  +dataExecucao
+  +sepultamentoId
+  +dh_exu
   +motivo
+  +destino
+  +coveiro
+  +obs_exu
+  +status
+  +confirmado
+
+  +validarCamposObrigatorios()
+  +cadastrar()
+  +confirmar()
+  +cancelar()
+}
+
+class Sepultamento {
+  +id
+  +falecido
+  +nome_sep
+  +quadra_sep
+  +num_sepultura_sep
+  +dh_sep
+  +data_obito
   +status
 
-  +solicitarExumacao()
-  +aprovarExumacao()
-  +executarExumacao()
-  +cancelarExumacao()
+  +buscarDados()
+  +vincularExumacao()
 }
 
 class Falecido {
   +id
-  +nome
-  +dataObito
+  +nome_fal
+  +dh_falec
+  +causa_mortis
+
+  +consultar()
+}
+
+class Ossario {
+  +id
+  +numero
+  +tipo
   +status
 
-  +buscarFalecido()
-  +filtrarFalecidos()
+  +verificarDisponibilidade()
+  +reservarDestino()
 }
 
 class Grave {
   +id
-  +numero
+  +number
+  +blockId
   +status
+  +bodyCapacity
 
-  +createGrave()
-  +updateGrave()
-  +patchGraveStatus()
-  +inactivateGrave()
-  +getGrave()
+  +localizarSepultura()
+  +atualizarStatus()
 }
 
 class Block {
   +id
-  +nome
+  +num_quadra
+  +cemeteryId
 
-  +createBlock()
-  +updateBlock()
-  +inactivateBlock()
-  +getBlocks()
-  +loadBlocks()
-  +deactivateBlock()
+  +buscarQuadra()
 }
 
 class Cemetery {
   +id
-  +nome
+  +name
+  +active
 
-  +listarCemiterios()
   +buscarCemiterio()
 }
 
-class Responsavel {
-  +id
-  +nome
-  +cpf
-
-  +validarResponsavel()
-  +vincularContrato()
+enum StatusExumacao {
+  pendente
+  confirmado
+  cancelado
 }
 
-class Contrato {
-  +id
-  +numero
-  +status
+Exumacao "0..1" --> "1" Sepultamento : pertence a
+Exumacao "0..1" --> "1" Ossario : destino
+Exumacao --> StatusExumacao : status
 
-  +validarContrato()
-  +verificarStatus()
-}
+Sepultamento "0..*" --> "1" Falecido : registra
+Sepultamento "0..*" --> "1" Grave : ocupa
+Grave "0..*" --> "1" Block : fica em
+Block "0..*" --> "1" Cemetery : pertence a
 
-class Usuario {
-  +id
-  +nome
-  +cargo
+note right of Exumacao
+  Obrigatorios:
+  - motivo
+  - destino
+  - coveiro
 
-  +autorizarExumacao()
-  +registrarAcao()
-}
-
-Exumacao --> Falecido
-Exumacao --> Grave
-Exumacao --> Responsavel
-Exumacao --> Contrato
-Exumacao --> Usuario
-
-
-Grave --> Block
-Block --> Cemetery
+  Opcional:
+  - obs_exu
+end note
 
 @enduml

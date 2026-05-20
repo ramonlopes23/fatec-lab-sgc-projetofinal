@@ -8,11 +8,22 @@ export const Container = styled.div`
 `;
 
 export const Title = styled.h2`
-  text-align: center;
-  font-size: 20px;
-  letter-spacing: 2px;
-  margin-bottom: 28px;
+  margin: 0;
+  margin-bottom:10px;
+  font-size: 25px;
+  text-align:center;
+  line-height: 1.15;
+  font-weight: 800;
   color: #191970;
+  letter-spacing: -0.02em;
+`;
+
+export const Subtitle = styled.p`
+  margin: 0;
+  text-align:center;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6c7293;
 `;
 
 export const FormStyled = styled.form`

@@ -44,6 +44,7 @@ import {
     Container,
     FormStyled,
     Title,
+    Subtitle,
 } from "./styles";
 
 const processFromPath = (pathname) => (
@@ -318,8 +319,8 @@ export default function Cadastros() {
                         </CheckboxWrapper>
                     )}
 
-                    <Title>{isFalecidoProcess ? "CADASTRO DE FALECIDO" : "CADASTRO DE SEPULTAMENTO"}</Title>
-
+                    <Title>{isFalecidoProcess ? "Cadastro de Falecido" : "Cadastro de Sepultamento"}</Title>
+                    <Subtitle>{isFalecidoProcess ? "Faça o cadastro dos falecidos antes de realizar processos de sepultamento." : "Faça o cadastro do sepultamento para finalizar o processo."} </Subtitle>
                     <Box sx={{ mt: 3 }}>
                         {isFalecidoProcess ? (
                             <FalecidoProcess

@@ -1,21 +1,49 @@
 import React, { useEffect, useMemo, useState } from "react";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
-import { FaPowerOff, FaRegEdit, FaSearch } from "react-icons/fa";
+import {
+    FaCheckCircle,
+    FaClock,
+    FaDollarSign,
+    FaFilter,
+    FaPlus,
+    FaPowerOff,
+    FaRegEdit,
+    FaSearch,
+    FaTimesCircle,
+} from "react-icons/fa";
 import {
     Actions,
     BtnPrimaryClose,
     BtnPrimarySave,
     Card,
+    CardBody,
+    CardTitle,
     Container,
+    FilterGrid,
+    FilterSelect,
+    FiltersPanel,
     FormStyled,
+    HeaderActions,
+    HeaderCopy,
     IconBtn,
     Input,
     ModalContent,
     ModalGrid,
     ModalOverlay,
+    PageHeader,
+    PrimaryActionButton,
+    SearchField,
     SearchIcon,
     SearchWrapper,
+    SecondaryButton,
+    StatCard,
+    StatCopy,
+    StatHint,
+    StatIcon,
+    StatLabel,
+    StatValue,
+    StatsGrid,
     StatusBadge,
     Table,
     TableScroller,
@@ -27,9 +55,11 @@ import {
     THead,
     Title,
     Tr,
+    Subtitle,
 } from "./styles";
 import useTaxas from "../../hooks/Taxas/useTaxas";
 import { createTaxa, patchTaxaStatus, updateTaxa } from "../../services/taxaService";
+import { formatDateDMY, parseDateValue } from "../../utils/date";
 import { formatCurrencyBRL, formatTaxaLabel, normalizeTaxa } from "../../utils/taxas";
 
 const INITIAL_FORM = {
@@ -53,6 +83,36 @@ const normalizeCode = (value) => String(value || "")
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
 
+const normalizeSearchText = (value) => String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const isVencendoEm30Dias = (taxa) => {
+    const date = parseDateValue(taxa?.vigencia_fim);
+    if (!date) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const limit = new Date(today);
+    limit.setDate(limit.getDate() + 30);
+    limit.setHours(23, 59, 59, 999);
+
+    return date >= today && date <= limit;
+};
+
+const formatVigencia = (taxa) => {
+    const inicio = formatDateDMY(taxa?.vigencia_inicio, "");
+    const fim = formatDateDMY(taxa?.vigencia_fim, "");
+
+    if (inicio && fim) return `${inicio} até ${fim}`;
+    if (inicio) return inicio;
+    if (fim) return fim;
+    return "-";
+};
+
 function TaxasComponent() {
     const { taxas, loading, error, loadTaxas, setTaxas } = useTaxas({ autoLoad: false, onlyActive: false });
     const [form, setForm] = useState(INITIAL_FORM);
@@ -61,20 +121,54 @@ function TaxasComponent() {
     const [modalOpen, setModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [typeFilter, setTypeFilter] = useState("all");
 
     useEffect(() => {
         loadTaxas();
     }, [loadTaxas]);
 
-    const filteredTaxas = useMemo(() => {
-        const term = search.trim().toLowerCase();
-        if (!term) return taxas;
+    const normalizedTaxas = useMemo(() => taxas.map((taxa) => normalizeTaxa(taxa)), [taxas]);
 
-        return taxas.filter((taxa) => {
-            const haystack = `${taxa.codigo} ${taxa.descricao} ${formatTaxaLabel(taxa)}`.toLowerCase();
-            return haystack.includes(term);
+    const typeOptions = useMemo(() => {
+        const values = new Set(normalizedTaxas.map((taxa) => String(taxa.tipo || "").trim()).filter(Boolean));
+        return Array.from(values).sort((a, b) => a.localeCompare(b));
+    }, [normalizedTaxas]);
+
+    const filteredTaxas = useMemo(() => {
+        const term = normalizeSearchText(search);
+
+        return normalizedTaxas.filter((taxa) => {
+            const matchesSearch = !term || [
+                taxa.codigo,
+                taxa.descricao,
+                taxa.tipo,
+                String(taxa.valor ?? ""),
+                formatCurrencyBRL(taxa.valor),
+                formatTaxaLabel(taxa),
+            ].some((field) => normalizeSearchText(field).includes(term));
+
+            const matchesStatus = statusFilter === "all"
+                || (statusFilter === "active" && taxa.active)
+                || (statusFilter === "inactive" && !taxa.active);
+
+            const matchesType = typeFilter === "all"
+                || normalizeSearchText(taxa.tipo) === normalizeSearchText(typeFilter);
+
+            return matchesSearch && matchesStatus && matchesType;
         });
-    }, [taxas, search]);
+    }, [normalizedTaxas, search, statusFilter, typeFilter]);
+
+    const totalTaxas = normalizedTaxas.length;
+    const activeTaxas = normalizedTaxas.filter((taxa) => taxa.active).length;
+    const inactiveTaxas = normalizedTaxas.filter((taxa) => !taxa.active).length;
+    const vencerTaxas = normalizedTaxas.filter((taxa) => taxa.active && isVencendoEm30Dias(taxa)).length;
+
+    const clearFilters = () => {
+        setSearch("");
+        setStatusFilter("all");
+        setTypeFilter("all");
+    };
 
     const updateField = (key, value) => {
         setForm((prev) => {
@@ -204,76 +298,149 @@ function TaxasComponent() {
 
     return (
         <Container>
-            <FormStyled as="section">
-                <Title>CONTROLE DE TAXAS</Title>
-                <SearchWrapper>
-                    <TextField
-                        fullWidth
-                        size="small"
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Pesquisar por codigo ou descricao..."
-                    />
-                    <SearchIcon><FaSearch /></SearchIcon>
-                </SearchWrapper>
-                {error ? <p style={{ ...errorStyle, color: "#8a5a00" }}>{error}</p> : null}
-            </FormStyled>
+            <PageHeader>
+                <HeaderCopy>
+                    <Title>Controle de Taxas</Title>
+                    <Subtitle>Gerencie as taxas e sepultamentos vigentes do cemitério.</Subtitle>
+                </HeaderCopy>
 
-            <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-                <BtnPrimarySave type="button" onClick={openModal}>
-                    Nova taxa
-                </BtnPrimarySave>
-            </div>
+                <HeaderActions>
+                    <PrimaryActionButton type="button" onClick={openModal} disabled={isSubmitting}>
+                        <FaPlus /> Nova Taxa
+                    </PrimaryActionButton>
+                </HeaderActions>
+            </PageHeader>
+
+            <FiltersPanel>
+                <FormStyled as="div">
+                    <FilterGrid>
+                        <SearchWrapper>
+                            <SearchIcon>
+                                <FaSearch />
+                            </SearchIcon>
+                            <SearchField
+                                value={search}
+                                onChange={(event) => setSearch(event.target.value)}
+                                placeholder="Buscar por descrição, código, valor ou tipo..."
+                            />
+                        </SearchWrapper>
+
+                        <FilterSelect value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+                            <option value="all">Tipo: Todos</option>
+                            {typeOptions.map((type) => (
+                                <option key={type} value={type}>
+                                    Tipo: {type}
+                                </option>
+                            ))}
+                        </FilterSelect>
+
+                        <FilterSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                            <option value="all">Situação: Todas</option>
+                            <option value="active">Situação: Ativas</option>
+                            <option value="inactive">Situação: Inativas</option>
+                        </FilterSelect>
+
+                        <SecondaryButton type="button" onClick={clearFilters}>
+                            <FaFilter /> Limpar filtros
+                        </SecondaryButton>
+                    </FilterGrid>
+
+                    {error ? <p style={{ ...errorStyle, color: "#8a5a00", marginTop: 8 }}>{error}</p> : null}
+                </FormStyled>
+            </FiltersPanel>
+
+            <StatsGrid>
+                <StatCard>
+                    <StatIcon $tone="primary"><FaDollarSign /></StatIcon>
+                    <StatCopy>
+                        <StatLabel>Total de Taxas</StatLabel>
+                        <StatValue>{totalTaxas}</StatValue>
+                        <StatHint>Cadastradas</StatHint>
+                    </StatCopy>
+                </StatCard>
+
+                <StatCard>
+                    <StatIcon $tone="success"><FaCheckCircle /></StatIcon>
+                    <StatCopy>
+                        <StatLabel>Ativas</StatLabel>
+                        <StatValue>{activeTaxas}</StatValue>
+                        <StatHint>Vigentes</StatHint>
+                    </StatCopy>
+                </StatCard>
+
+                <StatCard>
+                    <StatIcon $tone="warning"><FaClock /></StatIcon>
+                    <StatCopy>
+                        <StatLabel>A vencer</StatLabel>
+                        <StatValue>{vencerTaxas}</StatValue>
+                        <StatHint>Próximos 30 dias</StatHint>
+                    </StatCopy>
+                </StatCard>
+
+                <StatCard>
+                    <StatIcon $tone="danger"><FaTimesCircle /></StatIcon>
+                    <StatCopy>
+                        <StatLabel>Inativas</StatLabel>
+                        <StatValue>{inactiveTaxas}</StatValue>
+                        <StatHint>Desativadas</StatHint>
+                    </StatCopy>
+                </StatCard>
+            </StatsGrid>
 
             <Card>
-                <TableWrapper>
-                    <TableScroller>
-                        <Table>
-                            <THead>
-                                <Tr>
-                                    <Th>Codigo</Th>
-                                    <Th>Descricao</Th>
-                                    <Th>Valor</Th>
-                                    <Th>Tipo</Th>
-                                    <Th>Status</Th>
-                                    <Th>Acoes</Th>
-                                </Tr>
-                            </THead>
-                            <TBody>
-                                {loading ? (
-                                    <Tr><Td colSpan={6}>Carregando taxas...</Td></Tr>
-                                ) : filteredTaxas.length === 0 ? (
-                                    <Tr><Td colSpan={6}>Nenhuma taxa encontrada.</Td></Tr>
-                                ) : filteredTaxas.map((taxa, index) => {
-                                    const normalized = normalizeTaxa(taxa);
-                                    return (
-                                        <Tr key={String(normalized.id || normalized.codigo)} index={index}>
-                                            <Td>{normalized.codigo}</Td>
-                                            <Td>{normalized.descricao}</Td>
-                                            <Td>{formatCurrencyBRL(normalized.valor)}</Td>
-                                            <Td>{normalized.tipo}</Td>
-                                            <TdStatus>
-                                                <StatusBadge $status={normalized.active ? "ativo" : "inativo"}>
-                                                    {normalized.active ? "Ativa" : "Inativa"}
-                                                </StatusBadge>
-                                            </TdStatus>
-                                            <Td>
-                                                <Actions>
-                                                    <IconBtn type="button" onClick={() => handleEdit(normalized)} disabled={isSubmitting}>
-                                                        <FaRegEdit />
-                                                    </IconBtn>
-                                                    <IconBtn type="button" onClick={() => handleToggleStatus(normalized)} disabled={isSubmitting} data-danger={normalized.active ? "true" : undefined}>
-                                                        <FaPowerOff />
-                                                    </IconBtn>
-                                                </Actions>
-                                            </Td>
-                                        </Tr>
-                                    );
-                                })}
-                            </TBody>
-                        </Table>
-                    </TableScroller>
-                </TableWrapper>
+                <CardBody>
+                    <CardTitle>Taxas cadastradas</CardTitle>
+                    <TableWrapper>
+                        <TableScroller>
+                            <Table>
+                                <THead>
+                                    <Tr>
+                                        <Th>Código</Th>
+                                        <Th>Descrição</Th>
+                                        <Th>Tipo</Th>
+                                        <Th>Valor</Th>
+                                        <Th>Vigência</Th>
+                                        <Th>Status</Th>
+                                        <Th>Ações</Th>
+                                    </Tr>
+                                </THead>
+                                <TBody>
+                                    {loading ? (
+                                        <Tr><Td colSpan={7}>Carregando taxas...</Td></Tr>
+                                    ) : filteredTaxas.length === 0 ? (
+                                        <Tr><Td colSpan={7}>Nenhuma taxa encontrada.</Td></Tr>
+                                    ) : filteredTaxas.map((taxa, index) => {
+                                        const normalized = normalizeTaxa(taxa);
+                                        return (
+                                            <Tr key={String(normalized.id || normalized.codigo)} index={index}>
+                                                <Td>{normalized.codigo}</Td>
+                                                <Td>{normalized.descricao}</Td>
+                                                <Td>{normalized.tipo}</Td>
+                                                <Td>{formatCurrencyBRL(normalized.valor)}</Td>
+                                                <Td>{formatVigencia(normalized)}</Td>
+                                                <TdStatus>
+                                                    <StatusBadge $status={normalized.active ? "ativo" : "inativo"}>
+                                                        {normalized.active ? "Ativa" : "Inativa"}
+                                                    </StatusBadge>
+                                                </TdStatus>
+                                                <Td>
+                                                    <Actions>
+                                                        <IconBtn type="button" onClick={() => handleEdit(normalized)} disabled={isSubmitting}>
+                                                            <FaRegEdit />
+                                                        </IconBtn>
+                                                        <IconBtn type="button" onClick={() => handleToggleStatus(normalized)} disabled={isSubmitting} data-danger={normalized.active ? "true" : undefined}>
+                                                            <FaPowerOff />
+                                                        </IconBtn>
+                                                    </Actions>
+                                                </Td>
+                                            </Tr>
+                                        );
+                                    })}
+                                </TBody>
+                            </Table>
+                        </TableScroller>
+                    </TableWrapper>
+                </CardBody>
             </Card>
 
             {modalOpen && (
@@ -283,7 +450,7 @@ function TaxasComponent() {
                         <form onSubmit={handleSave}>
                             <ModalGrid>
                                 <div>
-                                    <label>Descricao</label>
+                                    <label>Descrição</label>
                                     <Input
                                         value={form.descricao}
                                         onChange={(event) => updateField("descricao", event.target.value)}
@@ -293,7 +460,7 @@ function TaxasComponent() {
                                 </div>
 
                                 <div>
-                                    <label>Codigo</label>
+                                    <label>Código</label>
                                     <Input
                                         value={form.codigo}
                                         onChange={(event) => updateField("codigo", normalizeCode(event.target.value))}
@@ -330,7 +497,7 @@ function TaxasComponent() {
                                 </div>
 
                                 <div>
-                                    <label>Vigencia inicio</label>
+                                    <label>Vigência início</label>
                                     <Input
                                         type="date"
                                         value={form.vigencia_inicio}
@@ -340,7 +507,7 @@ function TaxasComponent() {
                                 </div>
 
                                 <div>
-                                    <label>Vigencia fim</label>
+                                    <label>Vigência fim</label>
                                     <Input
                                         type="date"
                                         value={form.vigencia_fim}
@@ -357,7 +524,7 @@ function TaxasComponent() {
                                         onChange={(event) => updateField("isencao", event.target.checked)}
                                         disabled={isSubmitting}
                                     />
-                                    Isencao
+                                    Isenção
                                 </label>
 
                                 <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
