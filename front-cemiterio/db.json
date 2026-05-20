@@ -1,4 +1,88 @@
 {
+  "taxas": [
+    {
+      "codigo": "crianca",
+      "descricao": "CRIANÇA",
+      "valor": 56.12,
+      "tipo": "sepultamento",
+      "active": true,
+      "isencao": false,
+      "vigencia_inicio": "",
+      "vigencia_fim": "",
+      "updated_at": "2026-05-20T00:56:38.748Z",
+      "label": "CRIANÇA - R$ 56,12",
+      "id": "taxa-crianca"
+    },
+    {
+      "id": "taxa-crianca-fora",
+      "codigo": "crianca_fora",
+      "descricao": "CRIANÇA (FORA DO MUNICÍPIO)",
+      "valor": 224.54,
+      "tipo": "sepultamento",
+      "active": true,
+      "isencao": false,
+      "vigencia_inicio": "",
+      "vigencia_fim": ""
+    },
+    {
+      "id": "taxa-adulto-terra",
+      "codigo": "adulto_terra",
+      "descricao": "ADULTO (TERRA)",
+      "valor": 112.27,
+      "tipo": "sepultamento",
+      "active": true,
+      "isencao": false,
+      "vigencia_inicio": "",
+      "vigencia_fim": ""
+    },
+    {
+      "id": "taxa-adulto-fora",
+      "codigo": "adulto_fora",
+      "descricao": "ADULTO (FORA DO MUNICÍPIO)",
+      "valor": 430.42,
+      "tipo": "sepultamento",
+      "active": true,
+      "isencao": false,
+      "vigencia_inicio": "",
+      "vigencia_fim": ""
+    },
+    {
+      "id": "taxa-adulto-laje",
+      "codigo": "adulto_laje",
+      "descricao": "ADULTO LAJE",
+      "valor": 280.71,
+      "tipo": "sepultamento",
+      "active": true,
+      "isencao": false,
+      "vigencia_inicio": "",
+      "vigencia_fim": ""
+    },
+    {
+      "id": "taxa-indigente",
+      "codigo": "indigente",
+      "descricao": "ISENÇÃO POR INDIGÊNCIA",
+      "valor": 0,
+      "tipo": "sepultamento",
+      "active": true,
+      "isencao": true,
+      "vigencia_inicio": "",
+      "vigencia_fim": ""
+    },
+    {
+      "id": "a079",
+      "codigo": "taxa_teste",
+      "descricao": "TAXA TESTE",
+      "valor": 100,
+      "tipo": "sepultamento",
+      "active": true,
+      "isencao": false,
+      "vigencia_inicio": "2026-05-19",
+      "vigencia_fim": "2027-05-19",
+      "updated_at": "2026-05-20T00:57:37.746Z",
+      "label": "TAXA TESTE - R$ 100,00",
+      "created_at": "2026-05-20T00:57:37.746Z"
+    }
+  ],
   "falecidos": [
     {
       "id": "7c58",
@@ -137,5 +221,14 @@
     }
   ],
   "contratos": [],
-  "pets": []
+  "pets": [],
+  "ossarios": [
+    {
+      "id": "2e27",
+      "numero": "1",
+      "tipo": "individual",
+      "status": "disponivel",
+      "obs": "teste"
+    }
+  ]
 }
