@@ -53,6 +53,7 @@ import {
     Tr,
     Subtitle,
 } from "./styles.js";
+import { RiArchiveDrawerFill } from "react-icons/ri";
 
 const TYPE_OPTIONS = [
     { value: "coletivo", label: "Coletivo" },
@@ -329,7 +330,7 @@ export default function OssariosComponent() {
 
             <StatsGrid>
                 <StatCard>
-                    <StatIcon><FaPlus /></StatIcon>
+                    <StatIcon><RiArchiveDrawerFill /></StatIcon>
                     <StatCopy>
                         <StatLabel>Ossários cadastrados</StatLabel>
                         <StatValue>{stats.total}</StatValue>

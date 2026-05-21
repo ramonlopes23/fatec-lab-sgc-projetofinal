@@ -5,6 +5,7 @@ import {
     FaCheckCircle,
     FaClock,
     FaDollarSign,
+    FaFileContract,
     FaFilter,
     FaPlus,
     FaRegEdit,
@@ -407,7 +408,7 @@ export default function ContratosComponent() {
 
             <StatsGrid>
                 <StatCard>
-                    <StatIcon><FaPlus /></StatIcon>
+                    <StatIcon><FaFileContract /></StatIcon>
                     <StatCopy>
                         <StatLabel>Total de contratos</StatLabel>
                         <StatValue>{stats.total}</StatValue>
