@@ -12,7 +12,7 @@ export const Card = styled.div`
   border-radius: 12px;
   padding: 1rem;
   width: 100%;
-  max-width: 800px;
+  max-width:1500px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 `;
 
@@ -39,7 +39,7 @@ export const Subtitle = styled.p`
 
 export const CardsGrid = styled.div`
     display:grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap:16px;
 `;
 

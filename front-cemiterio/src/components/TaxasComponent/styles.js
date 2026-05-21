@@ -287,7 +287,7 @@ export const Table = styled.table`
 
 export const THead = styled.thead`
   color: #5b5f81;
-  background: #f7f8fc;
+  background: #191970;
 `;
 
 export const Th = styled.th`
@@ -295,7 +295,7 @@ export const Th = styled.th`
   padding: 14px 16px;
   font-weight: 700;
   font-size: 13px;
-  color: #67708f;
+  color: #191970;
   border-bottom: 1px solid rgba(31, 38, 82, 0.08);
 `;
 

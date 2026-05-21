@@ -981,7 +981,7 @@ export default function VerMapa() {
     const statusList = [
         { key: "ocupada", label: "Ocupada", color: "#000" },
         { key: "disponivel", label: "Disponível", color: "#9e9e9e" },
-        { key: "indisponivel", label: "Indisponivel", color: "#c55" },
+        { key: "indisponivel", label: "Indisponível", color: "#c55" },
         { key: "reservada", label: "Particular", color: "#d2b24a" },
         { key: "particular_ocupada", label: "P/O (Particular e ocupada)", color: "#000", borderColor: "#d2b24a", borderWidth: 3 }
     ];
@@ -1170,7 +1170,7 @@ export default function VerMapa() {
                     }}>
                         <ChartModalContent>
                             <ChartModalHeader>
-                                <ChartModalTitle>DISTRIBUICAO DAS SEPULTURAS</ChartModalTitle>
+                                <ChartModalTitle>Distribuição de Sepulturas </ChartModalTitle>
                             </ChartModalHeader>
                             <ChartModalBody>
                                 <ChartArea>

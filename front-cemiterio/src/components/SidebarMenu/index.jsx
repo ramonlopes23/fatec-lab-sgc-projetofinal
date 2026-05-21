@@ -52,7 +52,6 @@ export default function SidebarMenu() {
         },
         { name: "Calendário", icon: <LuCalendarSearch size={20} />, path: "/calendario" },
         { name: "Registros Gerais", icon: <LuFileStack size={20} />, path: "/processselection" },
-        { name: "Taxas", icon: <FaMoneyBillWave size={20} />, path: "/cadastros/taxas" },
     ];
 
     const toggleExpanded = (itemName) => {

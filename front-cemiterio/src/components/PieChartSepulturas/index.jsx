@@ -6,7 +6,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 const PIE_SERIES = [
     { key: "disponivel", label: "Disponível", color: "#9e9e9e" },
     { key: "ocupada", label: "Ocupada", color: "#000" },
-    { key: "indisponivel", label: "Indisponivel", color: "#c55" },
+    { key: "indisponivel", label: "Indisponível", color: "#c55" },
     { key: "particular", label: "Particular", color: "#d2b24a" },
     { key: "particular_ocupada", label: "P/O", color: "#000", borderColor: "#d2b24a", borderWidth: 4 },
 ];

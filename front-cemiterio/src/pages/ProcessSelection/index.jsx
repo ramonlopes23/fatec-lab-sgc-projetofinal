@@ -4,9 +4,17 @@ import { useNavigate } from 'react-router-dom';
 import { LiaFileContractSolid } from "react-icons/lia";
 import { GiArchiveResearch } from "react-icons/gi";
 import { TbReportAnalytics } from "react-icons/tb";
+import { FaMoneyBill1Wave } from 'react-icons/fa6';
 
 
 const OPTIONS = [
+    {
+        id: "taxas",
+        title: "Taxas",
+        desc: "Gerenciamento de taxas dos cemitério.",
+        route: "/taxas",
+        icon: FaMoneyBill1Wave,
+    },
     {
         id: "contratos",
         title: "Contratos",

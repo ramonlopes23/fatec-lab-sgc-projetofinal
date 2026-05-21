@@ -46,7 +46,7 @@ export default function AppRoutes() {
                 <Route path='/cadastros' element={<Navigate to="/cadastros/falecido" replace />} />
                 <Route path='/cadastros/falecido' element={<Cadastros />} />
                 <Route path='/cadastros/sepultamento' element={<Cadastros />} />
-                <Route path='/cadastros/taxas' element={<Taxas />} />
+                <Route path='/taxas' element={<Taxas />} />
                 <Route path='/sepulturas' element={<Navigate to="/sepulturas/cemiterio" replace />} />
                 <Route path='/sepulturas/cemiterio' element={<Cemiterios />} />
                 <Route path='/sepulturas/ossario' element={<Ossarios />} />

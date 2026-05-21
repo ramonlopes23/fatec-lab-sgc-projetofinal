@@ -39,6 +39,7 @@ export const SidebarContainer = styled.div`
   display:flex;
   flex-direction:column;
   border-right: 0.5px solid var(--app-border);
+  overflow: hidden;
   position:fixed;
   top:0;
   left:0;

@@ -38,8 +38,30 @@ export const LogoImage = styled.img`
 
 export const NavContainer = styled.nav`
   flex: 1;
+  min-height: 0;
   padding: 0.5rem 0.75rem 1rem;
   background: #191970;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.35);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
 `;
 
 export const NavList = styled.ul`
