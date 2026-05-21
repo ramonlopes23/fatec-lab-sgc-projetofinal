@@ -1,22 +1,80 @@
-import Footer from "../../components/Footer";
-import MainLayout from "../../layout/MainLayout";
-import { IconBtn, StatusBadge, Actions, BtnPrimaryClose, BtnPrimarySave, Container, FormStyled, SearchBar, SearchIcon, SearchWrapper, TableWrapper, Title, Card, TableScroller, TBody, THead, Table, Td, TdStatus, Th, Tr, ModalOverlay, ModalContent, ModalGrid, Input, TdNumContrato } from "./styles";
+import React, { useEffect, useMemo, useState } from "react";
 import TextField from "@mui/material/TextField";
-import { MenuItem } from "@mui/material";
-import { FaSearch } from "react-icons/fa";
-import { ImProfile } from "react-icons/im";
-import { FaRegEdit } from "react-icons/fa";
-import { AiOutlineUserSwitch } from "react-icons/ai";
-import { FaTrash } from "react-icons/fa"
-import { RiDeleteBin2Line } from "react-icons/ri";
-import api from "../../services/index.js";
-import React, { useEffect, useMemo, useState } from "react"
-import { formatDateDMY, formatDateTimeKey } from "../../utils/date";
+import MenuItem from "@mui/material/MenuItem";
+import {
+    FaCheckCircle,
+    FaClock,
+    FaDollarSign,
+    FaFilter,
+    FaPlus,
+    FaRegEdit,
+    FaSearch,
+    FaTimesCircle,
+    FaTrash,
+} from "react-icons/fa";
+import {
+    Actions,
+    BtnPrimaryClose,
+    BtnPrimarySave,
+    Card,
+    CardBody,
+    CardTitle,
+    Container,
+    FilterGrid,
+    FilterSelect,
+    FiltersPanel,
+    FormStyled,
+    HeaderActions,
+    HeaderCopy,
+    IconBtn,
+    Input,
+    ModalContent,
+    ModalGrid,
+    ModalOverlay,
+    PageHeader,
+    PrimaryActionButton,
+    SearchField,
+    SearchIcon,
+    SearchWrapper,
+    SecondaryButton,
+    StatCard,
+    StatCopy,
+    StatHint,
+    StatIcon,
+    StatLabel,
+    StatValue,
+    StatsGrid,
+    StatusBadge,
+    Table,
+    TableScroller,
+    TableWrapper,
+    TBody,
+    Td,
+    TdLocal,
+    TdStatus,
+    TdValue,
+    Th,
+    THead,
+    Title,
+    Tr,
+    Subtitle,
+} from "./styles";
+import { getContratos, createContrato, updateContrato, deleteContrato } from "../../services/contratoService.js";
+import { useCemeteryStore } from "../../stores/cemeteryStore.js";
+import { formatCurrencyBRL } from "../../utils/taxas";
+import { formatDateDMY, formatDateTimeKey, parseDateValue } from "../../utils/date";
 
 const STATUS_OPTIONS = [
     { value: "ativo", label: "Ativo" },
     { value: "inativo", label: "Inativo" },
-    { value: "vencido", label: "Vencido" }
+    { value: "vencido", label: "Vencido" },
+];
+
+const STATUS_FILTER_OPTIONS = [
+    { value: "all", label: "Situação: Todas" },
+    { value: "active", label: "Situação: Ativos" },
+    { value: "expiring", label: "Situação: A vencer" },
+    { value: "expired", label: "Situação: Vencidos" },
 ];
 
 const INITIAL_FORM = {
@@ -26,21 +84,69 @@ const INITIAL_FORM = {
     validade_titulo: "",
     sepultura: "",
     quadra: "",
+    valor: "0",
+    cemiterio: "",
 };
 
-function formatDateBR(value) {
-    return formatDateDMY(value, value || "-");
-}
+const errorStyle = { margin: "6px 0 0", color: "#b42318", fontSize: 12 };
 
-function statusLabel(status) {
-    const normalized = String(status || "").trim().toLowerCase();
-    const found = STATUS_OPTIONS.find((s) => s.value === normalized);
+const normalizeSearchText = (value) => String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const formatDateBR = (value) => formatDateDMY(value, value || "-");
+
+const normalizeStatus = (status) => String(status || "").trim().toLowerCase();
+
+const statusLabel = (status) => {
+    const normalized = normalizeStatus(status);
+    const found = STATUS_OPTIONS.find((item) => item.value === normalized);
     return found ? found.label : (status || "-");
-}
+};
 
+const getValidityBucket = (contract) => {
+    const date = parseDateValue(contract?.validade_titulo);
+    if (!date) return "active";
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const limit = new Date(today);
+    limit.setDate(limit.getDate() + 30);
+    limit.setHours(23, 59, 59, 999);
+
+    if (date < today) return "expired";
+    if (date <= limit) return "expiring";
+    return "active";
+};
+
+const formatLocal = (contract, cemeteryNameFallback) => {
+    const cemeteryName = String(contract?.cemiterio || cemeteryNameFallback || "").trim();
+    const quadra = String(contract?.quadra || "").trim();
+    const sepultura = String(contract?.sepultura || "").trim();
+
+    return [cemeteryName, quadra ? `Quadra ${quadra}` : "", sepultura ? `Sepultura ${sepultura}` : ""]
+        .filter(Boolean)
+        .join(" • ") || "-";
+};
+
+const normalizeContract = (contract) => ({
+    id: contract?.id ?? contract?.numero_titulo ?? "",
+    nome_titular: String(contract?.nome_titular || "").trim(),
+    numero_titulo: String(contract?.numero_titulo || "").trim(),
+    status: normalizeStatus(contract?.status) || "ativo",
+    validade_titulo: contract?.validade_titulo || "",
+    sepultura: String(contract?.sepultura || "").trim(),
+    quadra: String(contract?.quadra || "").trim(),
+    valor: Number(contract?.valor ?? contract?.valor_anual ?? 0),
+    cemiterio: String(contract?.cemiterio || contract?.cemiterio_nome || "").trim(),
+});
 
 export default function ContratosComponent() {
     const [query, setQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
     const [modalOpen, setModalOpen] = useState(false);
     const [titulos, setTitulos] = useState([]);
     const [form, setForm] = useState(INITIAL_FORM);
@@ -49,91 +155,141 @@ export default function ContratosComponent() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    const filteredTitulos = useMemo(() => {
-        const q = String(query || "").trim().toLowerCase();
-        if (!q) return titulos;
+    const cemeteries = useCemeteryStore((state) => state.cemeteries);
+    const selectedCemeteryId = useCemeteryStore((state) => state.selectedCemeteryId);
+    const selectedCemetery = useMemo(() => (
+        cemeteries.find((cemetery) => String(cemetery?.id) === String(selectedCemeteryId))
+        || cemeteries.find((cemetery) => cemetery?.active !== false)
+        || cemeteries[0]
+        || null
+    ), [cemeteries, selectedCemeteryId]);
 
-        return titulos.filter((item) => {
-            const byNumero = String(item.numero_titulo || "").toLowerCase().includes(q);
-            const byTitular = String(item.nome_titular || "").toLowerCase().includes(q);
-            return byNumero || byTitular;
-        })
-    }, [query, titulos]);
-
-    const updateField = (key, value) => {
-        setForm((prev) => ({ ...prev, [key]: value }));
-        setErrors((prev) => ({ ...prev, [key]: "" }));
-    };
+    const selectedCemeteryName = selectedCemetery?.name || "";
 
     useEffect(() => {
         loadContratos();
     }, []);
 
     const loadContratos = async () => {
-        setIsLoading(true)
+        setIsLoading(true);
         try {
-            const { data } = await api.get("/contratos");
+            const data = await getContratos();
             setTitulos(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error("Erro ao carregar contratos", error);
             setTitulos([]);
             alert("Erro ao carregar contratos");
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
     };
 
+    const normalizedTitulos = useMemo(() => titulos.map(normalizeContract), [titulos]);
+
+    const filteredTitulos = useMemo(() => {
+        const q = normalizeSearchText(query);
+
+        return normalizedTitulos.filter((item) => {
+            const local = formatLocal(item, selectedCemeteryName);
+            const matchesSearch = !q || [
+                item.numero_titulo,
+                item.nome_titular,
+                item.status,
+                item.validade_titulo,
+                item.sepultura,
+                item.quadra,
+                local,
+                formatCurrencyBRL(item.valor),
+            ].some((field) => normalizeSearchText(field).includes(q));
+
+            const bucket = getValidityBucket(item);
+            const matchesStatus = statusFilter === "all"
+                || (statusFilter === "active" && bucket === "active")
+                || (statusFilter === "expiring" && bucket === "expiring")
+                || (statusFilter === "expired" && bucket === "expired");
+
+            return matchesSearch && matchesStatus;
+        });
+    }, [normalizedTitulos, query, selectedCemeteryName, statusFilter]);
+
+    const stats = useMemo(() => {
+        const total = normalizedTitulos.length;
+        const active = normalizedTitulos.filter((item) => getValidityBucket(item) === "active").length;
+        const expiring = normalizedTitulos.filter((item) => getValidityBucket(item) === "expiring").length;
+        const expired = normalizedTitulos.filter((item) => getValidityBucket(item) === "expired").length;
+        const revenueAnnual = normalizedTitulos.reduce((sum, item) => {
+            const bucket = getValidityBucket(item);
+            if (bucket === "expired") return sum;
+            return sum + (Number(item.valor) || 0);
+        }, 0);
+
+        return { total, active, expiring, expired, revenueAnnual };
+    }, [normalizedTitulos]);
+
+    const updateField = (key, value) => {
+        setForm((prev) => ({ ...prev, [key]: value }));
+        setErrors((prev) => ({ ...prev, [key]: "" }));
+    };
+
+    const clearFilters = () => {
+        setQuery("");
+        setStatusFilter("all");
+    };
+
     const openModal = () => {
-        setEditingId(null)
-        setForm(INITIAL_FORM);
+        setEditingId(null);
+        setForm({
+            ...INITIAL_FORM,
+            cemiterio: selectedCemeteryName,
+        });
         setErrors({});
         setModalOpen(true);
     };
 
     const closeModal = () => {
-        setModalOpen(false)
-        setForm(INITIAL_FORM);
+        setModalOpen(false);
+        setEditingId(null);
+        setForm({
+            ...INITIAL_FORM,
+            cemiterio: selectedCemeteryName,
+        });
         setErrors({});
     };
 
     const validateForm = () => {
         const nextErrors = {};
-        if (!form.nome_titular.trim()) nextErrors.nome_titular = "Informe o nome do titular";
-        if (!form.numero_titulo.trim()) nextErrors.numero_titulo = "Informe o número do título";
+        const numero = form.numero_titulo.trim();
+        const nome = form.nome_titular.trim();
+        const valor = Number(form.valor);
+
+        if (!nome) nextErrors.nome_titular = "Informe o nome do titular";
+        if (!numero) nextErrors.numero_titulo = "Informe o número do título";
         if (!form.status.trim()) nextErrors.status = "Informe o status do título";
-        if (!form.validade_titulo.trim()) nextErrors.validade_titulo = "Informe a validade do título";
+        if (!form.validade_titulo.trim()) nextErrors.validade_titulo = "Informe a vigência do título";
         if (!form.sepultura.trim()) nextErrors.sepultura = "Informe o número da sepultura";
         if (!form.quadra.trim()) nextErrors.quadra = "Informe o número da quadra";
+        if (!Number.isFinite(valor) || valor < 0) nextErrors.valor = "Informe um valor válido";
 
-        if (form.validade_titulo) {
-            const date = new Date(`${form.validade_titulo}`);
-            if (Number.isNaN(date.getTime())) {
-                nextErrors.validade_titulo = "Data de validade em formato inválido";
-            }
+        if (form.validade_titulo && !parseDateValue(form.validade_titulo)) {
+            nextErrors.validade_titulo = "Data de vigência em formato inválido";
         }
 
-        const numeroNormalizado = form.numero_titulo.trim().toLowerCase();
-        const isDuplicated = titulos.some(
-            (item) => item.id !== editingId && String(item.numero_titulo || "").trim().toLowerCase() === numeroNormalizado
+        const duplicated = titulos.some(
+            (item) => item.id !== editingId && String(item.numero_titulo || "").trim().toLowerCase() === numero.toLowerCase()
         );
-        if (isDuplicated) {
-            nextErrors.numero_titulo = "Já existe um título com esse número";
-        }
+        if (duplicated) nextErrors.numero_titulo = "Já existe um título com esse número";
 
         setErrors(nextErrors);
         return Object.keys(nextErrors).length === 0;
     };
 
-    const errorStyle = { margin: "6px 0 0", color: "#b42318", fontSize: 12 };
-
-    const handleSaveTitulo = async (e) => {
-        e.preventDefault();
+    const handleSaveTitulo = async (event) => {
+        event.preventDefault();
         if (!validateForm()) return;
 
         setIsSubmitting(true);
         try {
             const now = formatDateTimeKey(new Date());
-
             const payload = {
                 nome_titular: form.nome_titular.trim(),
                 numero_titulo: form.numero_titulo.trim(),
@@ -141,46 +297,51 @@ export default function ContratosComponent() {
                 validade_titulo: form.validade_titulo,
                 sepultura: form.sepultura.trim(),
                 quadra: form.quadra.trim(),
+                cemiterio: String(form.cemiterio || selectedCemeteryName || "").trim(),
+                valor: Number(form.valor),
                 update_at: now,
-            }
+            };
 
             if (editingId) {
-                await api.put(`/contratos/${editingId}`, {
+                await updateContrato(editingId, {
                     ...payload,
                     id: editingId,
                 });
+                alert("Título atualizado com sucesso.");
             } else {
-                await api.post("/contratos", {
+                await createContrato({
                     ...payload,
                     created_at: now,
                 });
-                alert("Título cadastrado com sucesso.")
+                alert("Título cadastrado com sucesso.");
             }
 
             await loadContratos();
             closeModal();
-            setEditingId(null);
         } catch (error) {
             console.error("Erro ao salvar contrato/titulo", error);
-            alert("Não foi possivel salvar o título")
+            alert(error?.response?.data?.message || error?.message || "Não foi possível salvar o título");
         } finally {
-            setIsSubmitting(false)
+            setIsSubmitting(false);
         }
-    }
+    };
 
     const handleEditTitulo = (item) => {
-        setEditingId(item.id);
+        const normalized = normalizeContract(item);
+        setEditingId(normalized.id);
         setForm({
-            nome_titular: item.nome_titular || "",
-            numero_titulo: item.numero_titulo || "",
-            status: item.status || "ativo",
-            validade_titulo: item.validade_titulo || "",
-            sepultura: item.sepultura || "",
-            quadra: item.quadra || "",
+            nome_titular: normalized.nome_titular,
+            numero_titulo: normalized.numero_titulo,
+            status: normalized.status || "ativo",
+            validade_titulo: normalized.validade_titulo,
+            sepultura: normalized.sepultura,
+            quadra: normalized.quadra,
+            valor: String(normalized.valor ?? 0),
+            cemiterio: normalized.cemiterio || selectedCemeteryName,
         });
         setErrors({});
         setModalOpen(true);
-    }
+    };
 
     const handleDeleteTitulo = async (id) => {
         const ok = window.confirm("Deseja realmente excluir este título?");
@@ -188,123 +349,183 @@ export default function ContratosComponent() {
 
         setIsSubmitting(true);
         try {
-            await api.delete(`/contratos/${id}`);
-            alert("Título excluído com sucesso")
+            await deleteContrato(id);
+            alert("Título excluído com sucesso");
             await loadContratos();
         } catch (error) {
-            console.error("Error ao excluir título", error);
-            alert("Não foi possível excluiro título");
+            console.error("Erro ao excluir título", error);
+            alert(error?.response?.data?.message || error?.message || "Não foi possível excluir o título");
         } finally {
             setIsSubmitting(false);
         }
-    }
+    };
 
-return (
-        <>
-                <Container>
-                    <FormStyled >
-                        <Title>CONTRATOS / TÍTULOS DE POSSE</Title>
-                        <SearchBar />
+    return (
+        <Container>
+            <PageHeader>
+                <HeaderCopy>
+                    <Title>Contratos / Títulos de Posse</Title>
+                    <Subtitle>Gerencie os contratos vigentes, acompanhe a validade e a receita anual dos títulos ativos.</Subtitle>
+                </HeaderCopy>
+
+                <HeaderActions>
+                    <PrimaryActionButton type="button" onClick={openModal} disabled={isSubmitting}>
+                        <FaPlus /> Novo Contrato
+                    </PrimaryActionButton>
+                </HeaderActions>
+            </PageHeader>
+
+            <FiltersPanel>
+                <FormStyled as="div">
+                    <FilterGrid>
                         <SearchWrapper>
-                            <TextField
-                                fullWidth
-                                size="small"
-                                label="Pesquisar"
-                                placeholder="Pesquisar por titular ou Nº do título..."
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        borderRadius: '18px',
-                                        paddingRight: '44px'
-                                    },
-                                    '& .MuiOutlinedInput-input': {
-                                        fontSize: '14px'
-                                    }
-                                }}
-                            />
                             <SearchIcon>
                                 <FaSearch />
                             </SearchIcon>
+                            <SearchField
+                                fullWidth
+                                value={query}
+                                onChange={(event) => setQuery(event.target.value)}
+                                placeholder="Buscar por titular, número, local, valor ou vigência..."
+                            />
                         </SearchWrapper>
-                    </FormStyled>
 
-                    <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-                        <BtnPrimarySave type="button" onClick={openModal}>
-                            <ImProfile />Adicionar contrato/título
-                        </BtnPrimarySave>
-                        <BtnPrimaryClose type="button" disabled style={{ opacity: 0.6, cursor: "not-allowed" }}>
-                            <AiOutlineUserSwitch />Alterar responsável pelo título
-                        </BtnPrimaryClose>
-                    </div>
+                        <FilterSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                            {STATUS_FILTER_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </FilterSelect>
 
-                    <Card>
-                        <h3 style={{ marginTop: 0, color: "#191970" }}>Títulos cadastrados</h3>
-                        {isLoading ? (
-                            <p style={{ textAlign: "center", color: "#666" }}>Carregando...</p>
-                        ) : (
-                            <TableWrapper>
-                                <TableScroller>
-                                    <Table>
-                                        <THead>
-                                            <tr>
-                                                <Th>Nº do Título</Th>
-                                                <Th>Titular</Th>
-                                                <Th>Validade</Th>
-                                                <Th>Sepultura</Th>
-                                                <Th>Quadra</Th>
-                                                <Th>Status</Th>
-                                                <Th>Ações</Th>
-                                            </tr>
-                                        </THead>
-                                        <TBody>
-                                            {filteredTitulos.length > 0 ? (
-                                                filteredTitulos.map((item, index) => (
-                                                    <Tr key={item.id} index={index}>
-                                                        <TdNumContrato>{item.numero_titulo}</TdNumContrato>
-                                                        <Td>{item.nome_titular}</Td>
-                                                        <Td>{formatDateBR(item.validade_titulo)}</Td>
-                                                        <Td>{item.sepultura}</Td>
-                                                        <Td>{item.quadra}</Td>
-                                                        <TdStatus><StatusBadge $status={item.status}>{statusLabel(item.status)}</StatusBadge></TdStatus>
-                                                        <Td>
-                                                            <Actions>
-                                                                <IconBtn type="button" onClick={() => handleEditTitulo(item)}><FaRegEdit /></IconBtn>
-                                                                <IconBtn type="button" onClick={() => handleDeleteTitulo(item.id)}><FaTrash /></IconBtn>
-                                                            </Actions>
-                                                        </Td>
-                                                    </Tr>
-                                                ))
-                                            ) : (
-                                                <tr>
-                                                    <Td colSpan={7}>Nenhum título encontrado.</Td>
-                                                </tr>
-                                            )}
-                                        </TBody>
-                                    </Table>
-                                </TableScroller>
-                            </TableWrapper>
-                        )}
-                    </Card>
-                </Container>
+                        <SecondaryButton type="button" onClick={clearFilters}>
+                            <FaFilter /> Limpar filtros
+                        </SecondaryButton>
+                    </FilterGrid>
+                </FormStyled>
+            </FiltersPanel>
+
+            <StatsGrid>
+                <StatCard>
+                    <StatIcon><FaPlus /></StatIcon>
+                    <StatCopy>
+                        <StatLabel>Total de contratos</StatLabel>
+                        <StatValue>{stats.total}</StatValue>
+                        <StatHint>Cadastrados</StatHint>
+                    </StatCopy>
+                </StatCard>
+
+                <StatCard>
+                    <StatIcon $tone="success"><FaCheckCircle /></StatIcon>
+                    <StatCopy>
+                        <StatLabel>Contratos ativos</StatLabel>
+                        <StatValue>{stats.active}</StatValue>
+                        <StatHint>Vigência acima de 30 dias</StatHint>
+                    </StatCopy>
+                </StatCard>
+
+                <StatCard>
+                    <StatIcon $tone="warning"><FaClock /></StatIcon>
+                    <StatCopy>
+                        <StatLabel>Contratos a vencer</StatLabel>
+                        <StatValue>{stats.expiring}</StatValue>
+                        <StatHint>Próximos 30 dias</StatHint>
+                    </StatCopy>
+                </StatCard>
+
+                <StatCard>
+                    <StatIcon $tone="danger"><FaTimesCircle /></StatIcon>
+                    <StatCopy>
+                        <StatLabel>Contratos vencidos</StatLabel>
+                        <StatValue>{stats.expired}</StatValue>
+                        <StatHint>Vigência expirada</StatHint>
+                    </StatCopy>
+                </StatCard>
+
+                <StatCard>
+                    <StatIcon><FaDollarSign /></StatIcon>
+                    <StatCopy>
+                        <StatLabel>Receita anual</StatLabel>
+                        <StatValue>{formatCurrencyBRL(stats.revenueAnnual)}</StatValue>
+                        <StatHint>Prevista com contratos vigentes</StatHint>
+                    </StatCopy>
+                </StatCard>
+            </StatsGrid>
+
+            <Card>
+                <CardBody>
+                    <CardTitle>Contratos cadastrados</CardTitle>
+                    <TableWrapper>
+                        <TableScroller>
+                            <Table>
+                                <THead>
+                                    <Tr>
+                                        <Th>Nº do Título</Th>
+                                        <Th>Titular</Th>
+                                        <Th>Local</Th>
+                                        <Th>Vigência</Th>
+                                        <Th>Valor</Th>
+                                        <Th>Status</Th>
+                                        <Th>Ações</Th>
+                                    </Tr>
+                                </THead>
+                                <TBody>
+                                    {isLoading ? (
+                                        <Tr>
+                                            <Td colSpan={7}>Carregando contratos...</Td>
+                                        </Tr>
+                                    ) : filteredTitulos.length > 0 ? (
+                                        filteredTitulos.map((item, index) => {
+                                            const normalized = normalizeContract(item);
+                                            return (
+                                                <Tr key={String(normalized.id || normalized.numero_titulo)} index={index}>
+                                                    <Td>{normalized.numero_titulo}</Td>
+                                                    <Td>{normalized.nome_titular}</Td>
+                                                    <TdLocal>{formatLocal(normalized, selectedCemeteryName)}</TdLocal>
+                                                    <Td>{formatDateBR(normalized.validade_titulo)}</Td>
+                                                    <TdValue>{formatCurrencyBRL(normalized.valor)}</TdValue>
+                                                    <TdStatus>
+                                                        <StatusBadge $status={normalized.status}>
+                                                            {statusLabel(normalized.status)}
+                                                        </StatusBadge>
+                                                    </TdStatus>
+                                                    <Td>
+                                                        <Actions>
+                                                            <IconBtn type="button" onClick={() => handleEditTitulo(normalized)} disabled={isSubmitting}>
+                                                                <FaRegEdit />
+                                                            </IconBtn>
+                                                            <IconBtn type="button" onClick={() => handleDeleteTitulo(normalized.id)} disabled={isSubmitting}>
+                                                                <FaTrash />
+                                                            </IconBtn>
+                                                        </Actions>
+                                                    </Td>
+                                                </Tr>
+                                            );
+                                        })
+                                    ) : (
+                                        <Tr>
+                                            <Td colSpan={7}>Nenhum contrato encontrado.</Td>
+                                        </Tr>
+                                    )}
+                                </TBody>
+                            </Table>
+                        </TableScroller>
+                    </TableWrapper>
+                </CardBody>
+            </Card>
 
             {modalOpen && (
                 <ModalOverlay>
-                    {/* <div style={{
-                        position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999
-                    }} onMouseDown={(e) => { if (e.target === e.currentTarget) closeModal(); }}></div> */}
                     <ModalContent>
-                        <h3 style={{ marginTop: 0, marginBottom: 16, color: "#191970" }}>
-                            {editingId ? "Editar título de posse" : "Novo título de posse"}
-                        </h3>
+                        <CardTitle>{editingId ? "Editar título de posse" : "Novo título de posse"}</CardTitle>
 
                         <form onSubmit={handleSaveTitulo}>
                             <ModalGrid>
                                 <div style={{ gridColumn: "1 / -1" }}>
-                                    <label>Nome de titular</label>
+                                    <label>Nome do titular</label>
                                     <Input
                                         value={form.nome_titular}
-                                        onChange={(e) => updateField("nome_titular", e.target.value)}
+                                        onChange={(event) => updateField("nome_titular", event.target.value)}
                                         placeholder="Nome completo do titular"
                                         disabled={isSubmitting}
                                     />
@@ -315,11 +536,24 @@ return (
                                     <label>Número do título</label>
                                     <Input
                                         value={form.numero_titulo}
-                                        onChange={(e) => updateField("numero_titulo", e.target.value)}
+                                        onChange={(event) => updateField("numero_titulo", event.target.value)}
                                         placeholder="Ex: 000145"
                                         disabled={isSubmitting}
                                     />
                                     {errors.numero_titulo ? <p style={errorStyle}>{errors.numero_titulo}</p> : null}
+                                </div>
+
+                                <div>
+                                    <label>Valor</label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={form.valor}
+                                        onChange={(event) => updateField("valor", event.target.value)}
+                                        disabled={isSubmitting}
+                                    />
+                                    {errors.valor ? <p style={errorStyle}>{errors.valor}</p> : null}
                                 </div>
 
                                 <div>
@@ -329,11 +563,11 @@ return (
                                         fullWidth
                                         size="small"
                                         value={form.status}
-                                        onChange={(e) => updateField("status", e.target.value)}
+                                        onChange={(event) => updateField("status", event.target.value)}
                                         disabled={isSubmitting}
                                         sx={{
                                             "& .MuiOutlinedInput-root": {
-                                                borderRadius: "18px",
+                                                borderRadius: "12px",
                                             },
                                             "& .MuiOutlinedInput-input": {
                                                 fontSize: "14px",
@@ -353,7 +587,7 @@ return (
                                     <label>Sepultura</label>
                                     <Input
                                         value={form.sepultura}
-                                        onChange={(e) => updateField("sepultura", e.target.value)}
+                                        onChange={(event) => updateField("sepultura", event.target.value)}
                                         placeholder="Exemplo: 05"
                                         disabled={isSubmitting}
                                     />
@@ -364,7 +598,7 @@ return (
                                     <label>Quadra</label>
                                     <Input
                                         value={form.quadra}
-                                        onChange={(e) => updateField("quadra", e.target.value)}
+                                        onChange={(event) => updateField("quadra", event.target.value)}
                                         placeholder="Exemplo: 12"
                                         disabled={isSubmitting}
                                     />
@@ -372,11 +606,11 @@ return (
                                 </div>
 
                                 <div>
-                                    <label>Validade do titulo</label>
+                                    <label>Vigência</label>
                                     <Input
                                         type="date"
                                         value={form.validade_titulo}
-                                        onChange={(e) => updateField("validade_titulo", e.target.value)}
+                                        onChange={(event) => updateField("validade_titulo", event.target.value)}
                                         disabled={isSubmitting}
                                     />
                                     {errors.validade_titulo ? <p style={errorStyle}>{errors.validade_titulo}</p> : null}
@@ -384,16 +618,17 @@ return (
                             </ModalGrid>
 
                             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                                <BtnPrimaryClose type="button" onClick={closeModal}>
+                                <BtnPrimaryClose type="button" onClick={closeModal} disabled={isSubmitting}>
                                     Cancelar
                                 </BtnPrimaryClose>
-                                <BtnPrimarySave type="submit" disabled={isSubmitting}>{isSubmitting ? "Salvando..." : "Salvar título"}</BtnPrimarySave>
+                                <BtnPrimarySave type="submit" disabled={isSubmitting}>
+                                    {isSubmitting ? "Salvando..." : "Salvar título"}
+                                </BtnPrimarySave>
                             </div>
                         </form>
                     </ModalContent>
-                </ModalOverlay >
-            )
-            }
-        </>
-    )
+                </ModalOverlay>
+            )}
+        </Container>
+    );
 }
