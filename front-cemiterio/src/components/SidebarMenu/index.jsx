@@ -1,31 +1,37 @@
 import React, { useState } from "react";
 import { MdDashboard } from "react-icons/md";
 import { BsGrid3X3GapFill } from "react-icons/bs";
-import { GiGraveFlowers } from "react-icons/gi";
+import { GiArchiveRegister, GiGraveFlowers } from "react-icons/gi";
 import { PiFlowerTulip } from "react-icons/pi";
-import { AiFillFolderAdd } from "react-icons/ai";
 import { FaHouse } from "react-icons/fa6";
 import { RiArchiveDrawerFill } from "react-icons/ri";
-import { LuCalendarSearch, LuFileStack, LuChevronDown } from "react-icons/lu";
+import { LuCalendarSearch, LuFileStack } from "react-icons/lu";
 import { FaCross, FaMoneyBillWave } from "react-icons/fa";
 
 import sgclogo1 from "../../assets/logoSGCwhite.png";
 import {
     GlobalStyle,
+    CollapsedNavLink,
+    CollapsedToggle,
+    ChevronIcon,
+    CompactChildLink,
+    CompactNestedList,
     LogoContainer,
     LogoImage,
+    MenuIconSlot,
+    MenuLabel,
     NavContainer,
     NavItem,
     NavList,
-    NavTitle,
-    NestedList,
+    SidebarToggle,
     StyledNavLink,
-    DropdownToggle,
-    ChevronIcon,
     Title,
 } from "./styles";
+import { LiaFileContractSolid } from "react-icons/lia";
+import { TbReportAnalytics } from "react-icons/tb";
+import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 
-export default function SidebarMenu() {
+export default function SidebarMenu({ isCollapsed = false, onToggleSidebar }) {
     const [expandedItems, setExpandedItems] = useState({});
 
     const menuItems = [
@@ -33,17 +39,14 @@ export default function SidebarMenu() {
         {
             name: "Sepultamento",
             icon: <FaCross size={20} />,
-            path: "/cadastros",
             children: [
                 { name: "Falecido", icon: <PiFlowerTulip size={20} />, path: "/cadastros/falecido" },
                 { name: "Cadastrar Sepultamento", icon: <FaCross size={20} />, path: "/cadastros/sepultamento" },
-
             ],
         },
         {
             name: "Sepulturas",
             icon: <GiGraveFlowers size={20} />,
-            path: "/sepulturas",
             children: [
                 { name: "Mapa", icon: <BsGrid3X3GapFill size={20} />, path: "/vermapa" },
                 { name: "Cemitério", icon: <FaHouse size={20} />, path: "/sepulturas/cemiterio" },
@@ -51,7 +54,14 @@ export default function SidebarMenu() {
             ],
         },
         { name: "Calendário", icon: <LuCalendarSearch size={20} />, path: "/calendario" },
-        { name: "Registros Gerais", icon: <LuFileStack size={20} />, path: "/processselection" },
+        {
+            name: "Registros Gerais", icon: <LuFileStack size={20} />, children: [
+                { name: "Contratos", icon: <LiaFileContractSolid size={20} />, path: "/contratos" },
+                { name: "Registros", icon: <GiArchiveRegister size={20} />, path: "/registros" },
+                { name: "Relatórios", icon: <TbReportAnalytics size={20} />, path: "/relatorios" },
+                { name: "Taxas", icon: <FaMoneyBillWave size={20} />, path: "/taxas" },
+            ]
+        },
     ];
 
     const toggleExpanded = (itemName) => {
@@ -65,8 +75,16 @@ export default function SidebarMenu() {
         <>
             <GlobalStyle />
             <LogoContainer>
-                <LogoImage src={sgclogo1} alt="Logo Memo" />
-                <Title>SISTEMA DE GERENCIAMENTO DE CEMITÉRIOS</Title>
+                <LogoImage src={sgclogo1} alt="Logo Memo" $isCollapsed={isCollapsed} />
+                {!isCollapsed && <Title>SISTEMA DE GERENCIAMENTO DE CEMITÉRIOS</Title>}
+
+                <SidebarToggle
+                    type="button"
+                    onClick={onToggleSidebar}
+                    aria-label={isCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
+                >
+                    {isCollapsed ? <LuChevronRight size={18} /> : <LuChevronLeft size={18} />}
+                </SidebarToggle>
             </LogoContainer>
 
             <NavContainer>
@@ -74,32 +92,41 @@ export default function SidebarMenu() {
                     {menuItems.map((item) => (
                         <NavItem key={item.name}>
                             {item.children ? (
-                                <DropdownToggle
+                                <CollapsedToggle
                                     onClick={() => toggleExpanded(item.name)}
                                     isExpanded={expandedItems[item.name]}
+                                    $isCollapsed={isCollapsed}
                                 >
-                                    {item.icon}
-                                    <span>{item.name}</span>
-                                    <ChevronIcon isExpanded={expandedItems[item.name]}>
-                                        <LuChevronDown size={18} />
-                                    </ChevronIcon>
-                                </DropdownToggle>
+                                    <MenuIconSlot>{item.icon}</MenuIconSlot>
+                                    <MenuLabel $isCollapsed={isCollapsed}>{item.name}</MenuLabel>
+                                    {item.children && (
+                                        <ChevronIcon $direction={expandedItems[item.name] ? "left" : "right"} $compact={isCollapsed}>
+                                            <LuChevronRight size={18} />
+                                        </ChevronIcon>
+                                    )}
+                                </CollapsedToggle>
                             ) : (
-                                <StyledNavLink to={item.path}>
-                                    {item.icon} {item.name}
-                                </StyledNavLink>
+                                <CollapsedNavLink to={item.path} $isCollapsed={isCollapsed} title={item.name}>
+                                    <MenuIconSlot>{item.icon}</MenuIconSlot>
+                                    <MenuLabel $isCollapsed={isCollapsed}>{item.name}</MenuLabel>
+                                </CollapsedNavLink>
                             )}
 
                             {item.children && (
-                                <NestedList $isOpen={!!expandedItems[item.name]}>
+                                <CompactNestedList
+                                    $isOpen={!!expandedItems[item.name]}
+                                    $isVisible={!!expandedItems[item.name]}
+                                    $isCollapsed={isCollapsed}
+                                >
                                     {item.children.map((child) => (
                                         <NavItem key={child.name}>
-                                            <StyledNavLink to={child.path}>
-                                                {child.icon} {child.name}
-                                            </StyledNavLink>
+                                            <CompactChildLink to={child.path} title={child.name} $isCollapsed={isCollapsed}>
+                                                <MenuIconSlot>{child.icon}</MenuIconSlot>
+                                                <MenuLabel $isCollapsed={isCollapsed}>{child.name}</MenuLabel>
+                                            </CompactChildLink>
                                         </NavItem>
                                     ))}
-                                </NestedList>
+                                </CompactNestedList>
                             )}
                         </NavItem>
                     ))}

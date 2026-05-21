@@ -13,9 +13,14 @@ export const LogoContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
   position: relative;
   border-bottom: none;
   background: #191970;
+  min-height: 6.25rem;
+  box-sizing: border-box;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
 
   &::after {
     content: "";
@@ -29,18 +34,44 @@ export const LogoContainer = styled.div`
 `;
 
 export const LogoImage = styled.img`
-  width:300px;
-  height: 150px;
+  width: ${({ $isCollapsed }) => ($isCollapsed ? "58px" : "220px")};
+  height: ${({ $isCollapsed }) => ($isCollapsed ? "58px" : "112px")};
   object-fit: contain;
-  margin-bottom:-25px;
+  margin-bottom: ${({ $isCollapsed }) => ($isCollapsed ? "-2px" : "-25px")};
+`;
+
+export const SidebarToggle = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  cursor: pointer;
+  flex: 0 0 auto;
+  position: absolute;
+  top: 1rem;
+  right: 0.9rem;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  svg {
+    transition: transform 0.2s ease;
+  }
 `;
 
 
 export const NavContainer = styled.nav`
   flex: 1;
   min-height: 0;
-  padding: 0.5rem 0.75rem 1rem;
-  background: #191970;
+  padding: 0.6rem 0.75rem 1rem;
+  background: linear-gradient(180deg, #191970 0%, #18195d 100%);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -71,7 +102,7 @@ export const NavList = styled.ul`
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
 `;
 
 export const NavTitle = styled.h2`
@@ -98,11 +129,21 @@ export const NavItem = styled.li`
   width: 100%;
 `;
 
+export const MenuIconSlot = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  min-width: 1.6rem;
+  height: 1.6rem;
+  flex: 0 0 1.6rem;
+`;
+
 export const NestedList = styled.ul`
   list-style: none;
   padding: 0;
   font-size:14px;
-  margin: 0.35rem 0 0.2rem 0.75rem;
+  margin: 0.45rem 0 0.2rem 0.75rem;
   overflow: hidden;
   max-height: ${props => (props.$isOpen ? "500px" : "0px")};
   opacity: ${props => (props.$isOpen ? 1 : 0)};
@@ -122,22 +163,30 @@ export const StyledNavLink = styled(NavLink)`
   gap: 0.7rem;
   width: 100%;
   min-width: 0;
+  min-height: 3.15rem;
   box-sizing: border-box;
-  padding: 0.82rem 0.95rem;
+  padding: 0.85rem 0.95rem;
   border-radius: 0.7rem;
   text-decoration: none;
   color: #fff;
   font-weight: 800;
   transition: background-color 0.2s ease, color 0.2s ease;
   align-self: stretch;
+  position: relative;
+
+  svg {
+    flex: 0 0 auto;
+  }
 
   &:hover {
     background-color: #326bdd;
+    transform: translateX(2px);
   }
 
   &.active {
     background-color: #326bdd;
     font-weight: 600;
+    box-shadow: 0 10px 24px rgba(50, 107, 221, 0.28);
   }
 `;
 
@@ -154,9 +203,11 @@ export const DropdownToggle = styled(StyledNavLink).attrs({ as: "button" })`
   width: 100%;
   min-width: 0;
   align-self: stretch;
+  position: relative;
 
   &:hover {
     background-color: #326bdd;
+    transform: translateX(2px);
   }
 
   ${props => props.isExpanded && `
@@ -170,7 +221,87 @@ export const ChevronIcon = styled.span`
   justify-content: center;
   margin-left: auto;
   transition: transform 0.3s ease;
-  ${props => props.isExpanded && `
+  flex: 0 0 auto;
+
+  ${props => props.$direction === "left" && `
     transform: rotate(180deg);
   `}
+
+  ${props => props.$compact && `
+    position: absolute;
+    right: 0.8rem;
+    margin-left: 0;
+    opacity: 0.95;
+  `}
+`;
+
+export const MenuLabel = styled.span`
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 0.2s ease, width 0.2s ease, margin 0.2s ease;
+  width: ${({ $isCollapsed }) => ($isCollapsed ? "0" : "auto")};
+  opacity: ${({ $isCollapsed }) => ($isCollapsed ? 0 : 1)};
+  pointer-events: ${({ $isCollapsed }) => ($isCollapsed ? "none" : "auto")};
+`;
+
+export const CollapsedNavLink = styled(StyledNavLink)`
+  justify-content: flex-start;
+  padding: 0.85rem 0.95rem;
+
+  ${ChevronIcon} {
+    display: flex;
+  }
+
+  ${MenuLabel} {
+    display: ${({ $isCollapsed }) => ($isCollapsed ? "none" : "inline")};
+  }
+`;
+
+export const CollapsedToggle = styled(DropdownToggle)`
+  justify-content: flex-start;
+  padding: 0.85rem 2rem 0.85rem 0.95rem;
+
+  ${ChevronIcon} {
+    display: flex;
+    position: ${({ $isCollapsed }) => ($isCollapsed ? "absolute" : "static")};
+    right: ${({ $isCollapsed }) => ($isCollapsed ? "0.75rem" : "auto")};
+    margin-left: ${({ $isCollapsed }) => ($isCollapsed ? "0" : "auto")};
+  }
+
+  ${MenuLabel} {
+    display: ${({ $isCollapsed }) => ($isCollapsed ? "none" : "inline")};
+  }
+`;
+
+export const CompactNestedList = styled(NestedList)`
+  display: ${({ $isVisible }) => ($isVisible ? "block" : "none")};
+  margin-left: 0;
+  padding-left: 0;
+  position: ${({ $isCollapsed }) => ($isCollapsed ? "static" : "relative")};
+  width: 100%;
+
+  ${NavItem} {
+    margin-bottom: 0.25rem;
+  }
+`;
+
+export const CompactChildLink = styled(StyledNavLink)`
+  min-height: 2.8rem;
+  padding: 0.72rem 0.85rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  justify-content: ${({ $isCollapsed }) => ($isCollapsed ? "center" : "flex-start")};
+  gap: ${({ $isCollapsed }) => ($isCollapsed ? "0" : "0.65rem")};
+
+  &:hover,
+  &.active {
+    background-color: #326bdd;
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  ${MenuLabel} {
+    display: ${({ $isCollapsed }) => ($isCollapsed ? "none" : "inline")};
+  }
 `;

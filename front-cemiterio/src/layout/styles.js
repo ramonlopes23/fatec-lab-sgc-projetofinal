@@ -17,8 +17,8 @@ export const Content = styled.div`
   border-left:1px solid var(--app-border);
   display: flex;
   flex-direction: column;
-  width:${({isSidebarOpen}) => (isSidebarOpen? 'calc(100% - 16rem)' : '100%')};
-  margin-left:${({isSidebarOpen}) => (isSidebarOpen ? '16rem' : '0')};
+  width:${({isSidebarOpen}) => (isSidebarOpen? 'calc(100% - 16rem)' : 'calc(100% - 5.5rem)')};
+  margin-left:${({isSidebarOpen}) => (isSidebarOpen ? '16rem' : '5.5rem')};
   transition:width 0.3s ease, margin-left 0.3s ease;
   height:100vh;
 `;
@@ -32,7 +32,7 @@ export const PageContent = styled.main`
 `;
 
 export const SidebarContainer = styled.div`
-  width:16rem;
+  width:${({isOpen}) => (isOpen ? '16rem' : '5.5rem')};
   height:100vh;
   background-color:var(--app-surface);
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -43,8 +43,7 @@ export const SidebarContainer = styled.div`
   position:fixed;
   top:0;
   left:0;
-  transform:${({isOpen})=> (isOpen ?"translate(0)":"translate(-100%)")};
-  transition:transform 0.3s ease;
+  transition:width 0.3s ease;
   z-index:1000;
 `;
 

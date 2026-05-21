@@ -15,12 +15,11 @@ export default function MainLayout ({children}){
 
         <LayoutContainer>
             <SidebarContainer isOpen={isSidebarOpen}>
-                <SidebarMenu />
+                <SidebarMenu isCollapsed={!isSidebarOpen} onToggleSidebar={toggleSidebarMenu} />
             </SidebarContainer>
             <Content isSidebarOpen={isSidebarOpen}>
                 <Header onMenuClick={toggleSidebarMenu} />
-{                <PageContent>{children}</PageContent>
-}               
+                <PageContent>{children}</PageContent>
             </Content>
       
         </LayoutContainer>

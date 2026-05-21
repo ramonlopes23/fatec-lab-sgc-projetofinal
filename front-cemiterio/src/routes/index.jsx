@@ -11,7 +11,6 @@ import Contratos from "../pages/Contratos";
 import Cemiterios from "../pages/Cemiterios";
 import Ossarios from "../pages/Ossarios";
 import Taxas from "../pages/Taxas";
-import ProcessSelection from "../pages/ProcessSelection";
 import NotFound from "../pages/NotFound";
 import Login from "../pages/Login";
 import { useAuthStore } from "../stores/authStore";
@@ -52,7 +51,6 @@ export default function AppRoutes() {
                 <Route path='/sepulturas/ossario' element={<Ossarios />} />
                 <Route path='/registros' element={<Registros />} />
                 <Route path='/vermapa' element={<VerMapa />} />
-                <Route path='/processselection' element={<ProcessSelection />} />
                 <Route path='/relatorios' element={<Relatorios />} />
                 <Route path='/contratos' element={<Contratos />} />
                 <Route path='*' element={<NotFound />} />

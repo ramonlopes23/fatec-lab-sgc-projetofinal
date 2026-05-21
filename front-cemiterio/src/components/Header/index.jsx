@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { HiBars4 } from "react-icons/hi2";
 import { FaChevronDown, FaRegUserCircle, FaChevronUp } from "react-icons/fa";
+import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { FiLogOut } from 'react-icons/fi';
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
