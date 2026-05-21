@@ -1,15 +1,62 @@
 import { useEffect, useMemo, useState } from "react";
-import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
-import { FaSearch, FaRegEdit, FaTrash } from "react-icons/fa";
+import TextField from "@mui/material/TextField";
+import { FaChartPie, FaCheckCircle, FaFilter, FaPlus, FaRegEdit, FaSearch, FaTimesCircle, FaTrash } from "react-icons/fa";
 import api from "../../services/index.js";
-import { IconBtn, StatusBadge, Actions, BtnPrimaryClose, BtnPrimarySave, Container, FormStyled, SearchBar, SearchIcon, SearchWrapper, TableWrapper, Title, Card, TableScroller, TBody, THead, Table, Td, TdStatus, Th, Tr, ModalOverlay, ModalContent, ModalGrid, Input, TdNumContrato } from "./styles.js";
+import {
+    Actions,
+    BtnPrimaryClose,
+    BtnPrimarySave,
+    Card,
+    CardBody,
+    CardTitle,
+    ChartCardBody,
+    ChartStage,
+    Container,
+    FilterGrid,
+    FilterSelect,
+    FiltersPanel,
+    FormStyled,
+    HeaderActions,
+    HeaderCopy,
+    IconBtn,
+    Input,
+    LegendDot,
+    LegendKey,
+    LegendRow,
+    ModalContent,
+    ModalGrid,
+    ModalOverlay,
+    PageHeader,
+    PrimaryActionButton,
+    SearchField,
+    SearchIcon,
+    SearchWrapper,
+    SecondaryButton,
+    StatCard,
+    StatCopy,
+    StatHint,
+    StatIcon,
+    StatLabel,
+    StatValue,
+    StatsGrid,
+    StatusBadge,
+    Table,
+    TableScroller,
+    TableWrapper,
+    TBody,
+    Td,
+    TdStatus,
+    Th,
+    THead,
+    Title,
+    Tr,
+    Subtitle,
+} from "./styles.js";
 
 const TYPE_OPTIONS = [
-    { value: "individual", label: "Individual" },
     { value: "coletivo", label: "Coletivo" },
     { value: "familiar", label: "Familiar" },
-    { value: "temporario", label: "Temporário" },
 ];
 
 const STATUS_OPTIONS = [
@@ -19,27 +66,57 @@ const STATUS_OPTIONS = [
     { value: "manutencao", label: "Manutenção" },
 ];
 
+const ACTIVE_STATUS = new Set(["disponivel", "ocupado"]);
+const INACTIVE_STATUS = new Set(["interditado", "manutencao"]);
+
 const INITIAL_FORM = {
     numero: "",
-    tipo: "individual",
+    tipo: "coletivo",
     status: "disponivel",
     obs: "",
 };
 
-const statusLabel = (status) => {
-    const normalized = String(status || "").trim().toLowerCase();
-    const found = STATUS_OPTIONS.find((s) => s.value === normalized);
-    return found ? found.label : (status || "-");
+const errorStyle = { margin: "6px 0 0", color: "#b42318", fontSize: 12 };
+
+const normalizeSearchText = (value) => String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const normalizeType = (value) => {
+    const raw = String(value || "").trim().toLowerCase();
+    if (raw === "individual") return "familiar";
+    if (TYPE_OPTIONS.some((item) => item.value === raw)) return raw;
+    return "";
 };
 
 const typeLabel = (type) => {
-    const normalized = String(type || "").trim().toLowerCase();
-    const found = TYPE_OPTIONS.find((s) => s.value === normalized);
+    const raw = String(type || "").trim().toLowerCase();
+    if (raw === "individual") return "Individual";
+    const found = TYPE_OPTIONS.find((option) => option.value === raw);
     return found ? found.label : (type || "-");
+};
+
+const statusLabel = (status) => {
+    const normalized = String(status || "").trim().toLowerCase();
+    const found = STATUS_OPTIONS.find((option) => option.value === normalized);
+    return found ? found.label : (status || "-");
+};
+
+const normalizeStatus = (status) => String(status || "").trim().toLowerCase();
+
+const isOssarioActive = (item) => {
+    if (item?.active !== undefined) return Boolean(item.active);
+    const status = normalizeStatus(item?.status);
+    if (ACTIVE_STATUS.has(status)) return true;
+    if (INACTIVE_STATUS.has(status)) return false;
+    return status !== "";
 };
 
 export default function OssariosComponent() {
     const [query, setQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
     const [modalOpen, setModalOpen] = useState(false);
     const [items, setItems] = useState([]);
     const [form, setForm] = useState(INITIAL_FORM);
@@ -47,23 +124,6 @@ export default function OssariosComponent() {
     const [editingId, setEditingId] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-
-    const filteredItems = useMemo(() => {
-        const q = String(query || "").trim().toLowerCase();
-        if (!q) return items;
-
-        return items.filter((item) => {
-            return String(item.numero || "").toLowerCase().includes(q)
-                || String(item.tipo || "").toLowerCase().includes(q)
-                || String(item.status || "").toLowerCase().includes(q)
-                || String(item.obs || "").toLowerCase().includes(q);
-        });
-    }, [query, items]);
-
-    const updateField = (key, value) => {
-        setForm((prev) => ({ ...prev, [key]: value }));
-        setErrors((prev) => ({ ...prev, [key]: "" }));
-    };
 
     const loadItems = async () => {
         setIsLoading(true);
@@ -83,6 +143,45 @@ export default function OssariosComponent() {
         loadItems();
     }, []);
 
+    const normalizedItems = useMemo(() => items.map((item) => ({
+        ...item,
+        tipo: normalizeType(item.tipo) || item.tipo,
+        active: isOssarioActive(item),
+    })), [items]);
+
+    const filteredItems = useMemo(() => {
+        const q = normalizeSearchText(query);
+
+        return normalizedItems.filter((item) => {
+            const matchesSearch = !q || [item.numero, item.tipo, item.status, item.obs].some((field) => normalizeSearchText(field).includes(q));
+            const matchesStatus = statusFilter === "all"
+                || (statusFilter === "active" && item.active)
+                || (statusFilter === "inactive" && !item.active);
+            return matchesSearch && matchesStatus;
+        });
+    }, [normalizedItems, query, statusFilter]);
+
+    const stats = useMemo(() => {
+        const total = normalizedItems.length;
+        const active = normalizedItems.filter((item) => item.active).length;
+        const inactive = total - active;
+        const collective = normalizedItems.filter((item) => normalizeType(item.tipo) === "coletivo").length;
+        const familiar = normalizedItems.filter((item) => normalizeType(item.tipo) === "familiar").length;
+
+        return {
+            total,
+            active,
+            inactive,
+            collective,
+            familiar,
+        };
+    }, [normalizedItems]);
+
+    const updateField = (key, value) => {
+        setForm((prev) => ({ ...prev, [key]: value }));
+        setErrors((prev) => ({ ...prev, [key]: "" }));
+    };
+
     const openModal = () => {
         setEditingId(null);
         setForm(INITIAL_FORM);
@@ -92,6 +191,7 @@ export default function OssariosComponent() {
 
     const closeModal = () => {
         setModalOpen(false);
+        setEditingId(null);
         setForm(INITIAL_FORM);
         setErrors({});
     };
@@ -103,10 +203,10 @@ export default function OssariosComponent() {
         if (!form.status.trim()) nextErrors.status = "Informe o status do ossário";
 
         const numeroNormalizado = form.numero.trim().toLowerCase();
-        const isDuplicated = items.some(
+        const duplicated = items.some(
             (item) => item.id !== editingId && String(item.numero || "").trim().toLowerCase() === numeroNormalizado
         );
-        if (isDuplicated) {
+        if (duplicated) {
             nextErrors.numero = "Já existe um ossário com esse número";
         }
 
@@ -114,17 +214,15 @@ export default function OssariosComponent() {
         return Object.keys(nextErrors).length === 0;
     };
 
-    const errorStyle = { margin: "6px 0 0", color: "#b42318", fontSize: 12 };
-
-    const handleSave = async (e) => {
-        e.preventDefault();
+    const handleSave = async (event) => {
+        event.preventDefault();
         if (!validateForm()) return;
 
         setIsSubmitting(true);
         try {
             const payload = {
                 numero: form.numero.trim(),
-                tipo: form.tipo,
+                tipo: normalizeType(form.tipo) || form.tipo,
                 status: form.status,
                 obs: form.obs.trim(),
             };
@@ -134,6 +232,7 @@ export default function OssariosComponent() {
                     ...payload,
                     id: editingId,
                 });
+                alert("Ossário atualizado com sucesso.");
             } else {
                 await api.post("/ossarios", payload);
                 alert("Ossário cadastrado com sucesso.");
@@ -141,10 +240,9 @@ export default function OssariosComponent() {
 
             await loadItems();
             closeModal();
-            setEditingId(null);
         } catch (error) {
             console.error("Erro ao salvar ossário", error);
-            alert("Não foi possível salvar o ossário");
+            alert(error?.response?.data?.message || error?.message || "Não foi possível salvar o ossário");
         } finally {
             setIsSubmitting(false);
         }
@@ -154,8 +252,8 @@ export default function OssariosComponent() {
         setEditingId(item.id);
         setForm({
             numero: item.numero || "",
-            tipo: item.tipo || "individual",
-            status: item.status || "disponivel",
+            tipo: normalizeType(item.tipo) || "coletivo",
+            status: normalizeStatus(item.status) || "disponivel",
             obs: item.obs || "",
         });
         setErrors({});
@@ -173,99 +271,155 @@ export default function OssariosComponent() {
             await loadItems();
         } catch (error) {
             console.error("Erro ao excluir ossário", error);
-            alert("Não foi possível excluir o ossário");
+            alert(error?.response?.data?.message || error?.message || "Não foi possível excluir o ossário");
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    const clearFilters = () => {
+        setQuery("");
+        setStatusFilter("all");
+    };
+
     return (
-        <>
-            <Container>
-                <FormStyled>
-                    <Title>OSSÁRIOS</Title>
-                    <SearchWrapper>
-                        <TextField
-                            fullWidth
-                            size="small"
-                            label="Pesquisar"
-                            placeholder="Pesquisar por número, tipo, status ou observações..."
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    borderRadius: '18px',
-                                    paddingRight: '44px'
-                                },
-                                '& .MuiOutlinedInput-input': {
-                                    fontSize: '14px'
-                                }
-                            }}
-                        />
-                        <SearchIcon>
-                            <FaSearch />
-                        </SearchIcon>
-                    </SearchWrapper>
+        <Container>
+            <PageHeader>
+                <HeaderCopy>
+                    <Title>Controle de Ossários</Title>
+                    <Subtitle>Gerencie os ossários cadastrados e acompanhe a distribuição entre coletivos e familiares.</Subtitle>
+                </HeaderCopy>
+
+                <HeaderActions>
+                    <PrimaryActionButton type="button" onClick={openModal} disabled={isSubmitting}>
+                        <FaPlus /> Novo Ossário
+                    </PrimaryActionButton>
+                </HeaderActions>
+            </PageHeader>
+
+            <FiltersPanel>
+                <FormStyled as="div">
+                    <FilterGrid>
+                        <SearchWrapper>
+                            <SearchIcon>
+                                <FaSearch />
+                            </SearchIcon>
+                            <SearchField
+                                value={query}
+                                onChange={(event) => setQuery(event.target.value)}
+                                placeholder="Pesquisar por número, tipo, status ou observações..."
+                            />
+                        </SearchWrapper>
+
+                        <FilterSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                            <option value="all">Situação: Todas</option>
+                            <option value="active">Situação: Ativos</option>
+                            <option value="inactive">Situação: Inativos</option>
+                        </FilterSelect>
+
+                        <SecondaryButton type="button" onClick={clearFilters}>
+                            <FaFilter /> Limpar filtros
+                        </SecondaryButton>
+                    </FilterGrid>
+
+                    {isLoading ? <p style={{ margin: 0, color: "#6c7293" }}>Carregando dados...</p> : null}
+                    {stats.total === 0 && !isLoading ? <p style={{ margin: 0, color: "#8a5a00" }}>Nenhum ossário cadastrado.</p> : null}
                 </FormStyled>
+            </FiltersPanel>
 
-                <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-                    <BtnPrimarySave type="button" onClick={openModal}>
-                        <FaRegEdit />Adicionar ossário
-                    </BtnPrimarySave>
-                </div>
+            <StatsGrid>
+                <StatCard>
+                    <StatIcon><FaPlus /></StatIcon>
+                    <StatCopy>
+                        <StatLabel>Ossários cadastrados</StatLabel>
+                        <StatValue>{stats.total}</StatValue>
+                        <StatHint>Total no cadastro</StatHint>
+                    </StatCopy>
+                </StatCard>
 
-                <Card>
-                    <h3 style={{ marginTop: 0, color: "#191970" }}>Ossários cadastrados</h3>
-                    {isLoading ? (
-                        <p style={{ textAlign: "center", color: "#666" }}>Carregando...</p>
-                    ) : (
-                        <TableWrapper>
-                            <TableScroller>
-                                <Table>
-                                    <THead>
-                                        <tr>
-                                            <Th>Número</Th>
-                                            <Th>Tipo</Th>
-                                            <Th>Status</Th>
-                                            <Th>Observações</Th>
-                                            <Th>Ações</Th>
-                                        </tr>
-                                    </THead>
-                                    <TBody>
-                                        {filteredItems.length > 0 ? (
-                                            filteredItems.map((item, index) => (
-                                                <Tr key={item.id} index={index}>
-                                                    <TdNumContrato>{item.numero}</TdNumContrato>
-                                                    <Td>{typeLabel(item.tipo)}</Td>
-                                                    <TdStatus><StatusBadge $status={item.status}>{statusLabel(item.status)}</StatusBadge></TdStatus>
-                                                    <Td>{item.obs || "-"}</Td>
-                                                    <Td>
-                                                        <Actions>
-                                                            <IconBtn type="button" onClick={() => handleEdit(item)}><FaRegEdit /></IconBtn>
-                                                            <IconBtn type="button" onClick={() => handleDelete(item.id)}><FaTrash /></IconBtn>
-                                                        </Actions>
-                                                    </Td>
-                                                </Tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <Td colSpan={5}>Nenhum ossário encontrado.</Td>
-                                            </tr>
-                                        )}
-                                    </TBody>
-                                </Table>
-                            </TableScroller>
-                        </TableWrapper>
-                    )}
-                </Card>
-            </Container>
+                <StatCard>
+                    <StatIcon $tone="success"><FaCheckCircle /></StatIcon>
+                    <StatCopy>
+                        <StatLabel>Ossários ativos</StatLabel>
+                        <StatValue>{stats.active}</StatValue>
+                        <StatHint>Disponíveis para uso</StatHint>
+                    </StatCopy>
+                </StatCard>
+
+                <StatCard>
+                    <StatIcon $tone="danger"><FaTimesCircle /></StatIcon>
+                    <StatCopy>
+                        <StatLabel>Ossários inativos</StatLabel>
+                        <StatValue>{stats.inactive}</StatValue>
+                        <StatHint>Bloqueados/arquivados</StatHint>
+                    </StatCopy>
+                </StatCard>
+
+                <StatCard>
+                    <StatIcon $tone="warning"><FaChartPie /></StatIcon>
+                    <StatCopy>
+                        <StatLabel>Coletivos x familiares</StatLabel>
+                        <StatValue>{stats.collective} / {stats.familiar}</StatValue>
+                        <StatHint>Distribuição por tipo</StatHint>
+                    </StatCopy>
+                </StatCard>
+            </StatsGrid>            
+
+            <Card>
+                <CardBody>
+                    <CardTitle>Ossários cadastrados</CardTitle>
+                    <TableWrapper>
+                        <TableScroller>
+                            <Table>
+                                <THead>
+                                    <Tr>
+                                        <Th>Número</Th>
+                                        <Th>Tipo</Th>
+                                        <Th>Status</Th>
+                                        <Th>Observações</Th>
+                                        <Th>Ações</Th>
+                                    </Tr>
+                                </THead>
+                                <TBody>
+                                    {filteredItems.length > 0 ? (
+                                        filteredItems.map((item, index) => (
+                                            <Tr key={item.id} index={index}>
+                                                <Td>{item.numero}</Td>
+                                                <Td>{typeLabel(item.tipo)}</Td>
+                                                <TdStatus>
+                                                    <StatusBadge $status={normalizeStatus(item.status)}>
+                                                        {statusLabel(item.status)}
+                                                    </StatusBadge>
+                                                </TdStatus>
+                                                <Td>{item.obs || "-"}</Td>
+                                                <Td>
+                                                    <Actions>
+                                                        <IconBtn type="button" onClick={() => handleEdit(item)} disabled={isSubmitting}>
+                                                            <FaRegEdit />
+                                                        </IconBtn>
+                                                        <IconBtn type="button" onClick={() => handleDelete(item.id)} disabled={isSubmitting}>
+                                                            <FaTrash />
+                                                        </IconBtn>
+                                                    </Actions>
+                                                </Td>
+                                            </Tr>
+                                        ))
+                                    ) : (
+                                        <Tr>
+                                            <Td colSpan={5}>Nenhum ossário encontrado.</Td>
+                                        </Tr>
+                                    )}
+                                </TBody>
+                            </Table>
+                        </TableScroller>
+                    </TableWrapper>
+                </CardBody>
+            </Card>
 
             {modalOpen && (
                 <ModalOverlay>
                     <ModalContent>
-                        <h3 style={{ marginTop: 0, marginBottom: 16, color: "#191970" }}>
-                            {editingId ? "Editar ossário" : "Novo ossário"}
-                        </h3>
+                        <CardTitle>{editingId ? "Editar ossário" : "Novo ossário"}</CardTitle>
 
                         <form onSubmit={handleSave}>
                             <ModalGrid>
@@ -273,7 +427,7 @@ export default function OssariosComponent() {
                                     <label>Número do ossário</label>
                                     <Input
                                         value={form.numero}
-                                        onChange={(e) => updateField("numero", e.target.value)}
+                                        onChange={(event) => updateField("numero", event.target.value)}
                                         placeholder="Ex: 01"
                                         disabled={isSubmitting}
                                     />
@@ -287,15 +441,11 @@ export default function OssariosComponent() {
                                         fullWidth
                                         size="small"
                                         value={form.tipo}
-                                        onChange={(e) => updateField("tipo", e.target.value)}
+                                        onChange={(event) => updateField("tipo", event.target.value)}
                                         disabled={isSubmitting}
                                         sx={{
-                                            "& .MuiOutlinedInput-root": {
-                                                borderRadius: "18px",
-                                            },
-                                            "& .MuiOutlinedInput-input": {
-                                                fontSize: "14px",
-                                            },
+                                            "& .MuiOutlinedInput-root": { borderRadius: "12px" },
+                                            "& .MuiOutlinedInput-input": { fontSize: "14px" },
                                         }}
                                     >
                                         {TYPE_OPTIONS.map((option) => (
@@ -314,15 +464,11 @@ export default function OssariosComponent() {
                                         fullWidth
                                         size="small"
                                         value={form.status}
-                                        onChange={(e) => updateField("status", e.target.value)}
+                                        onChange={(event) => updateField("status", event.target.value)}
                                         disabled={isSubmitting}
                                         sx={{
-                                            "& .MuiOutlinedInput-root": {
-                                                borderRadius: "18px",
-                                            },
-                                            "& .MuiOutlinedInput-input": {
-                                                fontSize: "14px",
-                                            },
+                                            "& .MuiOutlinedInput-root": { borderRadius: "12px" },
+                                            "& .MuiOutlinedInput-input": { fontSize: "14px" },
                                         }}
                                     >
                                         {STATUS_OPTIONS.map((option) => (
@@ -338,7 +484,7 @@ export default function OssariosComponent() {
                                     <label>Observações</label>
                                     <Input
                                         value={form.obs}
-                                        onChange={(e) => updateField("obs", e.target.value)}
+                                        onChange={(event) => updateField("obs", event.target.value)}
                                         placeholder="Observações gerais"
                                         disabled={isSubmitting}
                                     />
@@ -346,15 +492,17 @@ export default function OssariosComponent() {
                             </ModalGrid>
 
                             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                                <BtnPrimaryClose type="button" onClick={closeModal}>
+                                <BtnPrimaryClose type="button" onClick={closeModal} disabled={isSubmitting}>
                                     Cancelar
                                 </BtnPrimaryClose>
-                                <BtnPrimarySave type="submit" disabled={isSubmitting}>{isSubmitting ? "Salvando..." : "Salvar ossário"}</BtnPrimarySave>
+                                <BtnPrimarySave type="submit" disabled={isSubmitting}>
+                                    {isSubmitting ? "Salvando..." : "Salvar ossário"}
+                                </BtnPrimarySave>
                             </div>
                         </form>
                     </ModalContent>
                 </ModalOverlay>
             )}
-        </>
+        </Container>
     );
 }
