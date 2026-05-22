@@ -31,7 +31,7 @@ import { LiaFileContractSolid } from "react-icons/lia";
 import { TbReportAnalytics } from "react-icons/tb";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 
-export default function SidebarMenu({ isCollapsed = false, onToggleSidebar }) {
+export default function SidebarMenu({ isCollapsed = false }) {
     const [expandedItems, setExpandedItems] = useState({});
 
     const menuItems = [
@@ -78,13 +78,6 @@ export default function SidebarMenu({ isCollapsed = false, onToggleSidebar }) {
                 <LogoImage src={sgclogo1} alt="Logo Memo" $isCollapsed={isCollapsed} />
                 {!isCollapsed && <Title>SISTEMA DE GERENCIAMENTO DE CEMITÉRIOS</Title>}
 
-                <SidebarToggle
-                    type="button"
-                    onClick={onToggleSidebar}
-                    aria-label={isCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
-                >
-                    {isCollapsed ? <LuChevronRight size={18} /> : <LuChevronLeft size={18} />}
-                </SidebarToggle>
             </LogoContainer>
 
             <NavContainer>

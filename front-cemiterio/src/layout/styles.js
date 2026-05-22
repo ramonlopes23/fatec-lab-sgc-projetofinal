@@ -47,3 +47,27 @@ export const SidebarContainer = styled.div`
   z-index:1000;
 `;
 
+export const SidebarExternalToggle = styled.button`
+  position: fixed;
+  top: 20rem;
+  left: ${({ isOpen }) => (isOpen ? '16rem' : '5.5rem')};
+  width: 2rem;
+  height: 5.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-left: none;
+  border-radius: 0 5px 5px 0;
+  background: linear-gradient(180deg, #191970 0%, #191970 100%);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(13, 21, 87, 0.24);
+  z-index: 1100;
+  transition: left 0.3s ease, background-color 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    background: linear-gradient(180deg, #3a40c2 0%, #21268c 100%);
+  }
+`;
+

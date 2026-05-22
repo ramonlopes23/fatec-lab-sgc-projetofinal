@@ -14,11 +14,11 @@ export const LogoContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
+  gap: 0.45rem;
   position: relative;
   border-bottom: none;
   background: #191970;
-  min-height: 6.25rem;
+  height: 7rem;
   box-sizing: border-box;
   box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
 
@@ -28,16 +28,16 @@ export const LogoContainer = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    height: 2px;
+    height: 1px;
     background: #e5e7eb;
   }
 `;
 
 export const LogoImage = styled.img`
-  width: ${({ $isCollapsed }) => ($isCollapsed ? "58px" : "220px")};
-  height: ${({ $isCollapsed }) => ($isCollapsed ? "58px" : "112px")};
+  width: ${({ $isCollapsed }) => ($isCollapsed ? "120px" : "220px")};
+  height: ${({ $isCollapsed }) => ($isCollapsed ? "80px" : "112px")};
   object-fit: contain;
-  margin-bottom: ${({ $isCollapsed }) => ($isCollapsed ? "-2px" : "-25px")};
+  margin-bottom: ${({ $isCollapsed }) => ($isCollapsed ? "-25px" : "-25px")};
 `;
 
 export const SidebarToggle = styled.button`
@@ -70,11 +70,13 @@ export const SidebarToggle = styled.button`
 export const NavContainer = styled.nav`
   flex: 1;
   min-height: 0;
+  margin-top:1px;
   padding: 0.6rem 0.75rem 1rem;
   background: linear-gradient(180deg, #191970 0%, #18195d 100%);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
@@ -117,9 +119,9 @@ margin-left:2.5rem;
 export const Title = styled.h2`
   text-align: center;
   font-size: 10px;
-  line-height: 1.35;
+  line-height: 1.00;
   letter-spacing: 2px;
-  margin: 0;
+  margin-top: -10px;
   color: #ffffff;
 `;
 
@@ -260,13 +262,12 @@ export const CollapsedNavLink = styled(StyledNavLink)`
 
 export const CollapsedToggle = styled(DropdownToggle)`
   justify-content: flex-start;
-  padding: 0.85rem 2rem 0.85rem 0.95rem;
+  padding: 0.85rem 0.95rem;
 
   ${ChevronIcon} {
     display: flex;
-    position: ${({ $isCollapsed }) => ($isCollapsed ? "absolute" : "static")};
-    right: ${({ $isCollapsed }) => ($isCollapsed ? "0.75rem" : "auto")};
-    margin-left: ${({ $isCollapsed }) => ($isCollapsed ? "0" : "auto")};
+    margin-left: auto;
+    position: static;
   }
 
   ${MenuLabel} {

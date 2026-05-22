@@ -35,7 +35,7 @@ import {
     UserDropdownNote
 } from "./styles";
 
-export default function Header({ onMenuClick }) {
+export default function Header( ) {
     const navigate = useNavigate();
     const user = useAuthStore((s) => s.user);
     const hydrated = useAuthStore((s) => s.hydrated);
@@ -114,9 +114,7 @@ export default function Header({ onMenuClick }) {
     return (
         <HeaderContainer>
             <HeaderLeft>
-                <MenuButton type="button" onClick={onMenuClick} aria-label="Abrir menu lateral">
-                    <HiBars4 />
-                </MenuButton>
+                
             </HeaderLeft>
 
             <HeaderCenter ref={cemeteryDropdownRef}>
