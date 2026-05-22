@@ -1,597 +1,675 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import MainLayout from "../../layout/MainLayout";
-import Footer from "../../components/Footer";
-import { BtnPrimary, BtnPrimaryClose, BtnPrimarySave, ColumnLeft, ColumnRight, Container, Field, FormStyled, Label, ModalContent, ModalGrid, ModalOverlay, SearchBar, SearchIcon, SearchInput, SearchWrapper, SmallInput, SmallSelect, Title, TwoCols, IconBtn, TableWrapper, Table, Tr, THead, Td, TBody, Th } from "./styles"
-import { FaFileCsv, FaFileExcel, FaFilePdf, FaSearch, FaEye } from "react-icons/fa";
-import api from "../../services/index.js";
+import React, { useEffect, useMemo, useState } from "react";
+import { FaChartBar, FaCoins, FaEye, FaFileAlt, FaRegCalendarAlt, FaSearch, FaUsers } from "react-icons/fa";
 import FormControl from "@mui/material/FormControl";
-import MenuItem from "@mui/material/MenuItem";
-import TextField from "@mui/material/TextField";
 import InputLabel from "@mui/material/InputLabel";
-import Select from "@mui/material/Select"
-import { formatDateKey, formatDateTimeDMY, formatDateDMY } from "../../utils/date";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
+import api from "../../services/index.js";
+import { formatDateDMY, parseDateValue } from "../../utils/date";
+import { formatCurrencyBRL } from "../../utils/taxas";
+import RelatoriosArrecadacaoMensalChart from "./charts/RelatoriosArrecadacaoMensalChart";
+import RelatoriosSepultadosMesChart from "./charts/RelatoriosSepultadosMesChart";
+import RelatoriosTipoSepultamentoPie from "./charts/RelatoriosTipoSepultamentoPie";
+import {
+    Actions,
+    ChartBody,
+    ChartCard,
+    ChartHeader,
+    ChartSubtitle,
+    ChartTitle,
+    ChartsGrid,
+    Container,
+    EmptyState,
+    FilterActionRow,
+    FilterCard,
+    FilterCardTitle,
+    FilterGrid,
+    FilterHint,
+    FilterRow,
+    HeaderCopy,
+    IconBtn,
+    LayoutGrid,
+    MainColumn,
+    ModalContent,
+    ModalField,
+    ModalFieldLabel,
+    ModalFieldValue,
+    ModalGrid,
+    ModalOverlay,
+    ModalSubtitle,
+    ModalTitle,
+    PageButton,
+    PageHeader,
+    PeriodChip,
+    PeriodChipLabel,
+    PeriodChipValue,
+    PrimaryButton,
+    SearchField,
+    SearchIcon,
+    SearchWrapper,
+    SecondaryButton,
+    Subtitle,
+    StatCard,
+    StatCopy,
+    StatHint,
+    StatIcon,
+    StatLabel,
+    StatValue,
+    StatsGrid,
+    StatusBadge,
+    Title,
+    Table,
+    TableCard,
+    TableHeader,
+    TableNote,
+    TableScroller,
+    TableTitle,
+    Td,
+    TdLocal,
+    TdValue,
+    TBody,
+    Th,
+    THead,
+    Tr,
+} from "./styles";
+import { FaCross, FaUserGroup } from "react-icons/fa6";
+import { RiContractFill, RiMoneyDollarBoxFill } from "react-icons/ri";
 
-export default function RelatoriosComponent() {
+const PAGE_SIZE = 8;
+const PERIOD_OPTIONS = [
+    { value: "all", label: "Todo o histórico" },
+    { value: "7d", label: "Últimos 7 dias" },
+    { value: "30d", label: "Últimos 30 dias" },
+    { value: "90d", label: "Últimos 90 dias" },
+    { value: "year", label: "Ano atual" },
+    { value: "custom", label: "Período personalizado" },
+];
 
-    const [search, setSearch] = useState("");
-    const [tipoLista, setTipoLista] = useState("exumacoes");
-    const [filters, setFilters] = useState({
-        quadra: "",
-        sepultura: "",
-        tipo_sep: "",
-        data_inicio: "",
-        data_fim: "",
-        status_taxa: ""
+const MONTH_LABELS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+const initialFilters = {
+    search: "",
+    quadra: "",
+    sepultura: "",
+    tipo: "all",
+    periodo: "30d",
+    dataInicio: "",
+    dataFim: "",
+};
+
+const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
+
+const isParticularRecord = (item) => {
+    const raw = normalizeText(item?.titulo_posse);
+    return ["sim", "s", "true", "1", "particular", "próprio", "proprio", "própria", "propria"].some((token) => raw.includes(token));
+};
+
+const classifyTaxa = (item) => {
+    const code = normalizeText(item?.taxa);
+    const label = normalizeText(item?.taxa_label);
+
+    if (code.includes("indig") || label.includes("indig")) return "indigente";
+    if (code.includes("crianca") || label.includes("criança") || label.includes("crianca")) return "crianca";
+    if (code.includes("adult") || label.includes("adult")) return "adulto";
+    return "outros";
+};
+
+const getMonthKey = (date) => {
+    if (!date) return null;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    return `${year}-${month}`;
+};
+
+const getMonthLabel = (monthKey) => {
+    if (!monthKey) return "Sem data";
+    const [year, month] = monthKey.split("-").map(Number);
+    return `${MONTH_LABELS[(month || 1) - 1]}/${String(year).slice(-2)}`;
+};
+
+const resolvePeriodRange = (filters) => {
+    const now = new Date();
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    if (filters.periodo === "custom") {
+        const start = filters.dataInicio ? new Date(`${filters.dataInicio}T00:00:00`) : null;
+        const end = filters.dataFim ? new Date(`${filters.dataFim}T23:59:59.999`) : null;
+        return { start, end };
+    }
+
+    if (filters.periodo === "7d" || filters.periodo === "30d" || filters.periodo === "90d") {
+        const days = Number(filters.periodo.replace("d", ""));
+        const start = new Date(now);
+        start.setDate(start.getDate() - (days - 1));
+        start.setHours(0, 0, 0, 0);
+        return { start, end: endOfToday };
+    }
+
+    if (filters.periodo === "year") {
+        const start = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+        return { start, end: endOfToday };
+    }
+
+    return { start: null, end: null };
+};
+
+const getStatusTone = (item) => {
+    const status = normalizeText(item?.status);
+    if (status.includes("cancel")) return "danger";
+    if (status.includes("pend") || status.includes("aguard")) return "warning";
+    return "success";
+};
+
+const getStatusLabel = (item) => {
+    const status = String(item?.status || "").trim();
+    if (status) return status;
+    return item?.confirmado ? "Concluído" : "Pendente";
+};
+
+const buildMonthlySeries = (items, valueSelector) => {
+    const map = new Map();
+
+    items.forEach((item) => {
+        const date = parseDateValue(item?.dh_sep);
+        const key = getMonthKey(date);
+        if (!key) return;
+
+        const current = map.get(key) || 0;
+        map.set(key, current + Number(valueSelector(item) || 0));
     });
-    const [exumacoes, setExumacoes] = useState([]);
-    const [sepultamentos, setSepultamentos] = useState([]);
-    const [page, setPage] = useState(1);
-    const [, setCovas] = useState([]);
-    const [quadras, setQuadras] = useState([])
-    const PAGE_SIZE = 10;
-    const [isLoading, setIsLoading] = useState(false);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [modalForm, setModalForm] = useState(null);
 
-    const formatCurrency = (v) => {
-        const n = Number(v);
-        return new Intl.NumberFormat('pt-br', { style: 'currency', currency: 'BRL' }).format(isNaN(n) ? 0 : n);
+    return Array.from(map.entries())
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, value]) => ({ key, label: getMonthLabel(key), value }));
+};
+
+const buildTypeSeries = (items) => {
+    const totals = {
+        crianca: 0,
+        adulto: 0,
+        indigente: 0,
+        outros: 0,
     };
 
-    const taxaSomaTotal = useMemo(() => {
-        return (sepultamentos || []).reduce((acc, it) => acc + (Number(it?.taxa_valor) || 0), 0);
+    items.forEach((item) => {
+        totals[classifyTaxa(item)] += 1;
+    });
 
-    }, [sepultamentos]);
+    return [
+        { key: "adulto", label: "Adulto", value: totals.adulto, color: "#6f63ff" },
+        { key: "crianca", label: "Criança", value: totals.crianca, color: "#5ec58f" },
+        { key: "indigente", label: "Indigente", value: totals.indigente, color: "#f59e0b" },
+    ].filter((item) => item.value > 0);
+};
 
-    const taxaSomaPeriodo = useMemo(() => {
-        const start = filters.data_inicio ? new Date(filters.data_inicio) : null;
-        const end = filters.data_fim ? new Date(filters.data_fim) : null;
-        if (end) end.setHours(23, 59, 59, 999);
-        if (!start && !end) return taxaSomaTotal;
+const sortNumericText = (left, right) => {
+    const leftNumber = Number(left);
+    const rightNumber = Number(right);
 
-        return (sepultamentos || []).reduce((acc, it) => {
-            if (!it?.dh_sep) return acc;
-            const d = new Date(it.dh_sep);
-            if (start && d < start) return acc;
-            if (end && d > end) return acc;
-            return acc + (Number(it?.taxa_valor) || 0);
-        }, 0)
-    }, [sepultamentos, filters.data_inicio, filters.data_fim, taxaSomaTotal])
+    if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) return leftNumber - rightNumber;
+    return String(left).localeCompare(String(right), "pt-BR", { numeric: true, sensitivity: "base" });
+};
 
-    const sepCountTotal = useMemo(() => (sepultamentos || []).length, [sepultamentos]);
-
-    const sepCountPeriodo = useMemo(() => {
-        const start = filters.data_inicio ? new Date(filters.data_inicio) : null;
-        const end = filters.data_fim ? new Date(filters.data_fim) : null;
-        if (end) end.setHours(23, 59, 59, 999);
-        if (!start && !end) return sepCountTotal;
-
-        return (sepultamentos || []).reduce((acc, it) => {
-            if (!it?.dh_sep) return acc;
-            const d = new Date(it.dh_sep);
-            if (start && d < start) return acc;
-            if (end && d > end) return acc;
-            return acc + 1;
-        }, 0);
-    }, [sepultamentos, filters.data_inicio, filters.data_fim, sepCountTotal])
+export default function RelatoriosComponent() {
+    const [sepultamentos, setSepultamentos] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [page, setPage] = useState(1);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [filters, setFilters] = useState(initialFilters);
 
     useEffect(() => {
+        const loadData = async () => {
+            setIsLoading(true);
+            try {
+                const response = await api.get("/sepultamentos").catch(() => ({ data: [] }));
+                setSepultamentos(Array.isArray(response.data) ? response.data : []);
+            } catch (error) {
+                console.error("Erro ao carregar sepultamentos", error);
+                setSepultamentos([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
         loadData();
     }, []);
 
-    const getStatusTaxa = (item) => {
-        if (!item) return null;
-        if (item.status_taxa) return String(item.status_taxa).toLowerCase();
-        const val = Number(item.taxa_valor ?? 0);
-        return val > 0 ? "pago" : "gratuito";
-    }
+    const filteredItems = useMemo(() => {
+        const search = normalizeText(filters.search);
+        const { start, end } = resolvePeriodRange(filters);
 
-    const matchesStatusFilter = useCallback((item) => {
-        const want = String(filters.status_taxa || "").trim().toLowerCase();
-        if (!want) return true;
-        const s = getStatusTaxa(item);
-        return s === want;
-    }, [filters.status_taxa]);
+        return sepultamentos.filter((item) => {
+            const name = normalizeText(item?.nome_sep || item?.nome);
+            if (search && !name.includes(search)) return false;
 
-    const loadData = async () => {
-        setIsLoading(true);
-        try {
-            const [rExu, rSep, rQuadras, rCovas] = await Promise.all([
-                api.get("/exumacoes").catch(() => ({ data: [] })),
-                api.get("/sepultamentos").catch(() => ({ data: [] })),
-                api.get("/quadras").catch(() => ({ data: [] })),
-                api.get("/covas").catch(() => ({ data: [] })),
-            ]);
-            setExumacoes(Array.isArray(rExu.data) ? rExu.data : []);
-            setSepultamentos(Array.isArray(rSep.data) ? rSep.data : []);
-            setQuadras(Array.isArray(rQuadras.data) ? rQuadras.data : []);
-            setCovas(Array.isArray(rCovas.data) ? rCovas.data : []);
-            setPage(1);
-        } catch (err) {
-            console.error("Erro ao carregar exumações/quadras/covas", err);
+            if (filters.quadra && String(item?.quadra_sep ?? "") !== String(filters.quadra)) return false;
+            if (filters.sepultura && String(item?.num_sepultura_sep ?? "") !== String(filters.sepultura)) return false;
 
-        } finally {
-            setIsLoading(false);
-        }
-    };
+            const isParticular = isParticularRecord(item);
+            if (filters.tipo === "particular" && !isParticular) return false;
+            if (filters.tipo === "comum" && isParticular) return false;
 
-    const filtered = useMemo(() => {
-        const s = String(search || "").trim().toLowerCase();
-        const start = filters.data_inicio ? (() => {
-            const [y, m, d] = String(filters.data_inicio).split("-").map(Number);
-            return new Date(y, (m || 1) - 1, d || 1, 0, 0, 0, 0);
-        })() : null;
-
-        const end = filters.data_fim ? (() => {
-            const [y, m, d] = String(filters.data_fim).split("-").map(Number);
-            return new Date(y, (m || 1) - 1, d || 1, 23, 59, 59, 999);
-        })() : null;
-
-        return exumacoes.filter(item => {
-            const nome = String(item.nome_fal || "").toLowerCase();
-            if (s && !nome.includes(s)) return false;
-
-            if (filters.quadra) {
-                const q = String(item.quadra_sep ?? "");
-                if (q !== String(filters.quadra)) return false;
-            }
-
-            if (filters.sepultura) {
-                const n = String(item.num_sepultura_sep ?? "");
-                if (n !== String(filters.sepultura)) return false;
-            }
-
-            if (filters.tipo_sep) {
-                const t = String(item.tipo_sep).toLowerCase();
-                if (t && !t.includes(String(filters.tipo_sep).toLowerCase())) return false;
-            }
-
-            if ((start || end) && item.dh_exu) {
-                const d = new Date(item.dh_exu);
-/*              const itemDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
- */             if (start && d < start) return false;
-                if (end && d > end) return false;
-            }
+            const date = parseDateValue(item?.dh_sep);
+            if ((start || end) && !date) return false;
+            if (start && date < start) return false;
+            if (end && date > end) return false;
 
             return true;
         });
-    }, [exumacoes, search, filters]);
-
-    const sepFiltered = useMemo(() => {
-        const s = String(search || "").trim().toLowerCase();
-        const start = filters.data_inicio ? (() => {
-            const [y, m, d] = String(filters.data_inicio).split("-").map(Number);
-            return new Date(y, (m || 1) - 1, d || 1, 0, 0, 0, 0);
-        })() : null;
-
-        const end = filters.data_fim ? (() => {
-            const [y, m, d] = String(filters.data_fim).split("-").map(Number);
-            return new Date(y, (m || 1) - 1, d || 1, 23, 59, 59, 999);
-        })() : null;
-
-        return sepultamentos.filter(item => {
-            const nome = String(item.nome_sep || "").toLowerCase();
-            if (s && !nome.includes(s)) return false;
-            if ((start || end) && item.dh_sep) {
-                const d = new Date(item.dh_sep);
-                if (start && d < start) return false;
-                if (end && d > end) return false;
-            }
-
-            if (filters.quadra) {
-                const q = String(item.quadra_sep ?? "");
-                if (q !== String(filters.quadra)) return false;
-            }
-
-            if (filters.sepultura) {
-                const n = String(item.num_sepultura_sep ?? "");
-                if (n !== String(filters.sepultura)) return false;
-            }
-
-            if (filters.status_taxa && !matchesStatusFilter(item)) return false;
-
-
-            return true;
-        })
-
-    }, [sepultamentos, search, filters, matchesStatusFilter]);
-
-
-    const totalPages = Math.max(1, Math.ceil((tipoLista === "exumacoes" ? filtered.length : sepFiltered.length) / PAGE_SIZE));
-    const currentPage = Math.min(Math.max(1, Number(page || 1)), totalPages);
-    const paginated = (tipoLista === "exumacoes" ? filtered : sepFiltered).slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    }, [filters, sepultamentos]);
 
     useEffect(() => {
-        if (page > totalPages) setPage(totalPages);
-    }, [totalPages, page]);
+        setPage(1);
+    }, [filters.search, filters.quadra, filters.sepultura, filters.tipo, filters.periodo, filters.dataInicio, filters.dataFim]);
 
-    const applyFilters = () => setPage(1);
+    const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+    const currentPage = Math.min(page, totalPages);
+    const pageItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-    const handleView = (item) => {
-        setModalForm(item);
-        setModalOpen(true);
-    }
+    useEffect(() => {
+        if (page !== currentPage) {
+            setPage(currentPage);
+        }
+    }, [currentPage, page]);
 
-    const closeModal = () => {
-        setModalOpen(false);
-        setModalForm(null);
-    }
+    const periodLabel = useMemo(() => {
+        if (filters.periodo === "custom") {
+            const startLabel = filters.dataInicio ? formatDateDMY(filters.dataInicio, filters.dataInicio) : "Início livre";
+            const endLabel = filters.dataFim ? formatDateDMY(filters.dataFim, filters.dataFim) : "Fim livre";
+            return `${startLabel} a ${endLabel}`;
+        }
 
-    const exportCSV = () => {
-        const rows = filtered.map(e => ({
-            Nome: e.nome_fal || "",
-            "Data exumação": e.dh_exu || "",
-            "Quadra": e.quadra_sep ?? "",
-            "Sepultura": e.num_sepultura_sep ?? "",
-            "Destinação": e.destino || "",
-            "Responsável": e.coveiro || ""
+        const selected = PERIOD_OPTIONS.find((option) => option.value === filters.periodo);
+        return selected ? selected.label : "Todo o histórico";
+    }, [filters.dataFim, filters.dataInicio, filters.periodo]);
 
-        }))
+    const stats = useMemo(() => {
+        const total = filteredItems.length;
+        const particulares = filteredItems.filter((item) => isParticularRecord(item)).length;
+        const comuns = total - particulares;
+        const arrecadacao = filteredItems.reduce((sum, item) => sum + (Number(item?.taxa_valor) || 0), 0);
 
-        const keys = Object.keys(rows[0] || { Nome: "" });
-        const csv = [
-            keys.join(","),
-            ...rows.map(r => keys.map(k => `"${String(r[k] ?? "").replace(/"/g, '""')}"`).join(","))
-        ].join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `exumacoes_${formatDateKey(new Date(), "data")}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+        return [
+            {
+                label: "Sepultamentos",
+                value: total.toLocaleString("pt-BR"),
+                hint: "Registros filtrados",
+                icon: <FaCross/>,
+                tone: "primary",
+            },
+            {
+                label: "Particulares",
+                value: particulares.toLocaleString("pt-BR"),
+                hint: "Com título de posse",
+                icon: <RiContractFill />,
+                tone: "success",
+            },
+            {
+                label: "Comuns",
+                value: comuns.toLocaleString("pt-BR"),
+                hint: "Sem título de posse",
+                icon: <FaUserGroup />,
+                tone: "warning",
+            },
+            {
+                label: "Arrecadação",
+                value: formatCurrencyBRL(arrecadacao),
+                hint: "Total no período",
+                icon: <RiMoneyDollarBoxFill />,
+                tone: "danger",
+            },
+        ];
+    }, [filteredItems]);
+
+    const monthlySepultamentos = useMemo(
+        () => buildMonthlySeries(filteredItems, () => 1),
+        [filteredItems]
+    );
+
+    const monthlyRevenue = useMemo(
+        () => buildMonthlySeries(filteredItems, (item) => Number(item?.taxa_valor) || 0),
+        [filteredItems]
+    );
+
+    const typeSeries = useMemo(
+        () => buildTypeSeries(filteredItems),
+        [filteredItems]
+    );
+
+    const quadraOptions = useMemo(() => {
+        const values = Array.from(new Set(sepultamentos.map((item) => String(item?.quadra_sep ?? "").trim()).filter(Boolean)));
+        return values.sort(sortNumericText);
+    }, [sepultamentos]);
+
+    const sepulturaOptions = useMemo(() => {
+        const base = filters.quadra
+            ? sepultamentos.filter((item) => String(item?.quadra_sep ?? "") === String(filters.quadra))
+            : sepultamentos;
+        const values = Array.from(new Set(base.map((item) => String(item?.num_sepultura_sep ?? "").trim()).filter(Boolean)));
+        return values.sort(sortNumericText);
+    }, [filters.quadra, sepultamentos]);
+
+    const openDetails = (item) => setSelectedItem(item);
+    const closeDetails = () => setSelectedItem(null);
+
+    const clearFilters = () => {
+        setFilters(initialFilters);
+        setSelectedItem(null);
     };
 
-    const exportPDF = () => {
-        const newWin = window.open("", "_blank", "width=900, height=700");
-        if (!newWin) return;
-        const html = `
-        <html><head><title>Exumações</title>
-        <style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:8px}</style>
-        </head><body>
-        <h2>Exumações</h2>        
-        <p>A Secretaria de Serviços Urbanos, por meio da Administração do Cemitério Municipal, informa que foram realizadas exumações no período de [data/período], em conformidade com as normas sanitárias e regulamentações vigentes.
-As exumações têm como objetivo garantir a adequada gestão dos espaços do cemitério, atender solicitações de familiares e cumprir prazos legais para renovação ou liberação de sepulturas.</p>
-        <table>
-        <thead>
-          <tr>
-            <th>Nome</th><th>Data exumação</th><th>Quadra</th><th>Sepultura</th><th>Destinação</th>
-          </tr>
-        </thead>
-        <tbody>
-        ${filtered.map(e => `<tr>
-            <td>${e.nome_sep || ""}</td>
-            <td>${e.dh_exu || ""}</td>
-            <td>${e.quadra_sep ?? ""}</td>
-            <td>${e.num_sepultura_sep ?? ""}</td>
-            <td>${e.destino || ""}</td>
-            </tr>`).join("")}
-        </tbody>
-        </table>
-        </body><html>
-    `;
-        newWin.document.write(html);
-        newWin.document.close();
-        newWin.focus();
-        setTimeout(() => newWin.print(), 500);
-
-    }
-
+    const handleFilterChange = (field) => (event) => {
+        const value = event.target.value;
+        setFilters((previous) => ({
+            ...previous,
+            [field]: value,
+            ...(field === "quadra" ? { sepultura: "" } : {}),
+        }));
+    };
 
     return (
-        <div>
+        <Container>
+            <PageHeader>
+                <HeaderCopy>
+                    <Title>Relatórios</Title>
+                    <Subtitle>Visualize a movimentação de sepultamentos com filtros, indicadores e gráficos consolidados.</Subtitle>
+                </HeaderCopy>
+                <PeriodChip>
+                    <PeriodChipLabel>Período ativo</PeriodChipLabel>
+                    <PeriodChipValue>{periodLabel}</PeriodChipValue>
+                    <PeriodChipValue>{filteredItems.length.toLocaleString("pt-BR")} registros filtrados</PeriodChipValue>
+                </PeriodChip>
+            </PageHeader>
 
-                <SmallSelect value={tipoLista} onChange={(e) => { setTipoLista(e.target.value); setPage(1) }} style={{ position: "relative", left: 940, borderRadius: 8 }}>
-                    <option value="sepultamentos">LISTA DE SEPULTAMENTOS</option>
-                    <option value="exumacoes">LISTA DE EXUMAÇÕES </option>
-                </SmallSelect>
+            <FilterCard>
+                <FilterGrid>
+                    <SearchWrapper>
+                        <SearchField
+                            value={filters.search}
+                            onChange={handleFilterChange("search")}
+                            placeholder="Nome do falecido"
+                        />
+                        <SearchIcon>
+                            <FaSearch />
+                        </SearchIcon>
+                    </SearchWrapper>
 
-                <Container>
+                    <FilterRow>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Quadra</InputLabel>
+                            <Select
+                                value={filters.quadra}
+                                label="Quadra"
+                                onChange={handleFilterChange("quadra")}
+                            >
+                                <MenuItem value="">Todas</MenuItem>
+                                {quadraOptions.map((quadra) => (
+                                    <MenuItem key={quadra} value={quadra}>
+                                        Quadra {quadra}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
 
-                    <FormStyled>
-                        <Title>BUSCAR RELATÓRIOS</Title>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Sepultura</InputLabel>
+                            <Select
+                                value={filters.sepultura}
+                                label="Sepultura"
+                                onChange={handleFilterChange("sepultura")}
+                            >
+                                <MenuItem value="">Todas</MenuItem>
+                                {sepulturaOptions.map((sepultura) => (
+                                    <MenuItem key={sepultura} value={sepultura}>
+                                        {sepultura}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </FilterRow>
 
-                        <SearchBar>
-                            <SearchWrapper>
-                                <TextField
-                                    fullWidth
-                                    size="small"
-                                    label="Pesquisar"
-                                    placeholder="Pesquisar por nome do falecido..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") {
-                                            e.preventDefault();
-                                            applyFilters();
-                                        }
-                                    }}
-                                    sx={{
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: '18px',
-                                            paddingRight: '44px'
-                                        },
-                                        '& .MuiOutlinedInput-input': {
-                                            fontSize: '14px'
-                                        }
-                                    }}
-                                />
-                                <SearchIcon>
-                                    <FaSearch />
-                                </SearchIcon>
-                            </SearchWrapper>
-                        </SearchBar>
+                    <FilterRow>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Tipo</InputLabel>
+                            <Select
+                                value={filters.tipo}
+                                label="Tipo"
+                                onChange={handleFilterChange("tipo")}
+                            >
+                                <MenuItem value="all">Todos</MenuItem>
+                                <MenuItem value="particular">Particular</MenuItem>
+                                <MenuItem value="comum">Comum</MenuItem>
+                            </Select>
+                        </FormControl>
 
-                        <TwoCols style={{ marginTop: 12 }}>
-                            <ColumnLeft style={{ flex: 1 }}>
-                                <FormControl
-                                    fullWidth
-                                    size="small"
-                                    sx={{
-                                        marginRight: '10px',
-                                        marginBottom: '10px',
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: '18px'
-                                        }
-                                    }}
-                                >
-                                    <InputLabel sx={{ fontSize: '14px' }}>Selecione a quadra</InputLabel>
-                                    <Select
-                                        value={filters.quadra}
-                                        onChange={(e) => setFilters(prev => ({ ...prev, quadra: e.target.value, sepultura: "" }))}
-                                        label="Selecione a quadra"
-                                        sx={{ fontSize: '14px' }}
-                                    >
-                                        <MenuItem value="">Selecione a quadra</MenuItem>
-                                        {quadras.map(q => (
-                                            <MenuItem key={String(q.id)} value={String(q.id)}>
-                                                {q.num_quadra ? `Quadra ${q.num_quadra}` : q.nome || `Quadra ${q.id}`}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Período</InputLabel>
+                            <Select
+                                value={filters.periodo}
+                                label="Período"
+                                onChange={handleFilterChange("periodo")}
+                            >
+                                {PERIOD_OPTIONS.map((option) => (
+                                    <MenuItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </FilterRow>
 
-                                <FormControl
-                                    fullWidth
-                                    size="small"
-                                    sx={{
-                                        marginRight: '10px',
-                                        marginBottom: '10px',
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: '18px'
-                                        }
-                                    }}
-                                >
-                                    <InputLabel sx={{ fontSize: '14px' }}>Selecione o tipo de sepultura</InputLabel>
-                                    <Select
-                                        value={filters.tipo_sep}
-                                        onChange={(e) => setFilters(prev => ({ ...prev, tipo_sep: e.target.value }))}
-                                        label="Selecione o tipo de sepultura"
-                                        sx={{ fontSize: '14px' }}
-                                    >
-                                        <MenuItem value="">Selecione o tipo de sepultura</MenuItem>
-                                        <MenuItem value="cova">Cova</MenuItem>
-                                        <MenuItem value="gaveta">Gaveta</MenuItem>
-                                        <MenuItem value="nicho">Nicho</MenuItem>
-                                    </Select>
-                                </FormControl>
+                    {filters.periodo === "custom" && (
+                        <FilterRow>
+                            <TextField
+                                type="date"
+                                fullWidth
+                                size="small"
+                                label="Início"
+                                value={filters.dataInicio}
+                                onChange={handleFilterChange("dataInicio")}
+                                InputLabelProps={{ shrink: true }}
+                            />
+                            <TextField
+                                type="date"
+                                fullWidth
+                                size="small"
+                                label="Fim"
+                                value={filters.dataFim}
+                                onChange={handleFilterChange("dataFim")}
+                                InputLabelProps={{ shrink: true }}
+                            />
+                        </FilterRow>
+                    )}
 
-                                <Field style={{ display: "flex", gap: 8 }}>
-                                    <TextField
-                                        type="date"
-                                        size="small"
-                                        value={filters.data_inicio}
-                                        onChange={(e) => setFilters(prev => ({ ...prev, data_inicio: e.target.value }))}
-                                        InputLabelProps={{ shrink: true }}
-                                        sx={{
-                                            width: 110,
-                                            '& .MuiOutlinedInput-root': {
-                                                borderRadius: '18px'
-                                            },
-                                            '& .MuiOutlinedInput-input': {
-                                                fontSize: '14px'
-                                            }
-                                        }}
-                                    />
-                                    <TextField
-                                        type="date"
-                                        size="small"
-                                        value={filters.data_fim}
-                                        onChange={(e) => setFilters(prev => ({ ...prev, data_fim: e.target.value }))}
-                                        InputLabelProps={{ shrink: true }}
-                                        sx={{
-                                            width: 110,
-                                            '& .MuiOutlinedInput-root': {
-                                                borderRadius: '18px'
-                                            },
-                                            '& .MuiOutlinedInput-input': {
-                                                fontSize: '14px'
-                                            }
-                                        }}
-                                    />
-                                    <FormControl
-                                        size="small"
-                                        sx={{
-                                            width: 93,
-                                            '& .MuiOutlinedInput-root': {
-                                                borderRadius: '18px'
-                                            }
-                                        }}
-                                    >
-                                        <InputLabel sx={{ fontSize: '14px' }}>Taxa</InputLabel>
-                                        <Select
-                                            value={filters.status_taxa}
-                                            onChange={(e) => setFilters(prev => ({ ...prev, status_taxa: e.target.value }))}
-                                            label="Taxa"
-                                            sx={{ fontSize: '14px' }}
-                                        >
-                                            <MenuItem value="">Selecione a taxa</MenuItem>
-                                            <MenuItem value="pago">Pago</MenuItem>
-                                            <MenuItem value="gratuito">Gratuito</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Field>
-                            </ColumnLeft>
+                    <FilterActionRow>
+                        <PrimaryButton type="button" onClick={() => setFilters((previous) => ({ ...previous }))}>
+                            Aplicar
+                        </PrimaryButton>
+                        <SecondaryButton type="button" onClick={clearFilters}>
+                            Limpar
+                        </SecondaryButton>
+                    </FilterActionRow>
+                </FilterGrid>
+            </FilterCard>
 
-                            <ColumnRight style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
-                                <div style={{ background: "#fafafa", border: "1px solid #e6e6e6", padding: 12, borderRadius: 8, minWidth: 380, textAlign: "left" }}>
-                                    <div style={{ fontSize: 14, color: "#666" }}>Valor total das taxas</div>
-                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
-                                        <div style={{ fontSize: 25, fontWeight: 600, marginTop: 6, color: "#191970" }}>
-                                            {formatCurrency((filters.data_inicio || filters.data_fim) ? taxaSomaPeriodo : taxaSomaTotal)}
-                                        </div>
-                                        <div style={{ fontSize: 25, fontWeight: 600, color: "#191970", marginTop: 6 }}>
-                                            <div style={{ fontSize: 14, color: "#666", fontWeight: 400 }}>Número de sepultado(s)</div>
-                                            {((filters.data_inicio || filters.data_fim) ? sepCountPeriodo : sepCountTotal)} sepultados
-                                        </div>
-                                    </div>
+            <LayoutGrid>
+                <MainColumn>
+                    <StatsGrid>
+                        {stats.map((item) => (
+                            <StatCard key={item.label}>
+                                <StatIcon $tone={item.tone}>{item.icon}</StatIcon>
+                                <StatCopy>
+                                    <StatLabel>{item.label}</StatLabel>
+                                    <StatValue>{item.value}</StatValue>
+                                    <StatHint>{item.hint}</StatHint>
+                                </StatCopy>
+                            </StatCard>
+                        ))}
+                    </StatsGrid>
 
-                                    <div style={{ fontSize: 16, color: "#666" }}>
-                                        {filters.data_inicio || filters.data_fim ? `Período: ${filters.data_inicio || "..."}<->${filters.data_fim || "..."}` : "Período: Total"}
-
-                                    </div>
+                    <ChartsGrid>
+                        <ChartCard>
+                            <ChartHeader>
+                                <div>
+                                    <ChartTitle>
+                                        <FaChartBar /> Sepultamentos por mês
+                                    </ChartTitle>
+                                    <ChartSubtitle>Distribuição temporal dos registros filtrados.</ChartSubtitle>
                                 </div>
-                            </ColumnRight>
-                        </TwoCols>
+                            </ChartHeader>
+                            <ChartBody>
+                                <RelatoriosSepultadosMesChart data={monthlySepultamentos} loading={isLoading} />
+                            </ChartBody>
+                        </ChartCard>
 
+                        <ChartCard>
+                            <ChartHeader>
+                                <div>
+                                    <ChartTitle>Tipo de sepultamento</ChartTitle>
+                                    <ChartSubtitle>Adulto, criança e indigente.</ChartSubtitle>
+                                </div>
+                            </ChartHeader>
+                            <ChartBody>
+                                <RelatoriosTipoSepultamentoPie data={typeSeries} loading={isLoading} />
+                            </ChartBody>
+                        </ChartCard>
 
-                        <TableWrapper>
+                        <ChartCard>
+                            <ChartHeader>
+                                <div>
+                                    <ChartTitle>Arrecadação mensal</ChartTitle>
+                                    <ChartSubtitle>Somatório de taxa aplicada por competência.</ChartSubtitle>
+                                </div>
+                            </ChartHeader>
+                            <ChartBody>
+                                <RelatoriosArrecadacaoMensalChart data={monthlyRevenue} loading={isLoading} />
+                            </ChartBody>
+                        </ChartCard>
+                    </ChartsGrid>
+
+                    <TableCard>
+                        <TableHeader>
+                            <div>
+                                <TableTitle>Lista de sepultamentos</TableTitle>
+                                <TableNote>
+                                    {filteredItems.length.toLocaleString("pt-BR")} registros encontrados no recorte atual.
+                                </TableNote>
+                            </div>
+                            <TableNote>
+                                Página {currentPage.toLocaleString("pt-BR")} de {totalPages.toLocaleString("pt-BR")}
+                            </TableNote>
+                        </TableHeader>
+
+                        <TableScroller>
                             <Table>
                                 <THead>
-                                    {tipoLista === "exumacoes" ? (
-                                        <>
-                                            <Th>Falecido</Th>
-                                            <Th>Data da exumação</Th>
-                                            <Th>Quadra - Sepultura</Th>
-                                            <Th>Destinação</Th>
-                                            <Th>Responsável</Th>
-                                            <Th>Ações</Th>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Th>Falecido</Th>
-                                            <Th>Data do Sepultamento</Th>
-                                            <Th>Taxa</Th>
-                                            <Th>Ações</Th>
-                                        </>
-                                    )}
+                                    <tr>
+                                        <Th>Data</Th>
+                                        <Th>Falecido</Th>
+                                        <Th>Quadra</Th>
+                                        <Th>Sepultura</Th>
+                                        <Th>Tipo</Th>
+                                        <Th>Posse</Th>
+                                        <Th>Taxa</Th>
+                                        <Th>Status</Th>
+                                        <Th>Ações</Th>
+                                    </tr>
                                 </THead>
                                 <TBody>
-                                    {paginated.length === 0 ? (
-
-                                        <Tr>
-                                            <Td colSpan={6} style={{ padding: 24, textAlign: "center", color: "#666" }}>
-                                                {isLoading ? "Carregando..." : (tipoLista === "exumacoes" ? "Nenhuma exumação encontrada." : "Nenhum sepultamento encontrado.")}
-                                            </Td>
-                                        </Tr>
+                                    {pageItems.length ? (
+                                        pageItems.map((item, index) => {
+                                            const isParticular = isParticularRecord(item);
+                                            const typeLabel = classifyTaxa(item);
+                                            const typeText = typeLabel === "crianca" ? "Criança" : typeLabel === "adulto" ? "Adulto" : typeLabel === "indigente" ? "Indigente" : "Outro";
+                                            return (
+                                                <Tr key={item?.id || `${item?.nome_sep || "sep"}-${index}`} $index={index}>
+                                                    <Td>{formatDateDMY(item?.dh_sep, "--")}</Td>
+                                                    <Td>{item?.nome_sep || item?.nome || "--"}</Td>
+                                                    <Td>{item?.quadra_sep || "--"}</Td>
+                                                    <Td>{item?.num_sepultura_sep || "--"}</Td>
+                                                    <Td>{typeText}</Td>
+                                                    <Td>{isParticular ? "Particular" : "Comum"}</Td>
+                                                    <TdValue>{formatCurrencyBRL(item?.taxa_valor)}</TdValue>
+                                                    <Td>
+                                                        <StatusBadge $tone={getStatusTone(item)}>{getStatusLabel(item)}</StatusBadge>
+                                                    </Td>
+                                                    <Td>
+                                                        <Actions>
+                                                            <IconBtn type="button" onClick={() => openDetails(item)} aria-label="Ver detalhes">
+                                                                <FaEye />
+                                                            </IconBtn>
+                                                        </Actions>
+                                                    </Td>
+                                                </Tr>
+                                            );
+                                        })
                                     ) : (
-                                        paginated.map((e, i) => (
-                                            tipoLista === "exumacoes" ? (
-                                                <Tr key={e.id ?? `exu-${i}`} index={i}>
-                                                    <Td>{e.nome_sep || "-"}</Td>
-                                                    <Td style={{ padding: "12px 16px" }}>{e.dh_exu ? formatDateTimeDMY(e.dh_exu) : "-"}</Td>
-                                                    <Td style={{ padding: "12px 16px" }}>{`${e.quadra_sep ?? e.num_quadra ?? "-"} - ${e.num_sepultura_sep ?? ""}`}</Td>
-                                                    <Td style={{ padding: "12px 16px" }}>{e.destino || "-"}</Td>
-                                                    <Td style={{ padding: "12px 16px" }}>{e.coveiro || "-"}</Td>
-                                                    <Td style={{ padding: "12px 16px", textAlign: "center" }}>
-                                                        <IconBtn type="button" onClick={() => handleView(e)}>
-                                                            <FaEye />
-                                                        </IconBtn>
-                                                    </Td>
-                                                </Tr>
-
-                                            ) : (
-                                                <Tr key={e.id ?? `sep-${i}`} index={i}>
-                                                    <Td style={{ padding: "12px 16px" }}>{e.nome_sep || "-"}</Td>
-                                                    <Td style={{ padding: "12px 16px" }}>{e.dh_sep ? formatDateTimeDMY(e.dh_sep) : "-"}</Td>
-                                                    <Td style={{ padding: "12px 16px" }}>{e.taxa_label ?? "-"}</Td>
-                                                    <Td style={{ padding: "12px 16px", textAlign: "center" }}>
-                                                        <IconBtn type="button" onClick={() => handleView(e)}>
-                                                            <FaEye />
-                                                        </IconBtn>
-                                                    </Td>
-                                                </Tr>
-                                            ))
-                                        )
-                                    )}</TBody>
+                                        <tr>
+                                            <Td colSpan={9}>
+                                                <EmptyState>
+                                                    Nenhum sepultamento encontrado com os filtros atuais.
+                                                </EmptyState>
+                                            </Td>
+                                        </tr>
+                                    )}
+                                </TBody>
                             </Table>
-                        </TableWrapper>
+                        </TableScroller>
 
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 18 }}>
-                            <div style={{ display: "flex", gap: 12 }}>
-                                <button title="Exportar como PDF" aria-label="Exportar como PDF" onClick={exportPDF} type="button" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8, background: "#b80000", color: "#fff", border: "none", cursor: "pointer" }}>
-                                    <FaFilePdf />
-                                </button>
-                                <button title="Exportar como Excel" aria-label="Exportar como Excel" type="button" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8, background: "#1D6f42", color: "#fff", border: "none", cursor: "pointer" }}>
-                                    <FaFileExcel />
-                                </button>
-                                <button title="Exportar como CSV" aria-label="Exportar como CSV" onClick={exportCSV} type="button" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8, background: "#0b72d2ff", color: "#fff", border: "none", cursor: "pointer" }}>
-                                    <FaFileCsv />
-                                </button>
-                            </div>
-
-
-                        </div>
-
-                    </FormStyled>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", marginTop: 16 }}>
-                        <button type="button" style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid #ddd", background: "#fff", cursor: currentPage === totalPages ? "pointer" : "not-allowed" }} onClick={() => setPage(1)} disabled={currentPage === 1}>«</button>
-                        <button type="button" style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid #ddd", background: "#fff", cursor: currentPage === totalPages ? "pointer" : "not-allowed" }} onClick={() => setPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}>‹</button>
-                        {(() => {
-                            const out = [];
-                            const maxButtons = 7;
-                            let start = Math.max(1, page - 3);
-                            let end = Math.min(totalPages, start + maxButtons - 1);
-                            if (end - start < maxButtons - 1) start = Math.max(1, end - maxButtons + 1);
-
-                            for (let p = start; p <= end; p++) {
-                                out.push(
-                                    <button
-                                        key={p}
-                                        onClick={() => setPage(p)}
-                                        aria-current={p === currentPage ? "page" : undefined}
-                                        style={{
-                                            padding: "8px 10px",
-                                            borderRadius: 8,
-                                            border: p === currentPage ? "2px solid #1b1464" : "1px solid #ddd",
-                                            background: p === currentPage ? "#1b1464" : "#fff",
-                                            color: p === currentPage ? "#fff" : "#222",
-                                            cursor: "pointer"
-                                        }}
+                        {totalPages > 1 && (
+                            <Pagination>
+                                <PageButton type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={currentPage === 1}>
+                                    Anterior
+                                </PageButton>
+                                {Array.from({ length: totalPages }, (_, index) => index + 1).map((number) => (
+                                    <PageButton
+                                        key={number}
+                                        type="button"
+                                        $active={number === currentPage}
+                                        onClick={() => setPage(number)}
                                     >
-                                        {p}
-                                    </button>
-                                );
-                            }
-                            return out;
-                        })()}
-                        <button type="button" style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid #ddd", background: "#fff", cursor: currentPage === totalPages ? "not-allowed" : "pointer" }} onClick={() => setPage(Math.max(1, currentPage + 1))} disabled={currentPage === totalPages}>›</button>
-                        <button type="button" style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid #ddd", background: "#fff", cursor: currentPage === totalPages ? "not-allowed" : "pointer" }} onClick={() => setPage(totalPages)} disabled={currentPage === totalPages}>»</button>
-                    </div>
-                </Container>
+                                        {number}
+                                    </PageButton>
+                                ))}
+                                <PageButton type="button" onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={currentPage === totalPages}>
+                                    Próxima
+                                </PageButton>
+                            </Pagination>
+                        )}
+                    </TableCard>
+                </MainColumn>
+            </LayoutGrid>
 
-                {modalOpen && modalForm && (
-                    <ModalOverlay>
-                        <ModalContent>
-                            <Title>
-                                DETALHES DA EXUMAÇÃO
-                            </Title>
-                            <ModalGrid>
-                                <Label>Nome: <div>{modalForm.nome_sep || "-"}</div></Label>
-                                <Label>Data e hora: <div>{modalForm.dh_exu ? formatDateTimeDMY(modalForm.dh_exu) : "-"}</div></Label>
-                                <Label>Quadra: <div>{modalForm.quadra_sep ?? "-"}</div></Label>
-                                <Label>Sepultura: <div>{modalForm.num_sepultura_sep || "-"}</div></Label>
-                                <Label>Destinação: <div>{modalForm.destino || "-"}</div></Label>
-                                <Label>Responsável: <div>{modalForm.coveiro || "-"}</div></Label>
-                                <Label>Observações: <div>{modalForm.obs_exu || "-"}</div></Label>
-                            </ModalGrid>
+            {selectedItem && (
+                <ModalOverlay onClick={closeDetails}>
+                    <ModalContent onClick={(event) => event.stopPropagation()}>
+                        <ModalTitle>{selectedItem?.nome_sep || selectedItem?.nome || "Detalhes do registro"}</ModalTitle>
+                        <ModalSubtitle>
+                            Sepultamento registrado em {formatDateDMY(selectedItem?.dh_sep, "--")}.
+                        </ModalSubtitle>
 
-                            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
-                                <BtnPrimaryClose type="button" onClick={closeModal}>Fechar</BtnPrimaryClose>
-                            </div>
-                        </ModalContent>
-                    </ModalOverlay>
-                )}
-        </div >
-    )
+                        <ModalGrid>
+                            {[
+                                ["Quadra", selectedItem?.quadra_sep || "--"],
+                                ["Sepultura", selectedItem?.num_sepultura_sep || "--"],
+                                ["Tipo", classifyTaxa(selectedItem)],
+                                ["Posse", isParticularRecord(selectedItem) ? "Particular" : "Comum"],
+                                ["Taxa", formatCurrencyBRL(selectedItem?.taxa_valor)],
+                                ["Status", getStatusLabel(selectedItem)],
+                                ["Data do sepultamento", formatDateDMY(selectedItem?.dh_sep, "--")],
+                                ["Data do óbito", formatDateDMY(selectedItem?.data_obito_sep, "--")],
+                                ["Observação", selectedItem?.obs_sep || "--"],
+                                ["Coveiro", selectedItem?.coveiro_sep || "--"],
+                            ].map(([label, value]) => (
+                                <ModalField key={label}>
+                                    <ModalFieldLabel>{label}</ModalFieldLabel>
+                                    <ModalFieldValue>{value}</ModalFieldValue>
+                                </ModalField>
+                            ))}
+                        </ModalGrid>
+                    </ModalContent>
+                </ModalOverlay>
+            )}
+        </Container>
+    );
 }
