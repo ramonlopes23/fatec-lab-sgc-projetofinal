@@ -52,13 +52,8 @@ export const FilterCard = styled.section`
   border: 1px solid rgba(25, 25, 112, 0.1);
   border-radius: 18px;
   padding: 1rem;
-  margin-bottom:10px;
+  margin-bottom: 10px;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-  top: 1rem;
-
-  @media (max-width: 1200px) {
-    position: static;
-  }
 `;
 
 export const Table = styled.table`
@@ -296,6 +291,10 @@ export const FilterActionRow = styled.div`
 
 
 export const SecondaryButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   border: 1px solid rgba(25, 25, 112, 0.16);
   background: #ffffff;
   color: #191970;
