@@ -6,8 +6,11 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import api from "../../services/index.js";
+import { useAuthStore } from "../../stores/authStore";
+import sgcLogo from "../../assets/SGC.png";
 import { formatDateDMY, parseDateValue } from "../../utils/date";
 import { formatCurrencyBRL } from "../../utils/taxas";
+import RelatoriosExportActions from "./RelatoriosExportActions";
 import RelatoriosArrecadacaoMensalChart from "./charts/RelatoriosArrecadacaoMensalChart";
 import RelatoriosSepultadosMesChart from "./charts/RelatoriosSepultadosMesChart";
 import RelatoriosTipoSepultamentoPie from "./charts/RelatoriosTipoSepultamentoPie";
@@ -297,11 +300,232 @@ const getTypeText = (item) => {
     return "Outro";
 };
 
+const getUserName = (user) => user?.name || user?.nome || user?.username || user?.email || "Administrador";
+
+const formatDateTimeBR = (value) => {
+    const date = value instanceof Date ? value : parseDateValue(value);
+    if (!date) return "--";
+    return `${formatDateDMY(date, "--")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+};
+
+const buildReportHash = (payload) => {
+    const raw = JSON.stringify({
+        reportType: payload.reportType,
+        filters: payload.filters,
+        generatedAt: payload.metadata.generatedAt,
+        total: payload.summary?.[0]?.value,
+    });
+    let hash = 0;
+    for (let index = 0; index < raw.length; index += 1) {
+        hash = ((hash << 5) - hash + raw.charCodeAt(index)) | 0;
+    }
+    return `SGC-${Math.abs(hash).toString(16).toUpperCase().padStart(8, "0")}`;
+};
+
+const getFileExtension = (format) => (format === "xlsx" ? "xls" : format);
+
+const getMimeType = (format) => ({
+    pdf: "text/html;charset=utf-8",
+    xlsx: "application/vnd.ms-excel;charset=utf-8",
+    csv: "text/csv;charset=utf-8",
+}[format] || "application/octet-stream");
+
+const downloadBlob = (blob, filename) => {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+};
+
+const escapeHtml = (value) => String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+const escapeCsv = (value) => {
+    const raw = String(value ?? "");
+    return `"${raw.replace(/"/g, '""')}"`;
+};
+
+const buildCsvContent = (payload) => {
+    const header = payload.table.columns.map((column) => escapeCsv(column.label)).join(";");
+    const rows = payload.table.rows.map((row) => (
+        payload.table.columns.map((column) => escapeCsv(row[column.key])).join(";")
+    ));
+    return `\uFEFF${[header, ...rows].join("\n")}`;
+};
+
+const buildExcelContent = (payload) => {
+    const summaryRows = payload.summary.map((item) => `
+        <tr>
+            <td>${escapeHtml(item.label)}</td>
+            <td>${escapeHtml(item.value)}</td>
+            <td>${escapeHtml(item.hint)}</td>
+        </tr>
+    `).join("");
+
+    const filterRows = payload.appliedFilters.map((item) => `
+        <tr>
+            <td>${escapeHtml(item.label)}</td>
+            <td>${escapeHtml(item.value || "-")}</td>
+        </tr>
+    `).join("");
+
+    const detailHeader = payload.table.columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join("");
+    const detailRows = payload.table.rows.map((row, index) => `
+        <tr class="${index % 2 === 0 ? "even" : "odd"}">
+            ${payload.table.columns.map((column) => `<td>${escapeHtml(row[column.key])}</td>`).join("")}
+        </tr>
+    `).join("");
+
+    return `<!doctype html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    table { border-collapse: collapse; font-family: Arial, sans-serif; }
+    th { background: #191970; color: #fff; font-weight: 700; border: 1px solid #dbe1f2; padding: 8px; }
+    td { border: 1px solid #dbe1f2; padding: 8px; }
+    .title { background: #f4f6ff; color: #191970; font-size: 18px; font-weight: 700; }
+    .section { background: #eef3ff; color: #191970; font-weight: 700; }
+    .even td { background: #fafbff; }
+    .odd td { background: #ffffff; }
+  </style>
+</head>
+<body>
+  <table>
+    <tr><td class="title" colspan="8">${escapeHtml(payload.reportTitle)}</td></tr>
+    <tr><td>Gerado em</td><td>${escapeHtml(payload.metadata.generatedAtLabel)}</td></tr>
+    <tr><td>Usuario</td><td>${escapeHtml(payload.metadata.userName)}</td></tr>
+    <tr><td>Codigo</td><td>${escapeHtml(payload.metadata.reportHash)}</td></tr>
+    <tr><td class="section" colspan="8">Resumo executivo</td></tr>
+    <tr><th>KPI</th><th>Valor</th><th>Descricao</th></tr>
+    ${summaryRows}
+    <tr><td class="section" colspan="8">Filtros aplicados</td></tr>
+    <tr><th>Filtro</th><th>Valor</th></tr>
+    ${filterRows}
+    <tr><td class="section" colspan="8">Dados completos</td></tr>
+    <tr>${detailHeader}</tr>
+    ${detailRows}
+  </table>
+</body>
+</html>`;
+};
+
+const renderPrintHtml = (payload) => {
+    const filters = payload.appliedFilters.filter((item) => item.value && item.value !== "Todos" && item.value !== "Todas");
+    const chartBlocks = payload.charts.map((chart) => `
+        <section class="panel">
+            <h3>${escapeHtml(chart.title)}</h3>
+            <div class="bars">
+                ${(chart.data || []).map((item) => `
+                    <div class="bar-row">
+                        <span>${escapeHtml(item.label)}</span>
+                        <strong>${escapeHtml(item.value)}</strong>
+                    </div>
+                `).join("") || "<p class='muted'>Sem dados</p>"}
+            </div>
+        </section>
+    `).join("");
+
+    return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtml(payload.reportTitle)}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 28px; font-family: Inter, Arial, sans-serif; color: #1f2652; background: #f6f7fb; }
+    .page { background: #fff; border: 1px solid #e6e9f5; border-radius: 18px; padding: 28px; }
+    header { display: flex; justify-content: space-between; gap: 24px; border-bottom: 3px solid #191970; padding-bottom: 18px; }
+    .brand { display: flex; gap: 14px; align-items: center; }
+    .brand img { width: 58px; height: 58px; object-fit: contain; }
+    h1 { margin: 0; color: #191970; font-size: 24px; }
+    h2 { margin: 22px 0 12px; color: #191970; font-size: 16px; }
+    h3 { margin: 0 0 10px; color: #191970; font-size: 14px; }
+    .muted { color: #6b7280; margin: 4px 0; font-size: 12px; }
+    .meta { text-align: right; font-size: 12px; color: #4b5563; }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+    .kpi, .panel { border: 1px solid #e6e9f5; border-radius: 14px; padding: 14px; background: linear-gradient(180deg, #fff 0%, #fafbff 100%); }
+    .kpi span { color: #6b7280; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .kpi strong { display: block; color: #191970; font-size: 20px; margin-top: 5px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .filters { width: 100%; border-collapse: collapse; }
+    .filters td { border: 1px solid #e6e9f5; padding: 8px; font-size: 12px; }
+    .filters td:first-child { color: #6b7280; font-weight: 700; width: 28%; }
+    .bars { display: grid; gap: 7px; }
+    .bar-row { display: flex; justify-content: space-between; border-bottom: 1px solid #edf0f8; padding-bottom: 5px; font-size: 12px; }
+    table.detail { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 11px; }
+    table.detail th { text-align: left; color: #191970; background: #f4f6ff; padding: 9px; border-bottom: 1px solid #dfe4f4; }
+    table.detail td { padding: 8px; border-bottom: 1px solid #edf0f8; }
+    table.detail tr:nth-child(even) td { background: #fafbff; }
+    footer { margin-top: 20px; padding-top: 12px; border-top: 1px solid #e6e9f5; display: flex; justify-content: space-between; color: #6b7280; font-size: 11px; }
+    @media print { body { background: #fff; padding: 0; } .page { border: 0; border-radius: 0; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div class="brand">
+        <img src="${payload.metadata.logo}" alt="SGC" />
+        <div>
+          <h1>${escapeHtml(payload.reportTitle)}</h1>
+          <p class="muted">${escapeHtml(payload.metadata.cemeteryName)}</p>
+          <p class="muted">Sistema de Gerenciamento de Cemiterios</p>
+        </div>
+      </div>
+      <div class="meta">
+        <strong>${escapeHtml(payload.metadata.generatedAtLabel)}</strong><br />
+        Usuario: ${escapeHtml(payload.metadata.userName)}<br />
+        Codigo: ${escapeHtml(payload.metadata.reportHash)}
+      </div>
+    </header>
+
+    <section class="kpis">
+      ${payload.summary.map((item) => `<article class="kpi"><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.value)}</strong><p class="muted">${escapeHtml(item.hint)}</p></article>`).join("")}
+    </section>
+
+    <h2>Filtros aplicados</h2>
+    <table class="filters">
+      <tbody>
+        ${(filters.length ? filters : [{ label: "Filtros", value: "Nenhum filtro adicional aplicado" }]).map((item) => `<tr><td>${escapeHtml(item.label)}</td><td>${escapeHtml(item.value)}</td></tr>`).join("")}
+      </tbody>
+    </table>
+
+    <h2>Graficos e distribuicoes</h2>
+    <section class="grid">${chartBlocks}</section>
+
+    <h2>Tabela detalhada</h2>
+    <table class="detail">
+      <thead><tr>${payload.table.columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join("")}</tr></thead>
+      <tbody>
+        ${payload.table.rows.map((row) => `<tr>${payload.table.columns.map((column) => `<td>${escapeHtml(row[column.key])}</td>`).join("")}</tr>`).join("")}
+      </tbody>
+    </table>
+
+    <footer>
+      <span>${escapeHtml(payload.metadata.generatedAtLabel)} - ${escapeHtml(payload.metadata.userName)}</span>
+      <span>Pagina 1 - ${escapeHtml(payload.metadata.reportHash)}</span>
+    </footer>
+  </main>
+</body>
+</html>`;
+};
+
 export default function RelatoriosComponent() {
+    const user = useAuthStore((state) => state.user);
     const [sepultamentos, setSepultamentos] = useState([]);
     const [exumacoes, setExumacoes] = useState([]);
     const [activeReport, setActiveReport] = useState("sepultamentos");
     const [isLoading, setIsLoading] = useState(false);
+    const [exportLoading, setExportLoading] = useState("");
+    const [exportError, setExportError] = useState("");
     const [page, setPage] = useState(1);
     const [selectedItem, setSelectedItem] = useState(null);
     const [filters, setFilters] = useState(initialFilters);
@@ -501,6 +725,155 @@ export default function RelatoriosComponent() {
         return values.sort((left, right) => getDestinoLabel(left).localeCompare(getDestinoLabel(right), "pt-BR"));
     }, [exumacoes]);
 
+    const exportSnapshot = useMemo(() => {
+        const generatedAt = new Date();
+        const reportTitle = isExumacoesReport ? "Relatorio de Exumacoes" : "Relatorio de Sepultamentos";
+        const appliedFilters = [
+            { key: "search", label: "Busca textual", value: filters.search || "" },
+            { key: "periodo", label: "Periodo", value: periodLabel },
+            { key: "dataInicio", label: "Periodo inicial", value: filters.dataInicio ? formatDateDMY(filters.dataInicio, filters.dataInicio) : "" },
+            { key: "dataFim", label: "Periodo final", value: filters.dataFim ? formatDateDMY(filters.dataFim, filters.dataFim) : "" },
+            { key: "quadra", label: "Quadra", value: filters.quadra ? `Quadra ${filters.quadra}` : "Todas" },
+            { key: "sepultura", label: "Sepultura", value: filters.sepultura || "Todas" },
+            { key: "tipoSepultamento", label: "Tipo de sepultamento", value: !isExumacoesReport ? (filters.tipo === "all" ? "Todos" : filters.tipo) : "" },
+            { key: "situacaoFinanceira", label: "Situacao financeira", value: filters.situacaoFinanceira || "" },
+            { key: "faixaValor", label: "Faixa de valor", value: filters.faixaValor || "" },
+            { key: "cemiterio", label: "Cemiterio", value: filters.cemiterio || "" },
+            { key: "responsavel", label: "Responsavel", value: filters.responsavel || "" },
+            { key: "destinoExumacao", label: "Destino da exumacao", value: isExumacoesReport ? (filters.destino ? getDestinoLabel(filters.destino) : "Todos") : "" },
+            { key: "tipoExumacao", label: "Tipo de exumacao", value: isExumacoesReport ? (filters.tipo === "all" ? "Todos" : getTypeText({ tipo: filters.tipo })) : "" },
+        ];
+
+        const table = isExumacoesReport
+            ? {
+                columns: [
+                    { key: "data", label: "Data" },
+                    { key: "falecido", label: "Falecido" },
+                    { key: "destino", label: "Destino" },
+                    { key: "ossario", label: "Ossario" },
+                    { key: "responsavel", label: "Responsavel" },
+                    { key: "taxa", label: "Taxa" },
+                    { key: "situacao", label: "Situacao" },
+                ],
+                rows: filteredItems.map((item) => ({
+                    data: formatDateDMY(getExumacaoDate(item), "--"),
+                    falecido: getExumacaoName(item),
+                    destino: getDestinoLabel(classifyDestino(item)),
+                    ossario: classifyDestino(item) === "ossario" ? getExumacaoDestino(item) : "--",
+                    responsavel: item?.responsavel || item?.coveiro || item?.usuario || "--",
+                    taxa: formatCurrencyBRL(item?.taxa_valor),
+                    situacao: getStatusLabel(item),
+                })),
+            }
+            : {
+                columns: [
+                    { key: "data", label: "Data" },
+                    { key: "falecido", label: "Falecido" },
+                    { key: "documento", label: "CPF/documento" },
+                    { key: "quadra", label: "Quadra" },
+                    { key: "sepultura", label: "Sepultura" },
+                    { key: "tipo", label: "Tipo" },
+                    { key: "taxa", label: "Taxa" },
+                    { key: "situacaoFinanceira", label: "Situacao financeira" },
+                    { key: "responsavel", label: "Responsavel" },
+                ],
+                rows: filteredItems.map((item) => ({
+                    data: formatDateDMY(item?.dh_sep, "--"),
+                    falecido: item?.nome_sep || item?.nome || "--",
+                    documento: item?.cpf || item?.documento || item?.doc_falecido || "--",
+                    quadra: item?.quadra_sep || "--",
+                    sepultura: item?.num_sepultura_sep || "--",
+                    tipo: getTypeText(item),
+                    taxa: formatCurrencyBRL(item?.taxa_valor),
+                    situacaoFinanceira: getStatusLabel(item),
+                    responsavel: item?.responsavel || item?.nome_resp || item?.coveiro_sep || "--",
+                })),
+            };
+
+        const charts = isExumacoesReport
+            ? [
+                { key: "exumacoesMes", title: "Exumacoes por mes", data: monthlyExumacoes },
+                { key: "destinos", title: "Destino da exumacao", data: destinoSeries },
+                { key: "tipos", title: "Tipo de exumacao", data: exumacaoTypeSeries },
+            ]
+            : [
+                { key: "sepultamentosMes", title: "Sepultamentos por mes", data: monthlySepultamentos },
+                { key: "tipos", title: "Tipo de sepultamento", data: sepultamentoTypeSeries },
+                { key: "arrecadacaoMensal", title: "Arrecadacao mensal", data: monthlyRevenue },
+            ];
+
+        const snapshot = {
+            reportType: isExumacoesReport ? "exumacoes" : "sepultamentos",
+            reportTitle,
+            filters: {
+                buscaTextual: filters.search || "",
+                periodo: filters.periodo,
+                periodoInicial: filters.dataInicio || "",
+                periodoFinal: filters.dataFim || "",
+                quadra: filters.quadra || "",
+                sepultura: filters.sepultura || "",
+                tipoSepultamento: !isExumacoesReport && filters.tipo !== "all" ? filters.tipo : "",
+                situacaoFinanceira: filters.situacaoFinanceira || "",
+                faixaValor: filters.faixaValor || "",
+                cemiterio: filters.cemiterio || "",
+                responsavel: filters.responsavel || "",
+                destinoExumacao: isExumacoesReport ? filters.destino || "" : "",
+                tipoExumacao: isExumacoesReport && filters.tipo !== "all" ? filters.tipo : "",
+            },
+            appliedFilters,
+            summary: stats.map(({ label, value, hint, tone }) => ({ label, value, hint, tone })),
+            charts,
+            table,
+            workbook: {
+                sheets: [
+                    { name: "Resumo executivo", summary: stats.map(({ label, value, hint }) => ({ label, value, hint })), charts },
+                    { name: "Dados completos", columns: table.columns, rows: table.rows },
+                ],
+                options: {
+                    autoFilter: true,
+                    freezeHeader: true,
+                    autoWidth: true,
+                    alternatingRows: true,
+                    conditionalColors: true,
+                },
+            },
+            csv: {
+                encoding: "UTF-8",
+                delimiter: ";",
+                columns: table.columns,
+            },
+            metadata: {
+                logo: sgcLogo,
+                cemeteryName: filters.cemiterio || "Cemiterio do Cambiri",
+                generatedAt: generatedAt.toISOString(),
+                generatedAtLabel: formatDateTimeBR(generatedAt),
+                userName: getUserName(user),
+                systemName: "SGC - Sistema de Gerenciamento de Cemiterios",
+            },
+        };
+
+        return {
+            ...snapshot,
+            metadata: {
+                ...snapshot.metadata,
+                reportHash: buildReportHash(snapshot),
+            },
+        };
+    }, [
+        destinoSeries,
+        exumacaoTypeSeries,
+        filteredItems,
+        filters,
+        isExumacoesReport,
+        monthlyExumacoes,
+        monthlyRevenue,
+        monthlySepultamentos,
+        periodLabel,
+        sepultamentoTypeSeries,
+        stats,
+        user,
+    ]);
+
     const clearFilters = () => {
         setFilters(initialFilters);
         setSelectedItem(null);
@@ -519,6 +892,52 @@ export default function RelatoriosComponent() {
             [field]: value,
             ...(field === "quadra" ? { sepultura: "" } : {}),
         }));
+    };
+
+    const handleExport = async (format) => {
+        setExportError("");
+        setExportLoading(format);
+
+        try {
+            if (format === "pdf") {
+                handlePrint();
+                return;
+            }
+
+            let content = "";
+
+            if (format === "csv") {
+                content = buildCsvContent(exportSnapshot);
+            } else if (format === "xlsx") {
+                content = buildExcelContent(exportSnapshot);
+            }
+
+            const blob = new Blob([content], { type: getMimeType(format) });
+            const filename = `${exportSnapshot.reportType}-${exportSnapshot.metadata.reportHash}.${getFileExtension(format)}`;
+            downloadBlob(blob, filename);
+        } catch (error) {
+            console.error("Erro ao exportar relatorio", error);
+            setExportError("Nao foi possivel gerar o arquivo localmente com os dados atuais.");
+        } finally {
+            setExportLoading("");
+        }
+    };
+
+    const handlePrint = () => {
+        setExportError("");
+        const printWindow = window.open("", "_blank", "noopener,noreferrer,width=1200,height=800");
+        if (!printWindow) {
+            setExportError("Permita pop-ups para imprimir o relatorio.");
+            return;
+        }
+
+        printWindow.document.open();
+        printWindow.document.write(renderPrintHtml(exportSnapshot));
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+        }, 350);
     };
 
     const renderSepultamentoRows = () => pageItems.map((item, index) => {
@@ -886,6 +1305,13 @@ export default function RelatoriosComponent() {
                             </Pagination>
                         )}
                     </TableCard>
+
+                    <RelatoriosExportActions
+                        loadingFormat={exportLoading}
+                        error={exportError}
+                        onExport={handleExport}
+                        onPrint={handlePrint}
+                    />
                 </MainColumn>
             </LayoutGrid>
 

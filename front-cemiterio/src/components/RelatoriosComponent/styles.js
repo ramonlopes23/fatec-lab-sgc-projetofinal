@@ -571,3 +571,97 @@ export const EmptyState = styled.div`
   text-align: center;
 `;
 
+export const ExportCard = styled.section`
+  background: #ffffff;
+  border: 1px solid rgba(25, 25, 112, 0.1);
+  border-radius: 18px;
+  padding: 1rem 1.05rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+
+  @media (max-width: 980px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const ExportCopy = styled.div`
+  min-width: 0;
+`;
+
+export const ExportTitle = styled.h3`
+  margin: 0;
+  color: #191970;
+  font-size: 1rem;
+`;
+
+export const ExportHint = styled.p`
+  margin: 0.25rem 0 0;
+  color: #6b7280;
+  font-size: 0.82rem;
+`;
+
+export const ExportError = styled.p`
+  margin: 0.45rem 0 0;
+  color: #991b1b;
+  font-size: 0.8rem;
+  font-weight: 700;
+`;
+
+export const ExportActionsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, minmax(135px, 1fr));
+  gap: 0.75rem;
+
+  @media (max-width: 860px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const ExportActionButton = styled.button`
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid ${({ $tone }) => (
+    $tone === "pdf" ? "rgba(239, 68, 68, 0.22)" :
+    $tone === "excel" ? "rgba(22, 163, 74, 0.24)" :
+    $tone === "csv" ? "rgba(37, 99, 235, 0.22)" :
+    "rgba(25, 25, 112, 0.16)"
+  )};
+  background: ${({ $tone }) => (
+    $tone === "pdf" ? "linear-gradient(180deg, #fff 0%, #fff5f5 100%)" :
+    $tone === "excel" ? "linear-gradient(180deg, #fff 0%, #f0fdf4 100%)" :
+    $tone === "csv" ? "linear-gradient(180deg, #fff 0%, #eff6ff 100%)" :
+    "linear-gradient(180deg, #fff 0%, #f8f8ff 100%)"
+  )};
+  color: ${({ $tone }) => (
+    $tone === "pdf" ? "#b91c1c" :
+    $tone === "excel" ? "#15803d" :
+    $tone === "csv" ? "#1d4ed8" :
+    "#191970"
+  )};
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(25, 25, 112, 0.08);
+  }
+
+  &:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+  }
+`;
