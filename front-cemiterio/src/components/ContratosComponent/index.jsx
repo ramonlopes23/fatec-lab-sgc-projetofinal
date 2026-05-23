@@ -61,6 +61,8 @@ import {
     Subtitle,
 } from "./styles";
 import { getContratos, createContrato, updateContrato, deleteContrato } from "../../services/contratoService.js";
+import { getBlocks } from "../../services/blockService.js";
+import { getGrave, createGrave } from "../../services/graveService.js";
 import { useCemeteryStore } from "../../stores/cemeteryStore.js";
 import { formatCurrencyBRL } from "../../utils/taxas";
 import { formatDateDMY, formatDateTimeKey, parseDateValue } from "../../utils/date";
@@ -80,6 +82,8 @@ const STATUS_FILTER_OPTIONS = [
 
 const INITIAL_FORM = {
     nome_titular: "",
+    cpf_titular: "",
+    contato_responsavel: "",
     numero_titulo: "",
     status: "ativo",
     validade_titulo: "",
@@ -136,6 +140,8 @@ const formatLocal = (contract, cemeteryNameFallback) => {
 const normalizeContract = (contract) => ({
     id: contract?.id ?? contract?.numero_titulo ?? "",
     nome_titular: String(contract?.nome_titular || "").trim(),
+    cpf_titular: String(contract?.cpf_titular || contract?.cpf || "").trim(),
+    contato_responsavel: String(contract?.contato_responsavel || contract?.telefone || contract?.tel_resp || "").trim(),
     numero_titulo: String(contract?.numero_titulo || "").trim(),
     status: normalizeStatus(contract?.status) || "ativo",
     validade_titulo: contract?.validade_titulo || "",
@@ -150,6 +156,8 @@ export default function ContratosComponent() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [modalOpen, setModalOpen] = useState(false);
     const [titulos, setTitulos] = useState([]);
+    const [quadras, setQuadras] = useState([]);
+    const [sepulturas, setSepulturas] = useState([]);
     const [form, setForm] = useState(INITIAL_FORM);
     const [errors, setErrors] = useState({});
     const [editingId, setEditingId] = useState(null);
@@ -174,11 +182,19 @@ export default function ContratosComponent() {
     const loadContratos = async () => {
         setIsLoading(true);
         try {
-            const data = await getContratos();
+            const [data, blocksData, gravesData] = await Promise.all([
+                getContratos(),
+                getBlocks().catch(() => []),
+                getGrave().catch(() => []),
+            ]);
             setTitulos(Array.isArray(data) ? data : []);
+            setQuadras(Array.isArray(blocksData) ? blocksData : []);
+            setSepulturas(Array.isArray(gravesData) ? gravesData : []);
         } catch (error) {
             console.error("Erro ao carregar contratos", error);
             setTitulos([]);
+            setQuadras([]);
+            setSepulturas([]);
             alert("Erro ao carregar contratos");
         } finally {
             setIsLoading(false);
@@ -195,6 +211,8 @@ export default function ContratosComponent() {
             const matchesSearch = !q || [
                 item.numero_titulo,
                 item.nome_titular,
+                item.cpf_titular,
+                item.contato_responsavel,
                 item.status,
                 item.validade_titulo,
                 item.sepultura,
@@ -212,6 +230,49 @@ export default function ContratosComponent() {
             return matchesSearch && matchesStatus;
         });
     }, [normalizedTitulos, query, selectedCemeteryName, statusFilter]);
+
+    const quadraOptions = useMemo(() => {
+        return (quadras || [])
+            .map((quadra) => ({
+                id: String(quadra?.id ?? quadra?.num_quadra ?? ""),
+                numero: String(quadra?.num_quadra ?? quadra?.number ?? quadra?.numero ?? quadra?.id ?? "").trim(),
+                nome: quadra?.nome || quadra?.name || "",
+                max: Number(quadra?.max_covas || quadra?.maxGraves || 0),
+            }))
+            .filter((quadra) => quadra.id && quadra.numero)
+            .sort((left, right) => String(left.numero).localeCompare(String(right.numero), "pt-BR", { numeric: true }));
+    }, [quadras]);
+
+    const selectedQuadra = useMemo(() => (
+        quadraOptions.find((quadra) => String(quadra.numero) === String(form.quadra) || String(quadra.id) === String(form.quadra))
+        || null
+    ), [form.quadra, quadraOptions]);
+
+    const getSepulturaQuadraKey = (sepultura) => String(
+        sepultura?.blockId ?? sepultura?.block ?? sepultura?.quadra_cova ?? sepultura?.quadra ?? sepultura?.quadra_sep ?? ""
+    );
+
+    const getSepulturaNumber = (sepultura) => String(
+        sepultura?.number ?? sepultura?.num_cova ?? sepultura?.numero ?? sepultura?.num_sepultura_sep ?? sepultura?.sepultura ?? ""
+    ).trim();
+
+    const isSepulturaNumberTaken = (quadraValue, sepulturaValue, ignoreContractId = editingId) => {
+        const quadra = quadraOptions.find((item) => String(item.numero) === String(quadraValue) || String(item.id) === String(quadraValue));
+        const quadraKeys = [quadraValue, quadra?.id, quadra?.numero].filter((item) => item !== undefined && item !== null).map(String);
+        const sepulturaNumber = String(sepulturaValue || "").trim();
+        if (!quadraKeys.length || !sepulturaNumber) return false;
+
+        const existsInGraves = sepulturas.some((sepultura) => (
+            quadraKeys.includes(getSepulturaQuadraKey(sepultura)) && getSepulturaNumber(sepultura) === sepulturaNumber
+        ));
+        const existsInContracts = normalizedTitulos.some((contract) => (
+            String(contract.id) !== String(ignoreContractId || "") &&
+            String(contract.quadra) === String(quadra?.numero ?? quadraValue) &&
+            String(contract.sepultura) === sepulturaNumber
+        ));
+
+        return existsInGraves || existsInContracts;
+    };
 
     const stats = useMemo(() => {
         const total = normalizedTitulos.length;
@@ -262,14 +323,24 @@ export default function ContratosComponent() {
         const numero = form.numero_titulo.trim();
         const nome = form.nome_titular.trim();
         const valor = Number(form.valor);
+        const sepulturaNumber = Number(form.sepultura);
 
         if (!nome) nextErrors.nome_titular = "Informe o nome do titular";
+        if (!form.cpf_titular.trim()) nextErrors.cpf_titular = "Informe o CPF do titular";
+        if (!form.contato_responsavel.trim()) nextErrors.contato_responsavel = "Informe o contato do responsavel";
         if (!numero) nextErrors.numero_titulo = "Informe o número do título";
         if (!form.status.trim()) nextErrors.status = "Informe o status do título";
         if (!form.validade_titulo.trim()) nextErrors.validade_titulo = "Informe a vigência do título";
         if (!form.sepultura.trim()) nextErrors.sepultura = "Informe o número da sepultura";
         if (!form.quadra.trim()) nextErrors.quadra = "Informe o número da quadra";
         if (!Number.isFinite(valor) || valor < 0) nextErrors.valor = "Informe um valor válido";
+
+        if (form.sepultura.trim() && (!Number.isInteger(sepulturaNumber) || sepulturaNumber <= 0)) {
+            nextErrors.sepultura = "Informe um numero de sepultura valido";
+        }
+        if (form.quadra && !selectedQuadra) {
+            nextErrors.quadra = "Selecione uma quadra existente";
+        }
 
         if (form.validade_titulo && !parseDateValue(form.validade_titulo)) {
             nextErrors.validade_titulo = "Data de vigência em formato inválido";
@@ -279,6 +350,10 @@ export default function ContratosComponent() {
             (item) => item.id !== editingId && String(item.numero_titulo || "").trim().toLowerCase() === numero.toLowerCase()
         );
         if (duplicated) nextErrors.numero_titulo = "Já existe um título com esse número";
+
+        if (!editingId && selectedQuadra && form.sepultura.trim() && isSepulturaNumberTaken(selectedQuadra.numero, form.sepultura)) {
+            nextErrors.sepultura = "Ja existe uma sepultura com esse numero nesta quadra";
+        }
 
         setErrors(nextErrors);
         return Object.keys(nextErrors).length === 0;
@@ -293,11 +368,14 @@ export default function ContratosComponent() {
             const now = formatDateTimeKey(new Date());
             const payload = {
                 nome_titular: form.nome_titular.trim(),
+                cpf_titular: form.cpf_titular.trim(),
+                contato_responsavel: form.contato_responsavel.trim(),
                 numero_titulo: form.numero_titulo.trim(),
                 status: form.status,
                 validade_titulo: form.validade_titulo,
                 sepultura: form.sepultura.trim(),
-                quadra: form.quadra.trim(),
+                quadra: selectedQuadra?.numero || form.quadra.trim(),
+                blockId: selectedQuadra?.id || "",
                 cemiterio: String(form.cemiterio || selectedCemeteryName || "").trim(),
                 valor: Number(form.valor),
                 update_at: now,
@@ -313,6 +391,19 @@ export default function ContratosComponent() {
                 await createContrato({
                     ...payload,
                     created_at: now,
+                });
+                await createGrave({
+                    number: Number(form.sepultura),
+                    graveType: "EARTH",
+                    bodyCapacity: 1,
+                    areaType: "PERPETUAL",
+                    blockId: String(selectedQuadra?.id || form.quadra),
+                    status: "AVAILABLE",
+                    blocked: false,
+                    contractTitle: form.numero_titulo.trim(),
+                    holderName: form.nome_titular.trim(),
+                    holderCpf: form.cpf_titular.trim(),
+                    holderContact: form.contato_responsavel.trim(),
                 });
                 alert("Título cadastrado com sucesso.");
             }
@@ -332,6 +423,8 @@ export default function ContratosComponent() {
         setEditingId(normalized.id);
         setForm({
             nome_titular: normalized.nome_titular,
+            cpf_titular: normalized.cpf_titular,
+            contato_responsavel: normalized.contato_responsavel,
             numero_titulo: normalized.numero_titulo,
             status: normalized.status || "ativo",
             validade_titulo: normalized.validade_titulo,
@@ -463,6 +556,8 @@ export default function ContratosComponent() {
                                     <Tr>
                                         <Th>Nº do Título</Th>
                                         <Th>Titular</Th>
+                                        <Th>CPF</Th>
+                                        <Th>Contato</Th>
                                         <Th>Local</Th>
                                         <Th>Vigência</Th>
                                         <Th>Valor</Th>
@@ -473,7 +568,7 @@ export default function ContratosComponent() {
                                 <TBody>
                                     {isLoading ? (
                                         <Tr>
-                                            <Td colSpan={7}>Carregando contratos...</Td>
+                                            <Td colSpan={9}>Carregando contratos...</Td>
                                         </Tr>
                                     ) : filteredTitulos.length > 0 ? (
                                         filteredTitulos.map((item, index) => {
@@ -482,6 +577,8 @@ export default function ContratosComponent() {
                                                 <Tr key={String(normalized.id || normalized.numero_titulo)} index={index}>
                                                     <Td>{normalized.numero_titulo}</Td>
                                                     <Td>{normalized.nome_titular}</Td>
+                                                    <Td>{normalized.cpf_titular || "-"}</Td>
+                                                    <Td>{normalized.contato_responsavel || "-"}</Td>
                                                     <TdLocal>{formatLocal(normalized, selectedCemeteryName)}</TdLocal>
                                                     <Td>{formatDateBR(normalized.validade_titulo)}</Td>
                                                     <TdValue>{formatCurrencyBRL(normalized.valor)}</TdValue>
@@ -505,7 +602,7 @@ export default function ContratosComponent() {
                                         })
                                     ) : (
                                         <Tr>
-                                            <Td colSpan={7}>Nenhum contrato encontrado.</Td>
+                                            <Td colSpan={9}>Nenhum contrato encontrado.</Td>
                                         </Tr>
                                     )}
                                 </TBody>
@@ -531,6 +628,28 @@ export default function ContratosComponent() {
                                         disabled={isSubmitting}
                                     />
                                     {errors.nome_titular ? <p style={errorStyle}>{errors.nome_titular}</p> : null}
+                                </div>
+
+                                <div>
+                                    <label>CPF do titular</label>
+                                    <Input
+                                        value={form.cpf_titular}
+                                        onChange={(event) => updateField("cpf_titular", event.target.value)}
+                                        placeholder="000.000.000-00"
+                                        disabled={isSubmitting}
+                                    />
+                                    {errors.cpf_titular ? <p style={errorStyle}>{errors.cpf_titular}</p> : null}
+                                </div>
+
+                                <div>
+                                    <label>Contato do responsavel</label>
+                                    <Input
+                                        value={form.contato_responsavel}
+                                        onChange={(event) => updateField("contato_responsavel", event.target.value)}
+                                        placeholder="Telefone ou e-mail"
+                                        disabled={isSubmitting}
+                                    />
+                                    {errors.contato_responsavel ? <p style={errorStyle}>{errors.contato_responsavel}</p> : null}
                                 </div>
 
                                 <div>
@@ -597,12 +716,29 @@ export default function ContratosComponent() {
 
                                 <div>
                                     <label>Quadra</label>
-                                    <Input
+                                    <TextField
+                                        select
+                                        fullWidth
+                                        size="small"
                                         value={form.quadra}
                                         onChange={(event) => updateField("quadra", event.target.value)}
-                                        placeholder="Exemplo: 12"
                                         disabled={isSubmitting}
-                                    />
+                                        sx={{
+                                            "& .MuiOutlinedInput-root": {
+                                                borderRadius: "12px",
+                                            },
+                                            "& .MuiOutlinedInput-input": {
+                                                fontSize: "14px",
+                                            },
+                                        }}
+                                    >
+                                        <MenuItem value="">Selecione a quadra</MenuItem>
+                                        {quadraOptions.map((quadra) => (
+                                            <MenuItem key={quadra.id} value={quadra.numero}>
+                                                {quadra.nome || `Quadra ${quadra.numero}`}
+                                            </MenuItem>
+                                        ))}
+                                    </TextField>
                                     {errors.quadra ? <p style={errorStyle}>{errors.quadra}</p> : null}
                                 </div>
 

@@ -287,7 +287,7 @@ export const TableWrapper = styled.div`
 export const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  min-width: 1080px;
+  min-width: 1280px;
   font-size: 14px;
   table-layout: fixed;
 `;
