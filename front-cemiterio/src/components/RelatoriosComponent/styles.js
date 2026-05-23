@@ -23,6 +23,7 @@ export const PageHeader = styled.div`
 export const Title = styled.h1`
   margin: 0;
   font-size: 29px;
+  font-weight:800;
   line-height: 1.05;
   color: #191970;
   letter-spacing: -0.5px;
@@ -56,6 +57,34 @@ export const FilterCard = styled.section`
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
 `;
 
+export const ReportModeTabs = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+`;
+
+export const ReportModeButton = styled.button`
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid ${({ $active }) => ($active ? "transparent" : "rgba(25, 25, 112, 0.12)")};
+  background: ${({ $active }) => ($active ? "linear-gradient(180deg, #191970 0%, #191970 100%)" : "#ffffff")};
+  color: ${({ $active }) => ($active ? "#ffffff" : "#191970")};
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  box-shadow: ${({ $active }) => ($active ? "0 12px 24px rgba(74, 47, 227, 0.18)" : "none")};
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(25, 25, 112, 0.08);
+  }
+`;
+
 export const Table = styled.table`
   width: 100%;
   min-width: 900px;
@@ -64,8 +93,8 @@ export const Table = styled.table`
 `;
 
 export const THead = styled.thead`
-  background: #191970;
-  color: #ffffff;
+  background: #fff;
+  color: #191970;
 `;
 
 export const TBody = styled.tbody`
@@ -494,8 +523,8 @@ export const TdLocal = styled(Td)`
 `;
 
 export const TdValue = styled(Td)`
-  font-weight: 700;
-  color: #191970;
+  font-weight: 400;
+ 
 `;
 
 export const StatusBadge = styled.span`

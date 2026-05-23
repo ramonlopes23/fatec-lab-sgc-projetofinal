@@ -9,7 +9,7 @@ import {
     YAxis,
 } from "recharts";
 
-export default function RelatoriosSepultadosMesChart({ data = [], loading = false }) {
+export default function RelatoriosSepultadosMesChart({ data = [], loading = false, label = "Sepultamentos" }) {
     if (loading) {
         return <div style={{ padding: 16, color: "#666" }}>Carregando gráfico...</div>;
     }
@@ -26,7 +26,7 @@ export default function RelatoriosSepultadosMesChart({ data = [], loading = fals
                 <YAxis tickLine={false} axisLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} allowDecimals={false} />
                 <Tooltip
                     cursor={{ fill: "rgba(25,25,112,0.05)" }}
-                    formatter={(value) => [value, "Sepultamentos"]}
+                    formatter={(value) => [value, label]}
                     labelStyle={{ color: "#191970", fontWeight: 600 }}
                     contentStyle={{ borderRadius: 12, border: "1px solid #dbe1f2", boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)" }}
                 />
