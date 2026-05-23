@@ -7,9 +7,10 @@ import {
   RULES_FALECIDO,
   RULES_RESPONSAVEL,
   RULES_SEPULTAMENTO,
+  RULES_VELORIO,
   validateForm,
 } from "../../utils/validation";
-import { ALLOWED_FAL_INDI, PROCESS_TYPES } from "../../pages/Cadastros/constants";
+import { ALLOWED_FAL_INDI, PROCESS_TYPES, VELORIO_FIELDS } from "../../pages/Cadastros/constants";
 
 export default function useFormValidation(form, processType, isIndigente, searchFal) {
   const [fieldErrors, setFieldErrors] = useState({});
@@ -39,6 +40,9 @@ export default function useFormValidation(form, processType, isIndigente, search
     if (!rule && ["nome_resp", "tel_resp", "doc_resp", "prof_resp"].includes(fieldName)) {
       rule = RULES_RESPONSAVEL[fieldName];
     }
+    if (!rule && form?.com_velorio && VELORIO_FIELDS.includes(fieldName)) {
+      rule = RULES_VELORIO[fieldName];
+    }
 
     const error = getFieldError(fieldName, value, rule || {});
     setFieldErrors((prev) => {
@@ -47,7 +51,7 @@ export default function useFormValidation(form, processType, isIndigente, search
       else delete next[fieldName];
       return next;
     });
-  }, [isIndigente, processType]);
+  }, [form?.com_velorio, isIndigente, processType]);
 
   const validateBeforeSubmit = useCallback(() => {
     const ignoreForEmptyCheck = ["taxa_valor", "foi_exumado", "residencia_preview", "dec_obito_preview", "falecido", "falecido_id"];
@@ -81,6 +85,13 @@ export default function useFormValidation(form, processType, isIndigente, search
       rules = { ...RULES_SEPULTAMENTO };
       if (isEmpty(searchFal) && isEmpty(form.nome_sep)) {
         extraErrors.nome_fal = "Informe o nome do falecido.";
+      }
+
+      if (form?.com_velorio) {
+        rules = { ...rules, ...RULES_VELORIO };
+        if (!isEmpty(form.dh_inicio_velorio) && !isEmpty(form.dh_fim_velorio) && !isValidDateRange(form.dh_inicio_velorio, form.dh_fim_velorio)) {
+          extraErrors.dh_fim_velorio = "Data de fim do velório nao pode ser anterior ao início";
+        }
       }
     }
 

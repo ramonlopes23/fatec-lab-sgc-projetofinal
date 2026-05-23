@@ -75,6 +75,7 @@ export default function Dashboard() {
                 }
 
                 const num_sepultura = item.num_sepultura_sep ?? item.num_sepultura ?? item.numero ?? item.num_cova ?? null;
+                const velorio_inicio = item.dh_inicio_velorio ?? item.data_velorio ?? null;
 
                 return {
                     ...item,
@@ -82,6 +83,8 @@ export default function Dashboard() {
                     falecido: f || null,
                     quadra_num,
                     num_sepultura,
+                    local: item.local_velorio || item.local || "",
+                    velorio_inicio,
                 }
             })
 
@@ -89,9 +92,9 @@ export default function Dashboard() {
             const active = all.filter(it => {
                 const st = String(it.status ?? "").toLowerCase();
                 const confirmed = it.confirmado === true || it.confirmado === "true";
-                return !(st === "concluído" || confirmed);
+                return !(st === "concluído" || confirmed || st.includes("aguardando velorio"));
             })
-            setProcessos(active.sort((a, b) => (a.dh_sep || a.data_velorio || a.dh_exu || "").localeCompare(b.dh_sep || b.data_velorio || b.dh_exu || "")));
+            setProcessos(active.sort((a, b) => (a.dh_inicio_velorio || a.data_velorio || a.dh_sep || a.dh_exu || "").localeCompare(b.dh_inicio_velorio || b.data_velorio || b.dh_sep || b.dh_exu || "")));
         } catch (err) {
             console.error("Erro ao carregar dashboard", err);
         }
@@ -137,7 +140,7 @@ export default function Dashboard() {
 
 
     const getScheduledDate = (item) => {
-        const raw = item.dh_sep || item.data_velorio || item.dh_exu || item.data || item.horario || "";
+        const raw = item.dh_inicio_velorio || item.dh_sep || item.data_velorio || item.dh_exu || item.data || item.horario || "";
         if (!raw) return null;
         if (typeof raw === "number") return new Date(raw);
         const s = String(raw).trim();
@@ -175,6 +178,20 @@ export default function Dashboard() {
             setProcessos(prev => prev.filter(p => !(p._type === item._type && p.id === item.id)));
             if (item._type === "Velório") {
                 await api.patch(`/velorios/${item.id}`, { status: "Concluído", confirmado: true }).catch(() => { });
+
+                const linkedSepultamentoId = item.sepultamento_id ?? item.sepultamentoId ?? null;
+                if (linkedSepultamentoId) {
+                    try {
+                        await api.patch(`/sepultamentos/${linkedSepultamentoId}`, { status: "Pendente", confirmado: false, liberado_por_velorio: true }).catch(() => { });
+                        const rSep = await api.get(`/sepultamentos/${linkedSepultamentoId}`).catch(() => null);
+                        const sepultamento = rSep?.data ?? null;
+                        if (sepultamento) {
+                            window.dispatchEvent(new CustomEvent("processoCriado", { detail: { ...sepultamento, _type: "Sepultamento" } }));
+                        }
+                    } catch (libErr) {
+                        console.warn("Erro ao liberar sepultamento após velório:", libErr);
+                    }
+                }
             } else if (item._type === "Sepultamento") {
                 await api.patch(`/sepultamentos/${item.id}`, { status: "Concluído", confirmado: true }).catch(() => { });
                 sepId = item.id;
@@ -263,7 +280,7 @@ export default function Dashboard() {
                         <ProcessItem key={`${p._type}-${p.id}`}>
                             <ProcessInfo>
                                 <strong>{p.nome_fal || p.nome}</strong>
-                                {p._type === "Velório" && p.data_velorio && <span>Velorio:{p.data_velorio}</span>}
+                                {p._type === "Velório" && (p.dh_inicio_velorio || p.data_velorio) && <span>Velório: {p.dh_inicio_velorio || p.data_velorio}{p.dh_fim_velorio ? ` até ${p.dh_fim_velorio}` : ""}</span>}
                                 {p._type === "Exumação" && p.dh_exu && <span>Exumação: {p.dh_exu}</span>}
                                 {p._type === "Sepultamento" && p.dh_sep && (
                                     <span>

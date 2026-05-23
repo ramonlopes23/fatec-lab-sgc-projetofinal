@@ -3,6 +3,8 @@ import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import Stepper from "@mui/material/Stepper";
@@ -44,6 +46,7 @@ function SepultamentoProcess({
     availableCovas,
     tipoCovaSelecionada,
     handleClearSepultamento,
+    handleVelorioToggle,
     validateFieldOnChange,
     taxaOptions,
     fieldSxStyle,
@@ -63,13 +66,143 @@ function SepultamentoProcess({
             <Step expanded={expandedSteps[0]}>
                 <StepLabel onClick={() => toggleStepExpanded(0)} sx={{ cursor: "pointer" }}>
                     <StepHeader>
-                        <span>Sepultamento</span>
+                        <span>Velório opcional</span>
                         <ChevronIcon isExpanded={expandedSteps[0]}>
                             <LuChevronDown size={20} />
                         </ChevronIcon>
                     </StepHeader>
                 </StepLabel>
                 <StepContent sx={{ display: expandedSteps[0] ? "block" : "none" }}>
+                    <Box sx={{ mb: 2 }}>
+                        <FormControlLabel
+                            control={(
+                                <Checkbox
+                                    checked={!!form.com_velorio}
+                                    onChange={(event) => handleVelorioToggle(event.target.checked)}
+                                />
+                            )}
+                            label="Adicionar velório antes do sepultamento"
+                        />
+                    </Box>
+
+                    {form.com_velorio ? (
+                        <Grid container spacing={2}>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <DateTimePicker
+                                    label="Data e hora de início"
+                                    format="dd/MM/yyyy HH:mm"
+                                    value={parseDateValue(form.dh_inicio_velorio)}
+                                    onChange={(newVal) => updateFieldByName("dh_inicio_velorio", newVal ? formatDateTimeKey(newVal) : "")}
+                                    disabled={isSubmitting}
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            error: !!fieldErrors.dh_inicio_velorio,
+                                            helperText: fieldErrors.dh_inicio_velorio,
+                                            sx: fieldSxStyle,
+                                            slotProps: { inputLabel: { sx: labelSxStyle } },
+                                        },
+                                    }}
+                                />
+                            </Grid>
+
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <DateTimePicker
+                                    label="Data e hora de fim"
+                                    format="dd/MM/yyyy HH:mm"
+                                    value={parseDateValue(form.dh_fim_velorio)}
+                                    onChange={(newVal) => updateFieldByName("dh_fim_velorio", newVal ? formatDateTimeKey(newVal) : "")}
+                                    disabled={isSubmitting}
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            error: !!fieldErrors.dh_fim_velorio,
+                                            helperText: fieldErrors.dh_fim_velorio,
+                                            sx: fieldSxStyle,
+                                            slotProps: { inputLabel: { sx: labelSxStyle } },
+                                        },
+                                    }}
+                                />
+                            </Grid>
+
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <TextField
+                                    fullWidth
+                                    variant="outlined"
+                                    label="Local"
+                                    name="local_velorio"
+                                    value={form.local_velorio}
+                                    onChange={handleChange}
+                                    disabled={isSubmitting}
+                                    error={!!fieldErrors.local_velorio}
+                                    helperText={fieldErrors.local_velorio}
+                                    sx={fieldSxStyle}
+                                    slotProps={{ inputLabel: { sx: labelSxStyle } }}
+                                />
+                            </Grid>
+
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <FormControl fullWidth error={!!fieldErrors.tipo_velorio}>
+                                    <InputLabel sx={labelSxStyle}>Tipo</InputLabel>
+                                    <Select label="Tipo" name="tipo_velorio" value={form.tipo_velorio || ""} onChange={handleChange} disabled={isSubmitting} sx={selectSxStyle}>
+                                        <MenuItem value="">Selecione o tipo</MenuItem>
+                                        <MenuItem value="Publico">Público</MenuItem>
+                                        <MenuItem value="Privado">Privado</MenuItem>
+                                    </Select>
+                                    {fieldErrors.tipo_velorio && <FormHelperText>{fieldErrors.tipo_velorio}</FormHelperText>}
+                                </FormControl>
+                            </Grid>
+
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <TextField
+                                    fullWidth
+                                    variant="outlined"
+                                    label="Responsável"
+                                    name="responsavel_velorio"
+                                    value={form.responsavel_velorio}
+                                    onChange={handleChange}
+                                    disabled={isSubmitting}
+                                    error={!!fieldErrors.responsavel_velorio}
+                                    helperText={fieldErrors.responsavel_velorio}
+                                    sx={fieldSxStyle}
+                                    slotProps={{ inputLabel: { sx: labelSxStyle } }}
+                                />
+                            </Grid>
+
+                            <Grid size={{ xs: 12 }}>
+                                <TextField
+                                    fullWidth
+                                    variant="outlined"
+                                    label="Observações"
+                                    name="obs_velorio"
+                                    value={form.obs_velorio}
+                                    onChange={handleChange}
+                                    disabled={isSubmitting}
+                                    multiline
+                                    rows={4}
+                                    sx={fieldSxStyle}
+                                    slotProps={{ inputLabel: { sx: labelSxStyle } }}
+                                />
+                            </Grid>
+                        </Grid>
+                    ) : (
+                        <Box sx={{ color: "text.secondary", fontSize: 14 }}>
+                            Se não marcar esta opção, o sistema seguirá direto para o sepultamento.
+                        </Box>
+                    )}
+                </StepContent>
+            </Step>
+
+            <Step expanded={expandedSteps[1] ?? true}>
+                <StepLabel onClick={() => toggleStepExpanded(1)} sx={{ cursor: "pointer" }}>
+                    <StepHeader>
+                        <span>Sepultamento</span>
+                        <ChevronIcon isExpanded={expandedSteps[1] ?? true}>
+                            <LuChevronDown size={20} />
+                        </ChevronIcon>
+                    </StepHeader>
+                </StepLabel>
+                <StepContent sx={{ display: (expandedSteps[1] ?? true) ? "block" : "none" }}>
                     <Grid container spacing={2}>
                         <Grid size={{ xs: 12, md:6 }}>
                             <SearchFieldWrapper>

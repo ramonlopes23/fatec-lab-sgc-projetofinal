@@ -38,6 +38,13 @@ export const INITIAL_SEPULTAMENTO_FORM = {
     nome_sep: "",
     data_obito_sep: "",
     dh_sep: "",
+    com_velorio: false,
+    dh_inicio_velorio: "",
+    dh_fim_velorio: "",
+    local_velorio: "",
+    tipo_velorio: "",
+    responsavel_velorio: "",
+    obs_velorio: "",
     titulo_posse: "",
     quadra_sep: "",
     num_sepultura_sep: "",
@@ -50,6 +57,15 @@ export const INITIAL_SEPULTAMENTO_FORM = {
     falecido_id: "",
     falecido: "",
 };
+
+export const VELORIO_FIELDS = [
+    "dh_inicio_velorio",
+    "dh_fim_velorio",
+    "local_velorio",
+    "tipo_velorio",
+    "responsavel_velorio",
+    "obs_velorio",
+];
 
 export const DEFAULT_TAXAS = [
     { id: "taxa-crianca", codigo: "crianca", descricao: "CRIANÇA", valor: 56.12, tipo: "sepultamento", active: true, isencao: false, vigencia_inicio: "", vigencia_fim: "" },

@@ -23,6 +23,7 @@ import {
     STORAGE_KEY,
     TAXA_LABEL,
     TAXA_MAP,
+    VELORIO_FIELDS,
 } from "./constants";
 import useTaxas from "../../hooks/Taxas/useTaxas";
 import { findTaxaByCodigo } from "../../utils/taxas";
@@ -81,7 +82,7 @@ export default function Cadastros() {
     const { busca, setBusca, resultados } = useCidadeBusca(cidades);
     const { searchFal, setSearchFal, filteredFalecidos } = useFalecidoSearch(falecidos, processType, saved, setForm);
     const { taxas, taxaOptions } = useTaxas({ onlyActive: true });
-    const { fieldErrors, validateFieldOnChange, validateBeforeSubmit, clearAllErrors, clearErrorsExcept } = useFormValidation(form, processType, isIndigente, searchFal);
+    const { fieldErrors, validateFieldOnChange, validateBeforeSubmit, clearAllErrors, clearErrorsExcept, clearFieldError } = useFormValidation(form, processType, isIndigente, searchFal);
     const { handleFileChange } = useFileUpload(setForm);
     const { clearFalecido, clearSepultamento, resetToSepultamento } = useFormClear({
         clearAllErrors,
@@ -198,6 +199,20 @@ export default function Cadastros() {
         setForm((prev) => ({ ...prev, falecido_id: id, falecido: id, nome_sep: falecido ? (falecido.nome_fal || falecido.nome) : prev.nome_sep }));
     };
 
+    const clearVelorioFields = useCallback(() => {
+        VELORIO_FIELDS.forEach((fieldName) => {
+            updateFieldByName(fieldName, "");
+            clearFieldError(fieldName);
+        });
+    }, [clearFieldError, updateFieldByName]);
+
+    const handleVelorioToggle = useCallback((enabled) => {
+        updateFieldByName("com_velorio", enabled);
+        if (!enabled) {
+            clearVelorioFields();
+        }
+    }, [clearVelorioFields, updateFieldByName]);
+
     const handleSubmit = (event) => {
         event.preventDefault();
         if (!validateBeforeSubmit()) {
@@ -236,7 +251,7 @@ export default function Cadastros() {
             }
 
             const selectedTaxa = findTaxaByCodigo(taxas, form.taxa);
-            const payload = {
+            const sepultamentoPayload = {
                 ...form,
                 nome: searchFal || form.nome_sep || form.nome_fal,
                 nome_sep: form.nome_sep || searchFal || form.nome_fal,
@@ -244,9 +259,11 @@ export default function Cadastros() {
                 taxa_valor: Number(selectedTaxa?.valor ?? form.taxa_valor ?? TAXA_MAP[form.taxa] ?? 0),
                 taxa_label: selectedTaxa?.label ?? TAXA_LABEL[form.taxa] ?? "",
                 foi_exumado: false,
+                status: form.com_velorio ? "Aguardando velorio" : "Pendente",
+                confirmado: false,
             };
 
-            const rCheck = await api.get("/covas", { params: { blockId: payload.quadra_sep, number: payload.num_sepultura_sep } }).catch(() => null);
+            const rCheck = await api.get("/covas", { params: { blockId: sepultamentoPayload.quadra_sep, number: sepultamentoPayload.num_sepultura_sep } }).catch(() => null);
             const foundCheck = rCheck && Array.isArray(rCheck.data) && rCheck.data.length ? rCheck.data[0] : null;
 
             if (!foundCheck?.id) {
@@ -261,12 +278,45 @@ export default function Cadastros() {
                 return;
             }
 
-            const res = await api.post("/sepultamentos", payload);
-            const created = res?.data ?? null;
-            if (created) window.dispatchEvent(new CustomEvent("processoCriado", { detail: created }));
+            let createdVelorio = null;
+            if (form.com_velorio) {
+                const velorioPayload = {
+                    nome_vel: sepultamentoPayload.nome_sep,
+                    nome_fal: sepultamentoPayload.nome_sep,
+                    falecido_id: sepultamentoPayload.falecido_id,
+                    data_velorio: sepultamentoPayload.dh_inicio_velorio,
+                    dh_inicio_velorio: sepultamentoPayload.dh_inicio_velorio,
+                    dh_fim_velorio: sepultamentoPayload.dh_fim_velorio,
+                    local: sepultamentoPayload.local_velorio,
+                    local_velorio: sepultamentoPayload.local_velorio,
+                    tipo_velorio: sepultamentoPayload.tipo_velorio,
+                    responsavel_velorio: sepultamentoPayload.responsavel_velorio,
+                    obs_velorio: sepultamentoPayload.obs_velorio,
+                    status: "Pendente",
+                    confirmado: false,
+                    sepultamento_id: "",
+                };
 
-            setRegistros((prev) => ([...prev, { processType, data: payload }]));
-            showSuccess("Sepultamento cadastrado (pendente). Confirme na Dashboard para concluir.");
+                const velorioResponse = await api.post("/velorios", velorioPayload);
+                createdVelorio = velorioResponse?.data ?? null;
+                if (createdVelorio?.id) {
+                    sepultamentoPayload.velorio_id = createdVelorio.id;
+                }
+            }
+
+            const res = await api.post("/sepultamentos", sepultamentoPayload);
+            const created = res?.data ?? null;
+
+            if (createdVelorio?.id && created?.id) {
+                await api.patch(`/velorios/${createdVelorio.id}`, { sepultamento_id: created.id }).catch(() => { });
+                createdVelorio = { ...createdVelorio, sepultamento_id: created.id };
+            }
+
+            if (createdVelorio) window.dispatchEvent(new CustomEvent("processoCriado", { detail: { ...createdVelorio, _type: "Velório" } }));
+            if (created) window.dispatchEvent(new CustomEvent("processoCriado", { detail: { ...created, _type: "Sepultamento" } }));
+
+            setRegistros((prev) => ([...prev, { processType, data: sepultamentoPayload }]));
+            showSuccess(form.com_velorio ? "Velório e sepultamento cadastrados. Confirme o velório na Dashboard para liberar o sepultamento." : "Sepultamento cadastrado (pendente). Confirme na Dashboard para concluir.");
             clearSaved();
             clearSepultamento();
         } catch (err) {
@@ -369,6 +419,7 @@ export default function Cadastros() {
                                 availableCovas={availableCovas}
                                 tipoCovaSelecionada={tipoCovaSelecionada}
                                 handleClearSepultamento={clearSepultamento}
+                                handleVelorioToggle={handleVelorioToggle}
                                 validateFieldOnChange={validateFieldOnChange}
                                 taxaOptions={taxaOptions}
                                 fieldSxStyle={fieldSxStyle}

@@ -55,9 +55,9 @@ export default function SidebarMenu({ isCollapsed = false }) {
         },
         { name: "Calendário", icon: <LuCalendarSearch size={20} />, path: "/calendario" },
         {
-            name: "Registros Gerais", icon: <LuFileStack size={20} />, children: [
+            name: "Registros", icon: <LuFileStack size={20} />, children: [
                 { name: "Contratos", icon: <LiaFileContractSolid size={20} />, path: "/contratos" },
-                { name: "Registros", icon: <GiArchiveRegister size={20} />, path: "/registros" },
+                { name: "Falecidos", icon: <GiArchiveRegister size={20} />, path: "/registros" },
                 { name: "Relatórios", icon: <TbReportAnalytics size={20} />, path: "/relatorios" },
                 { name: "Taxas", icon: <FaMoneyBillWave size={20} />, path: "/taxas" },
             ]

@@ -58,7 +58,7 @@ export const getFieldError = (fieldName, value, rule = {}) => {
         if (!isValidCPF(value)) return "CPF inválido";
     }
 
-    if ((fieldName === "data_nasc" || fieldName === "dh_falec" || fieldName === "dh_sep") && !isEmpty(value)) {
+    if ((fieldName === "data_nasc" || fieldName === "dh_falec" || fieldName === "dh_sep" || fieldName === "dh_inicio_velorio" || fieldName === "dh_fim_velorio") && !isEmpty(value)) {
         if (!isValidDate(value)) return "Data inválida";
     }
 
@@ -107,6 +107,14 @@ export const RULES_SEPULTAMENTO = {
     quadra_sep: { required: true, label: "Quadra" },
     num_sepultura_sep: { required: true, label: "Nº da sepultura" },
     taxa: { required: true, label: "Tipo de taxa" },
+};
+
+export const RULES_VELORIO = {
+    dh_inicio_velorio: { required: true, label: "Data e hora de início do velório" },
+    dh_fim_velorio: { required: true, label: "Data e hora de fim do velório" },
+    local_velorio: { required: true, label: "Local do velório" },
+    tipo_velorio: { required: true, label: "Tipo do velório" },
+    responsavel_velorio: { required: true, label: "Responsável pelo velório" },
 };
 
 export const RULES_RESPONSAVEL = {
