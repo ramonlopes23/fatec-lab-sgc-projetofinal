@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FaChartBar, FaCoins, FaEye, FaFileAlt, FaRegCalendarAlt, FaSearch, FaUsers } from "react-icons/fa";
+import { FaChartBar, FaCoins, FaEye, FaFileAlt, FaFilter, FaRegCalendarAlt, FaSearch, FaUsers } from "react-icons/fa";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
@@ -44,7 +44,6 @@ import {
     PeriodChip,
     PeriodChipLabel,
     PeriodChipValue,
-    PrimaryButton,
     SearchField,
     SearchIcon,
     SearchWrapper,
@@ -96,6 +95,37 @@ const initialFilters = {
     periodo: "30d",
     dataInicio: "",
     dataFim: "",
+};
+
+const filterLabelSx = {
+    fontSize: "14px",
+    backgroundColor: "white",
+    paddingX: "4px",
+    marginLeft: "-4px",
+};
+
+const filterSelectSx = {
+    borderRadius: "12px",
+    fontSize: "14px",
+    backgroundColor: "#fff",
+    "& .MuiOutlinedInput-notchedOutline": {
+        top: "0px",
+        borderColor: "rgba(31, 38, 82, 0.12)",
+    },
+    "&:hover .MuiOutlinedInput-notchedOutline": {
+        borderColor: "rgba(31, 38, 82, 0.2)",
+    },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+        borderColor: "#4a2fe3",
+        boxShadow: "0 0 0 4px rgba(74, 47, 227, 0.08)",
+    },
+};
+
+const filterTextFieldSx = {
+    "& .MuiInputBase-root": { borderRadius: "12px", backgroundColor: "#fff" },
+    "& .MuiOutlinedInput-root": { borderRadius: "12px" },
+    "& .MuiOutlinedInput-notchedOutline": { borderRadius: "12px" },
+    "& .MuiOutlinedInput-input": { fontSize: "14px" },
 };
 
 const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
@@ -395,12 +425,13 @@ export default function RelatoriosComponent() {
                     </SearchWrapper>
 
                     <FilterRow>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Quadra</InputLabel>
+                        <FormControl fullWidth size="medium">
+                            <InputLabel sx={filterLabelSx}>Quadra</InputLabel>
                             <Select
                                 value={filters.quadra}
                                 label="Quadra"
                                 onChange={handleFilterChange("quadra")}
+                                sx={filterSelectSx}
                             >
                                 <MenuItem value="">Todas</MenuItem>
                                 {quadraOptions.map((quadra) => (
@@ -411,12 +442,13 @@ export default function RelatoriosComponent() {
                             </Select>
                         </FormControl>
 
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Sepultura</InputLabel>
+                        <FormControl fullWidth size="medium">
+                            <InputLabel sx={filterLabelSx}>Sepultura</InputLabel>
                             <Select
                                 value={filters.sepultura}
                                 label="Sepultura"
                                 onChange={handleFilterChange("sepultura")}
+                                sx={filterSelectSx}
                             >
                                 <MenuItem value="">Todas</MenuItem>
                                 {sepulturaOptions.map((sepultura) => (
@@ -429,12 +461,13 @@ export default function RelatoriosComponent() {
                     </FilterRow>
 
                     <FilterRow>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Tipo</InputLabel>
+                        <FormControl fullWidth size="medium">
+                            <InputLabel sx={filterLabelSx}>Tipo</InputLabel>
                             <Select
                                 value={filters.tipo}
                                 label="Tipo"
                                 onChange={handleFilterChange("tipo")}
+                                sx={filterSelectSx}
                             >
                                 <MenuItem value="all">Todos</MenuItem>
                                 <MenuItem value="particular">Particular</MenuItem>
@@ -442,12 +475,13 @@ export default function RelatoriosComponent() {
                             </Select>
                         </FormControl>
 
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Período</InputLabel>
+                        <FormControl fullWidth size="medium">
+                            <InputLabel sx={filterLabelSx}>Período</InputLabel>
                             <Select
                                 value={filters.periodo}
                                 label="Período"
                                 onChange={handleFilterChange("periodo")}
+                                sx={filterSelectSx}
                             >
                                 {PERIOD_OPTIONS.map((option) => (
                                     <MenuItem key={option.value} value={option.value}>
@@ -467,6 +501,7 @@ export default function RelatoriosComponent() {
                                 label="Início"
                                 value={filters.dataInicio}
                                 onChange={handleFilterChange("dataInicio")}
+                                sx={filterTextFieldSx}
                                 InputLabelProps={{ shrink: true }}
                             />
                             <TextField
@@ -476,17 +511,15 @@ export default function RelatoriosComponent() {
                                 label="Fim"
                                 value={filters.dataFim}
                                 onChange={handleFilterChange("dataFim")}
+                                sx={filterTextFieldSx}
                                 InputLabelProps={{ shrink: true }}
                             />
                         </FilterRow>
                     )}
 
                     <FilterActionRow>
-                        <PrimaryButton type="button" onClick={() => setFilters((previous) => ({ ...previous }))}>
-                            Aplicar
-                        </PrimaryButton>
                         <SecondaryButton type="button" onClick={clearFilters}>
-                            Limpar
+                            <FaFilter /> Limpar filtros
                         </SecondaryButton>
                     </FilterActionRow>
                 </FilterGrid>
