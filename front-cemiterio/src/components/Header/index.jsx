@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
 import { useCemeteryStore } from "../../stores/cemeteryStore";
 import { formatDateDMY } from "../../utils/date";
+import NotificationsDropdown from "../NotificationsDropdown";
 import {
     CemeteryButton,
     CemeteryEmpty,
@@ -177,6 +178,7 @@ export default function Header( ) {
             </HeaderCenter>
 
             <HeaderRight ref={userDropdownRef}>
+                <NotificationsDropdown />
                 <UserDropdown>
                     <UserDropdownButton
                         type="button"

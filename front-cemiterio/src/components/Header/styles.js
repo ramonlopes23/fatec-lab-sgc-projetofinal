@@ -46,6 +46,7 @@ export const HeaderRight = styled.div`
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  gap: 0.75rem;
   position: relative;
 `;
 
@@ -61,8 +62,8 @@ export const MenuButton = styled.button`
 
 export const CemeterySwitcher = styled.div`
   display: flex;
-  justify-content: left;
-  right:100px;
+  justify-content: center;
+  left:100px;
   align-items: center;
   width: 100%;
   max-width: 720px;

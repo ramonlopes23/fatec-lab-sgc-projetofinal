@@ -4,15 +4,10 @@ import { FaCross } from "react-icons/fa";
 import { FaSkullCrossbones } from "react-icons/fa";
 import { FaTools } from "react-icons/fa";
 import api from "../../services/index.js";
-import ContractExpiryCard from "./ContractExpiryCard";
-import ExumacaoAlertCard from "./ExumacaoAlertCard";
 
 export default function Dashboard() {
 
     const [processos, setProcessos] = useState([]);
-    const [contratos, setContratos] = useState([]);
-    const [sepultamentos, setSepultamentos] = useState([]);
-    const [falecidos, setFalecidos] = useState([]);
     const mountedRef = useRef(true);
 
     const icones = {
@@ -50,18 +45,16 @@ export default function Dashboard() {
 
     const loadProcessos = async () => {
         try {
-            const [rFalecidos, rSep, rVel, rExu, rQuadras, rContratos] = await Promise.all([
+            const [rFalecidos, rSep, rVel, rExu, rQuadras] = await Promise.all([
                 api.get("/falecidos"),
                 api.get("/sepultamentos"),
                 api.get("/velorios"),
                 api.get("/exumacoes"),
                 api.get("/quadras"),
-                api.get("/contratos"),
             ]);
 
             const loadedFalecidos = rFalecidos.data || [];
             const loadedSepultamentos = rSep.data || [];
-            const loadedContratos = rContratos.data || [];
             const sep = loadedSepultamentos.map(s => ({ ...s, _type: "Sepultamento" }));
             const vel = (rVel.data || []).map(v => ({ ...v, _type: "Velório" }));
             const exu = (rExu.data || []).map(x => ({ ...x, _type: "Exumação" }));
@@ -97,9 +90,6 @@ export default function Dashboard() {
             })
 
             if (!mountedRef.current) return;
-            setFalecidos(loadedFalecidos);
-            setSepultamentos(loadedSepultamentos);
-            setContratos(loadedContratos);
             const active = all.filter(it => {
                 const st = String(it.status ?? "").toLowerCase();
                 const confirmed = it.confirmado === true || it.confirmado === "true";
@@ -284,8 +274,6 @@ export default function Dashboard() {
     }
     return (
         <DashboardWrapper>
-            <ContractExpiryCard contratos={contratos} />
-            <ExumacaoAlertCard sepultamentos={sepultamentos} falecidos={falecidos} />
             <Card>
                 <CardHeader>Próximos processos</CardHeader>
                 <CardBody>

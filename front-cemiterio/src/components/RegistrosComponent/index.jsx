@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { FaArchive, FaEdit, FaEye, FaFilter, FaSearch, FaUserClock, FaUsers } from "react-icons/fa";
 import { FaPerson, FaPersonDress } from "react-icons/fa6";
@@ -7,6 +7,7 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import api from "../../services/index.js";
+import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
 import { formatDateDMY, parseDateValue } from "../../utils/date";
 import {
   Actions,
@@ -255,8 +256,9 @@ export default function RegistrosComponent() {
   const [modalForm, setModalForm] = useState({});
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const { showSuccess, showError, ToastElement } = useToastFeedback();
 
-  const loadAll = async () => {
+  const loadAll = useCallback(async () => {
     setIsLoading(true);
     try {
       const [resFalecidos, resExumacoes, resSepultamentos, resQuadras, resCemiterios] = await Promise.all([
@@ -319,15 +321,16 @@ export default function RegistrosComponent() {
     } catch (error) {
       console.error("Erro ao carregar registros", error);
       setRecords([]);
+      showError("Erro ao carregar registros");
       return [];
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showError]);
 
   useEffect(() => {
     loadAll();
-  }, []);
+  }, [loadAll]);
 
   const filteredRecords = useMemo(() => {
     const search = normalizeText(filters.search);
@@ -383,7 +386,7 @@ export default function RegistrosComponent() {
         tone: "warning",
       },
       {
-        label: "Registros este mes",
+        label: "Registros este mês",
         value: esteMes.toLocaleString("pt-BR"),
         hint: "Entradas recentes",
         icon: <FaArchive />,
@@ -392,7 +395,7 @@ export default function RegistrosComponent() {
       {
         label: "Masculino/Feminino",
         value: proporcao,
-        hint: "Proporcao informada",
+        hint: "Proporção informada",
         icon: masculino >= feminino ? <FaPerson /> : <FaPersonDress />,
         tone: "danger",
       },
@@ -521,8 +524,10 @@ export default function RegistrosComponent() {
         });
       }
       setIsEditing(false);
+      showSuccess("Registro salvo com sucesso");
     } catch (error) {
       console.error("Erro ao salvar registro", error);
+      showError(error?.response?.data?.message || error?.message || "Não foi possível salvar o registro");
     }
   };
 
@@ -536,8 +541,10 @@ export default function RegistrosComponent() {
         await api.patch(`/falecidos/${record.id}`, { arquivado: true });
       }
       await loadAll();
+      showSuccess("Registro arquivado com sucesso");
     } catch (error) {
       console.error("Erro ao arquivar registro", error);
+      showError(error?.response?.data?.message || error?.message || "Não foi possível arquivar o registro");
     }
   };
 
@@ -561,11 +568,13 @@ export default function RegistrosComponent() {
   ];
 
   return (
+    <>
+      {ToastElement}
     <Container>
       <PageHeader>
         <HeaderCopy>
           <Title>Registros de Falecidos</Title>
-          <Subtitle>Acompanhe os dados cadastrais dos falecidos, sua situacao e localizacao nos cemiterios.</Subtitle>
+          <Subtitle>Acompanhe os dados cadastrais dos falecidos, sua situação e localização nos cemitérios.</Subtitle>
         </HeaderCopy>
         <PeriodChip>
           <PeriodChipLabel>Base ativa</PeriodChipLabel>
@@ -589,8 +598,8 @@ export default function RegistrosComponent() {
 
           <FilterRow>
             <FormControl fullWidth size="medium">
-              <InputLabel sx={filterLabelSx}>Faixa etaria</InputLabel>
-              <Select value={filters.faixaEtaria} label="Faixa etaria" onChange={updateFilter("faixaEtaria")} sx={filterSelectSx}>
+              <InputLabel sx={filterLabelSx}>Faixa etária</InputLabel>
+              <Select value={filters.faixaEtaria} label="Faixa etária" onChange={updateFilter("faixaEtaria")} sx={filterSelectSx}>
                 <MenuItem value="">Todas</MenuItem>
                 {AGE_RANGE_ORDER.map((range) => (
                   <MenuItem key={range} value={range}>{ageRangeLabel(range)}</MenuItem>
@@ -599,7 +608,7 @@ export default function RegistrosComponent() {
             </FormControl>
 
             <FormControl fullWidth size="medium">
-              <InputLabel sx={filterLabelSx}>Situacao</InputLabel>
+              <InputLabel sx={filterLabelSx}>Situação</InputLabel>
               <Select value={filters.situacao} label="Situacao" onChange={updateFilter("situacao")} sx={filterSelectSx}>
                 <MenuItem value="">Todas</MenuItem>
                 <MenuItem value="aguardando">Aguardando</MenuItem>
@@ -611,7 +620,7 @@ export default function RegistrosComponent() {
 
           <FilterRow>
             <FormControl fullWidth size="medium">
-              <InputLabel sx={filterLabelSx}>Cemiterio</InputLabel>
+              <InputLabel sx={filterLabelSx}>Cemitério</InputLabel>
               <Select value={filters.cemiterio} label="Cemiterio" onChange={updateFilter("cemiterio")} sx={filterSelectSx}>
                 <MenuItem value="">Todos</MenuItem>
                 {cemeteryOptions.map((cemiterio) => (
@@ -661,7 +670,7 @@ export default function RegistrosComponent() {
           </StatCard>
         ))}
         <ChartStatCard>
-          <ChartTitle>Faixa etaria</ChartTitle>
+          <ChartTitle>Faixa etária</ChartTitle>
           <ChartStatBody>
             <AgePieChart data={ageSeries} loading={isLoading} compact />
           </ChartStatBody>
@@ -690,12 +699,12 @@ export default function RegistrosComponent() {
                 <tr>
                   <Th>Nome</Th>
                   <Th>Documento</Th>
-                  <Th>Data do obito</Th>
+                  <Th>Data do óbito</Th>
                   <Th>Idade</Th>
-                  <Th>Filiacao mae</Th>
-                  <Th>Cemiterio</Th>
-                  <Th>Situacao</Th>
-                  <Th>Acoes</Th>
+                  <Th>Filiacao mãe</Th>
+                  <Th>Cemitério</Th>
+                  <Th>Situação</Th>
+                  <Th>Ações</Th>
                 </tr>
               </THead>
               <TBody>
@@ -796,5 +805,6 @@ export default function RegistrosComponent() {
         </ModalOverlay>
       )}
     </Container>
+    </>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import {
@@ -66,6 +66,7 @@ import { getGrave, createGrave } from "../../services/graveService.js";
 import { useCemeteryStore } from "../../stores/cemeteryStore.js";
 import { formatCurrencyBRL } from "../../utils/taxas";
 import { formatDateDMY, formatDateTimeKey, parseDateValue } from "../../utils/date";
+import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
 
 const STATUS_OPTIONS = [
     { value: "ativo", label: "Ativo" },
@@ -163,6 +164,7 @@ export default function ContratosComponent() {
     const [editingId, setEditingId] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const { showSuccess, showError, ToastElement } = useToastFeedback();
 
     const cemeteries = useCemeteryStore((state) => state.cemeteries);
     const selectedCemeteryId = useCemeteryStore((state) => state.selectedCemeteryId);
@@ -175,11 +177,7 @@ export default function ContratosComponent() {
 
     const selectedCemeteryName = selectedCemetery?.name || "";
 
-    useEffect(() => {
-        loadContratos();
-    }, []);
-
-    const loadContratos = async () => {
+    const loadContratos = useCallback(async () => {
         setIsLoading(true);
         try {
             const [data, blocksData, gravesData] = await Promise.all([
@@ -195,11 +193,15 @@ export default function ContratosComponent() {
             setTitulos([]);
             setQuadras([]);
             setSepulturas([]);
-            alert("Erro ao carregar contratos");
+            showError("Erro ao carregar contratos");
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [showError]);
+
+    useEffect(() => {
+        loadContratos();
+    }, [loadContratos]);
 
     const normalizedTitulos = useMemo(() => titulos.map(normalizeContract), [titulos]);
 
@@ -386,7 +388,7 @@ export default function ContratosComponent() {
                     ...payload,
                     id: editingId,
                 });
-                alert("Título atualizado com sucesso.");
+                showSuccess("Título atualizado com sucesso.");
             } else {
                 await createContrato({
                     ...payload,
@@ -405,14 +407,14 @@ export default function ContratosComponent() {
                     holderCpf: form.cpf_titular.trim(),
                     holderContact: form.contato_responsavel.trim(),
                 });
-                alert("Título cadastrado com sucesso.");
+                showSuccess("Título cadastrado com sucesso.");
             }
 
             await loadContratos();
             closeModal();
         } catch (error) {
             console.error("Erro ao salvar contrato/titulo", error);
-            alert(error?.response?.data?.message || error?.message || "Não foi possível salvar o título");
+            showError(error?.response?.data?.message || error?.message || "Não foi possível salvar o título");
         } finally {
             setIsSubmitting(false);
         }
@@ -444,17 +446,19 @@ export default function ContratosComponent() {
         setIsSubmitting(true);
         try {
             await deleteContrato(id);
-            alert("Título excluído com sucesso");
+            showSuccess("Título excluído com sucesso");
             await loadContratos();
         } catch (error) {
             console.error("Erro ao excluir título", error);
-            alert(error?.response?.data?.message || error?.message || "Não foi possível excluir o título");
+            showError(error?.response?.data?.message || error?.message || "Não foi possível excluir o título");
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
+        <>
+            {ToastElement}
         <Container>
             <PageHeader>
                 <HeaderCopy>
@@ -642,7 +646,7 @@ export default function ContratosComponent() {
                                 </div>
 
                                 <div>
-                                    <label>Contato do responsavel</label>
+                                    <label>Contato do responsável</label>
                                     <Input
                                         value={form.contato_responsavel}
                                         onChange={(event) => updateField("contato_responsavel", event.target.value)}
@@ -767,5 +771,6 @@ export default function ContratosComponent() {
                 </ModalOverlay>
             )}
         </Container>
+        </>
     );
 }

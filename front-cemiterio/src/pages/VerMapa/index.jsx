@@ -1296,11 +1296,11 @@ export default function VerMapa() {
 
                                 <ColumnRight>
 
-                                    <Field>
+                                    {/* <Field>
                                         <Label>
                                             Possui título de posse?<input type="checkbox" name="concessao.ativa" checked={!!formCova.concessao?.ativa} onChange={handleCovaChange} />
                                         </Label>
-                                    </Field>
+                                    </Field> */}
 
                                     {formCova.concessao?.ativa ? (
                                         <>

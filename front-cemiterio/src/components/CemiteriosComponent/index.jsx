@@ -62,6 +62,7 @@ import { getGrave } from "../../services/graveService.js";
 import { getSepultamentos } from "../../services/sepultamentoService.js";
 import { getExumacoes } from "../../services/exumacaoService.js";
 import { formatDateDMY, formatDateTimeDMY, parseDateValue } from "../../utils/date";
+import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
 
 const INITIAL_FORM = {
     name: "",
@@ -118,6 +119,7 @@ export default function CemiteriosComponent() {
     const [editingId, setEditingId] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const { showSuccess, showError, ToastElement } = useToastFeedback();
 
     const loadItems = useCallback(async () => {
         setIsLoading(true);
@@ -144,11 +146,11 @@ export default function CemiteriosComponent() {
             setGraves([]);
             setSepultamentos([]);
             setExumacoes([]);
-            alert("Erro ao carregar cemitérios");
+            showError("Erro ao carregar cemitérios");
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [showError]);
 
     useEffect(() => {
         loadItems();
@@ -330,17 +332,17 @@ export default function CemiteriosComponent() {
                     ...payload,
                     id: editingId,
                 });
-                alert("Cemitério atualizado com sucesso.");
+                showSuccess("Cemitério atualizado com sucesso.");
             } else {
                 await createCemeteries(payload);
-                alert("Cemitério cadastrado com sucesso.");
+                showSuccess("Cemitério cadastrado com sucesso.");
             }
 
             await loadItems();
             closeModal();
         } catch (error) {
             console.error("Erro ao salvar cemitério", error);
-            alert(error?.response?.data?.message || error?.message || "Não foi possível salvar o cemitério");
+            showError(error?.response?.data?.message || error?.message || "Não foi possível salvar o cemitério");
         } finally {
             setIsSubmitting(false);
         }
@@ -371,13 +373,15 @@ export default function CemiteriosComponent() {
             await loadItems();
         } catch (error) {
             console.error("Erro ao alterar status do cemitério", error);
-            alert(error?.response?.data?.message || error?.message || "Não foi possível alterar o status do cemitério");
+            showError(error?.response?.data?.message || error?.message || "Não foi possível alterar o status do cemitério");
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
+        <>
+            {ToastElement}
         <Container>
             <PageHeader>
                 <HeaderCopy>
@@ -578,5 +582,6 @@ export default function CemiteriosComponent() {
                 </ModalOverlay>
             )}
         </Container>
+        </>
     );
 }

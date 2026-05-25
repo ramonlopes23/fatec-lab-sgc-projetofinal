@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import { FaChartPie, FaCheckCircle, FaFilter, FaPlus, FaRegEdit, FaSearch, FaTimesCircle, FaTrash } from "react-icons/fa";
 import api from "../../services/index.js";
+import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
 import {
     Actions,
     BtnPrimaryClose,
@@ -125,8 +126,9 @@ export default function OssariosComponent() {
     const [editingId, setEditingId] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const { showSuccess, showError, ToastElement } = useToastFeedback();
 
-    const loadItems = async () => {
+    const loadItems = useCallback(async () => {
         setIsLoading(true);
         try {
             const { data } = await api.get("/ossarios");
@@ -134,15 +136,15 @@ export default function OssariosComponent() {
         } catch (error) {
             console.error("Erro ao carregar ossários", error);
             setItems([]);
-            alert("Erro ao carregar ossários");
+            showError("Erro ao carregar ossários");
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [showError]);
 
     useEffect(() => {
         loadItems();
-    }, []);
+    }, [loadItems]);
 
     const normalizedItems = useMemo(() => items.map((item) => ({
         ...item,
@@ -233,17 +235,17 @@ export default function OssariosComponent() {
                     ...payload,
                     id: editingId,
                 });
-                alert("Ossário atualizado com sucesso.");
+                showSuccess("Ossário atualizado com sucesso.");
             } else {
                 await api.post("/ossarios", payload);
-                alert("Ossário cadastrado com sucesso.");
+                showSuccess("Ossário cadastrado com sucesso.");
             }
 
             await loadItems();
             closeModal();
         } catch (error) {
             console.error("Erro ao salvar ossário", error);
-            alert(error?.response?.data?.message || error?.message || "Não foi possível salvar o ossário");
+            showError(error?.response?.data?.message || error?.message || "Não foi possível salvar o ossário");
         } finally {
             setIsSubmitting(false);
         }
@@ -268,11 +270,11 @@ export default function OssariosComponent() {
         setIsSubmitting(true);
         try {
             await api.delete(`/ossarios/${id}`);
-            alert("Ossário excluído com sucesso");
+            showSuccess("Ossário excluído com sucesso");
             await loadItems();
         } catch (error) {
             console.error("Erro ao excluir ossário", error);
-            alert(error?.response?.data?.message || error?.message || "Não foi possível excluir o ossário");
+            showError(error?.response?.data?.message || error?.message || "Não foi possível excluir o ossário");
         } finally {
             setIsSubmitting(false);
         }
@@ -284,6 +286,8 @@ export default function OssariosComponent() {
     };
 
     return (
+        <>
+            {ToastElement}
         <Container>
             <PageHeader>
                 <HeaderCopy>
@@ -505,5 +509,6 @@ export default function OssariosComponent() {
                 </ModalOverlay>
             )}
         </Container>
+        </>
     );
 }

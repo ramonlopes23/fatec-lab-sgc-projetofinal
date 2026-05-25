@@ -26,7 +26,7 @@ export default function SepultadosTotal() {
     return (
         <DashboardWrapper>
             <Card>
-                <CardHeader> Número atual de sepultados: {loading ? (
+                <CardHeader> Número total de sepultados: {loading ? (
                     <div style={{ padding: 12, color: "#666" }}>Carregando...</div>
                 ) : (
                     <div style={{ padding: 5, fontSize: 18, fontWeight: 600, color: "#000" }}>

@@ -52,7 +52,7 @@ export const PrimaryActionButton = styled.button`
   border: 0;
   border-radius: 12px;
   padding: 13px 18px;
-  background: linear-gradient(135deg, #191970 0%, #9a9ae1 100%);
+  background: #191970;
   color: #fff;
   font-weight: 700;
   font-size: 14px;

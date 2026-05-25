@@ -16,13 +16,13 @@ const EXPORT_ACTIONS = [
     { format: "csv", label: "Exportar CSV", icon: <FaFileCsv />, tone: "csv" },
 ];
 
-export default function RelatoriosExportActions({ loadingFormat, error, onExport, onPrint }) {
+export default function RelatoriosExportActions({ loadingFormat, error, onExport }) {
     const isBusy = Boolean(loadingFormat);
 
     return (
         <ExportCard>
             <ExportCopy>
-                <ExportTitle>Exportar relatorio</ExportTitle>
+                <ExportTitle>Exportar relatório</ExportTitle>
                 <ExportHint>Gere arquivos com os filtros, indicadores, graficos e dados detalhados do recorte atual.</ExportHint>
                 {error ? <ExportError>{error}</ExportError> : null}
             </ExportCopy>

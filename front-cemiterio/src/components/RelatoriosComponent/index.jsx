@@ -75,7 +75,9 @@ import {
     Tr,
 } from "./styles";
 import { FaCross, FaSkullCrossbones, FaUserGroup } from "react-icons/fa6";
+import { TbFlowerFilled } from "react-icons/tb";
 import { RiContractFill, RiMoneyDollarBoxFill } from "react-icons/ri";
+import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
 
 const PAGE_SIZE = 8;
 const PERIOD_OPTIONS = [
@@ -529,6 +531,7 @@ export default function RelatoriosComponent() {
     const [page, setPage] = useState(1);
     const [selectedItem, setSelectedItem] = useState(null);
     const [filters, setFilters] = useState(initialFilters);
+    const { showError, showWarning, ToastElement } = useToastFeedback();
 
     const isExumacoesReport = activeReport === "exumacoes";
 
@@ -546,13 +549,14 @@ export default function RelatoriosComponent() {
                 console.error("Erro ao carregar relatorios", error);
                 setSepultamentos([]);
                 setExumacoes([]);
+                showError("Erro ao carregar relatórios");
             } finally {
                 setIsLoading(false);
             }
         };
 
         loadData();
-    }, []);
+    }, [showError]);
 
     const filteredSepultamentos = useMemo(() => {
         const search = normalizeText(filters.search);
@@ -635,7 +639,7 @@ export default function RelatoriosComponent() {
                     label: "Total de exumacoes",
                     value: total.toLocaleString("pt-BR"),
                     hint: "Registros filtrados",
-                    icon: <FaSkullCrossbones />,
+                    icon: <TbFlowerFilled />,
                     tone: "primary",
                 },
                 {
@@ -677,19 +681,19 @@ export default function RelatoriosComponent() {
             {
                 label: "Particulares",
                 value: particulares.toLocaleString("pt-BR"),
-                hint: "Com titulo de posse",
+                hint: "Com título de posse",
                 icon: <RiContractFill />,
                 tone: "success",
             },
             {
                 label: "Comuns",
                 value: comuns.toLocaleString("pt-BR"),
-                hint: "Sem titulo de posse",
+                hint: "Sem título de posse",
                 icon: <FaUserGroup />,
                 tone: "warning",
             },
             {
-                label: "Arrecadacao",
+                label: "Arrecadação",
                 value: formatCurrencyBRL(arrecadacao),
                 hint: "Total no periodo",
                 icon: <RiMoneyDollarBoxFill />,
@@ -918,6 +922,7 @@ export default function RelatoriosComponent() {
         } catch (error) {
             console.error("Erro ao exportar relatorio", error);
             setExportError("Nao foi possivel gerar o arquivo localmente com os dados atuais.");
+            showError("Nao foi possivel gerar o arquivo localmente com os dados atuais.");
         } finally {
             setExportLoading("");
         }
@@ -928,6 +933,7 @@ export default function RelatoriosComponent() {
         const printWindow = window.open("", "_blank", "noopener,noreferrer,width=1200,height=800");
         if (!printWindow) {
             setExportError("Permita pop-ups para imprimir o relatorio.");
+            showWarning("Permita pop-ups para imprimir o relatório.");
             return;
         }
 
@@ -1018,14 +1024,16 @@ export default function RelatoriosComponent() {
     };
 
     return (
+        <>
+            {ToastElement}
         <Container>
             <PageHeader>
                 <HeaderCopy>
-                    <Title>Relatorios Operacionais</Title>
-                    <Subtitle>Visualize a movimentacao de sepultamentos e exumacoes com filtros, indicadores e graficos consolidados.</Subtitle>
+                    <Title>Relatórios Operacionais</Title>
+                    <Subtitle>Visualize a movimentação de sepultamentos e exumações com filtros, indicadores e gráficos consolidados.</Subtitle>
                 </HeaderCopy>
                 <PeriodChip>
-                    <PeriodChipLabel>Periodo ativo</PeriodChipLabel>
+                    <PeriodChipLabel>Período ativo</PeriodChipLabel>
                     <PeriodChipValue>{periodLabel}</PeriodChipValue>
                     <PeriodChipValue>{filteredItems.length.toLocaleString("pt-BR")} registros filtrados</PeriodChipValue>
                 </PeriodChip>
@@ -1036,7 +1044,7 @@ export default function RelatoriosComponent() {
                     <FaCross /> Sepultamentos
                 </ReportModeButton>
                 <ReportModeButton type="button" $active={isExumacoesReport} onClick={() => handleReportMode("exumacoes")}>
-                    <FaSkullCrossbones /> Exumações
+                    <TbFlowerFilled /> Exumações
                 </ReportModeButton>
             </ReportModeTabs>
 
@@ -1113,7 +1121,7 @@ export default function RelatoriosComponent() {
                                     [
                                         <MenuItem key="all-exu-tipos" value="all">Todos</MenuItem>,
                                         <MenuItem key="adulto" value="adulto">Adulto</MenuItem>,
-                                        <MenuItem key="crianca" value="crianca">Crianca</MenuItem>,
+                                        <MenuItem key="crianca" value="crianca">Criança</MenuItem>,
                                         <MenuItem key="indigente" value="indigente">Indigente</MenuItem>,
                                     ]
                                 ) : (
@@ -1128,7 +1136,7 @@ export default function RelatoriosComponent() {
                     {isExumacoesReport && (
                         <FilterRow>
                             <FormControl fullWidth size="medium">
-                                <InputLabel sx={filterLabelSx}>Periodo</InputLabel>
+                                <InputLabel sx={filterLabelSx}>Período</InputLabel>
                                 <Select value={filters.periodo} label="Periodo" onChange={handleFilterChange("periodo")} sx={filterSelectSx}>
                                     {PERIOD_OPTIONS.map((option) => (
                                         <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
@@ -1196,9 +1204,9 @@ export default function RelatoriosComponent() {
                             <ChartHeader>
                                 <div>
                                     <ChartTitle>
-                                        <FaChartBar /> {isExumacoesReport ? "Exumacoes por mes" : "Sepultamentos por mes"}
+                                        <FaChartBar /> {isExumacoesReport ? "Exumações por mês" : "Sepultamentos por mês"}
                                     </ChartTitle>
-                                    <ChartSubtitle>Distribuicao temporal dos registros filtrados.</ChartSubtitle>
+                                    <ChartSubtitle>Distribuição temporal dos registros filtrados.</ChartSubtitle>
                                 </div>
                             </ChartHeader>
                             <ChartBody>
@@ -1209,8 +1217,8 @@ export default function RelatoriosComponent() {
                         <ChartCard>
                             <ChartHeader>
                                 <div>
-                                    <ChartTitle>{isExumacoesReport ? "Destino da exumacao" : "Tipo de sepultamento"}</ChartTitle>
-                                    <ChartSubtitle>{isExumacoesReport ? "Ossario, crematorio, transladado e outros." : "Adulto, crianca e indigente."}</ChartSubtitle>
+                                    <ChartTitle>{isExumacoesReport ? "Destino da exumação" : "Tipo de sepultamento"}</ChartTitle>
+                                    <ChartSubtitle>{isExumacoesReport ? "Ossário, crematório, transladado e outros." : "Adulto, criança e indigente."}</ChartSubtitle>
                                 </div>
                             </ChartHeader>
                             <ChartBody>
@@ -1221,8 +1229,8 @@ export default function RelatoriosComponent() {
                         <ChartCard>
                             <ChartHeader>
                                 <div>
-                                    <ChartTitle>{isExumacoesReport ? "Tipo de exumacao" : "Arrecadacao mensal"}</ChartTitle>
-                                    <ChartSubtitle>{isExumacoesReport ? "Adulto, crianca, indigente e outros." : "Somatorio de taxa aplicada por competencia."}</ChartSubtitle>
+                                    <ChartTitle>{isExumacoesReport ? "Tipo de exumação" : "Arrecadação mensal"}</ChartTitle>
+                                    <ChartSubtitle>{isExumacoesReport ? "Adulto, crianca, indigente e outros." : "Somatório de taxa aplicada por competência."}</ChartSubtitle>
                                 </div>
                             </ChartHeader>
                             <ChartBody>
@@ -1256,7 +1264,7 @@ export default function RelatoriosComponent() {
                                                 <Th>Tipo</Th>
                                                 <Th>Taxa</Th>
                                                 <Th>Status</Th>
-                                                <Th>Acoes</Th>
+                                                <Th>Ações</Th>
                                             </>
                                         ) : (
                                             <>
@@ -1268,7 +1276,7 @@ export default function RelatoriosComponent() {
                                                 <Th>Posse</Th>
                                                 <Th>Taxa</Th>
                                                 <Th>Status</Th>
-                                                <Th>Acoes</Th>
+                                                <Th>Ações</Th>
                                             </>
                                         )}
                                     </tr>
@@ -1337,5 +1345,6 @@ export default function RelatoriosComponent() {
                 </ModalOverlay>
             )}
         </Container>
+        </>
     );
 }

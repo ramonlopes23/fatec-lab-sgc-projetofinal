@@ -2,7 +2,7 @@ import styled from "styled-components";
 
 export const Container = styled.div`
   max-width: 1100px;
-  margin: 24px auto;
+  margin: 0px auto;
   padding: 18px;
   display: flex;
   flex-direction: column;
@@ -28,7 +28,7 @@ export const Subtitle = styled.p`
 `;
 
 export const QuadraWrapper = styled.div`
-  border: 1px solid rgba(25,25,112,0.2);
+  border: 0px solid rgba(25,25,112,0.2);
   border-radius: 10px;
   padding: 20px;
   margin-top: 8px;

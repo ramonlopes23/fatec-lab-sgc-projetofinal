@@ -61,6 +61,7 @@ import useTaxas from "../../hooks/Taxas/useTaxas";
 import { createTaxa, patchTaxaStatus, updateTaxa } from "../../services/taxaService";
 import { formatDateDMY, parseDateValue } from "../../utils/date";
 import { formatCurrencyBRL, formatTaxaLabel, normalizeTaxa } from "../../utils/taxas";
+import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
 
 const INITIAL_FORM = {
     codigo: "",
@@ -123,6 +124,7 @@ function TaxasComponent() {
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [typeFilter, setTypeFilter] = useState("all");
+    const { showSuccess, showError, ToastElement } = useToastFeedback();
 
     useEffect(() => {
         loadTaxas();
@@ -240,17 +242,17 @@ function TaxasComponent() {
 
             if (editingId) {
                 await updateTaxa(editingId, { ...payload, id: editingId });
-                alert("Taxa atualizada com sucesso.");
+                showSuccess("Taxa atualizada com sucesso.");
             } else {
                 await createTaxa({ ...payload, created_at: now });
-                alert("Taxa cadastrada com sucesso.");
+                showSuccess("Taxa cadastrada com sucesso.");
             }
 
             await loadTaxas();
             closeModal();
         } catch (err) {
             console.error("Erro ao salvar taxa", err);
-            alert(err?.response?.data?.message || err?.message || "Erro ao salvar taxa.");
+            showError(err?.response?.data?.message || err?.message || "Erro ao salvar taxa.");
         } finally {
             setIsSubmitting(false);
         }
@@ -290,18 +292,20 @@ function TaxasComponent() {
             await loadTaxas();
         } catch (err) {
             console.error("Erro ao alterar status da taxa", err);
-            alert(err?.response?.data?.message || err?.message || "Erro ao alterar status da taxa.");
+            showError(err?.response?.data?.message || err?.message || "Erro ao alterar status da taxa.");
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
+        <>
+            {ToastElement}
         <Container>
             <PageHeader>
                 <HeaderCopy>
                     <Title>Controle de Taxas</Title>
-                    <Subtitle>Gerencie as taxas e sepultamentos vigentes do cemitério.</Subtitle>
+                    <Subtitle>Gerencie as taxas de sepultamento vigentes do cemitério.</Subtitle>
                 </HeaderCopy>
 
                 <HeaderActions>
@@ -446,7 +450,7 @@ function TaxasComponent() {
             {modalOpen && (
                 <ModalOverlay>
                     <ModalContent>
-                        <Title>{editingId ? "EDITAR TAXA" : "NOVA TAXA"}</Title>
+                        <Title>{editingId ? "Editar taxa" : "Nova taxa"}</Title>
                         <form onSubmit={handleSave}>
                             <ModalGrid>
                                 <div>
@@ -551,6 +555,7 @@ function TaxasComponent() {
                 </ModalOverlay>
             )}
         </Container>
+        </>
     );
 }
 
