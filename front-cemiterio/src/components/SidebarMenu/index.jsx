@@ -75,8 +75,8 @@ export default function SidebarMenu({ isCollapsed = false }) {
         <>
             <GlobalStyle />
             <LogoContainer>
-                <LogoImage src={sgclogo1} alt="Logo Memo" $isCollapsed={isCollapsed} />
-                {!isCollapsed && <Title>SISTEMA DE GERENCIAMENTO DE CEMITÉRIOS</Title>}
+{/*                 <LogoImage src={sgclogo1} alt="Logo Memo" $isCollapsed={isCollapsed} />
+ */}                {!isCollapsed && <Title>SISTEMA DE CEMITÉRIOS</Title>}
 
             </LogoContainer>
 

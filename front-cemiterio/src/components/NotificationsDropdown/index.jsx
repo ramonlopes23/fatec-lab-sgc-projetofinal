@@ -110,12 +110,12 @@ const buildExumacaoNotification = (sepultamento, falecidos) => {
   };
 };
 
-const formatDaysLeft = (daysLeft) => {
+/* const formatDaysLeft = (daysLeft) => {
   if (daysLeft === null) return "--";
   if (daysLeft < 0) return `${Math.abs(daysLeft)} dia(s) em atraso`;
   if (daysLeft === 0) return "Hoje";
   return `${daysLeft} dia(s)`;
-};
+}; */
 
 export default function NotificationsDropdown() {
   const navigate = useNavigate();
