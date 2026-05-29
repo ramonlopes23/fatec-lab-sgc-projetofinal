@@ -107,6 +107,8 @@ export const RULES_SEPULTAMENTO = {
     quadra_sep: { required: true, label: "Quadra" },
     num_sepultura_sep: { required: true, label: "Nº da sepultura" },
     taxa: { required: true, label: "Tipo de taxa" },
+    numero_titulo: { required: true, label: "Nº do título" },
+    nome_titular: { required: true, label: "Nome do titular do contrato" },
 };
 
 export const RULES_VELORIO = {
