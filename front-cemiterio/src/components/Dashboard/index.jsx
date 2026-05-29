@@ -4,11 +4,14 @@ import { FaCross } from "react-icons/fa";
 import { FaSkullCrossbones } from "react-icons/fa";
 import { FaTools } from "react-icons/fa";
 import api from "../../services/index.js";
+import { useToastFeedback } from "../../hooks";
+import { formatDateNormalized, parseDateValue, resolveQuadraDisplay } from "../../utils";
 
 export default function Dashboard() {
 
     const [processos, setProcessos] = useState([]);
     const mountedRef = useRef(true);
+    const { showSuccess, showError, ToastElement } = useToastFeedback();
 
     const icones = {
         Sepultamento: <FaCross />,
@@ -67,12 +70,13 @@ export default function Dashboard() {
                 let quadra_num = null;
                 if (item._type === "Sepultamento") {
                     const qKey = item.quadra_sep ?? item.quadra ?? item.quadra_cova ?? null;
-                    const qObj = quadras.find(qt =>
+                    const qObj = quadras.find((qt) =>
                         String(qt.id) === String(qKey)
                         || String(qt.num_quadra) === String(qKey)
+                        || String(qt.number) === String(qKey)
                         || (qt.nome && String(qt.nome).endsWith(String(qKey)))
                     );
-                    quadra_num = qObj ? (qObj.num_quadra ?? qObj.id) : (qKey ?? null);
+                    quadra_num = resolveQuadraDisplay(qObj ?? qKey, quadras) || (qKey ?? null);
                 }
 
                 const num_sepultura = item.num_sepultura_sep ?? item.num_sepultura ?? item.numero ?? item.num_cova ?? null;
@@ -140,30 +144,9 @@ export default function Dashboard() {
   
 
 
-    const getScheduledDate = (item) => {
-        const raw = item.dh_inicio_velorio || item.dh_sep || item.data_velorio || item.dh_exu || item.data || item.horario || "";
-        if (!raw) return null;
-        if (typeof raw === "number") return new Date(raw);
-        const s = String(raw).trim();
-
-        if (/^\d{4}-\d{2}-\d{2}([T\s].*)?$/.test(s)) {
-            const iso = s.includes("T") ? s : `${s}T00:00:00`;
-            const parsed = new Date(iso);
-            return isNaN(parsed) ? null : parsed;
-        }
-
-        const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}:\d{2}(?::\d{2})?))?$/);
-        if (m) {
-            const [, day, month, year, time] = m;
-            const timePart = time || "00:00:00";
-            const iso = `${year}-${month}-${day}T${timePart}`;
-            const parsed = new Date(iso);
-            return isNaN(parsed) ? null : parsed;
-        }
-
-        const parsed = new Date(s);
-        return isNaN(parsed) ? null : parsed;
-    };
+    const getScheduledDate = (item) => parseDateValue(
+        item.dh_inicio_velorio || item.dh_sep || item.data_velorio || item.dh_exu || item.data || item.horario || ""
+    );
 
     const processosPendentes = [...processos].sort((a, b) => {
         const da = getScheduledDate(a);
@@ -264,16 +247,17 @@ export default function Dashboard() {
             } catch (e) {
                 console.error("Erro ao dispatch evento processoConfirmado", e)
             }
-            alert("Processo Confirmado")
+            showSuccess("Processo confirmado.");
         } catch (err) {
             console.error("Erro ao confirmar processo", err);
-            alert("Erro ao confirmar processo");
+            showError("Erro ao confirmar processo");
         }
 
 
     }
     return (
         <DashboardWrapper>
+            {ToastElement}
             <Card>
                 <CardHeader>Próximos processos</CardHeader>
                 <CardBody>
@@ -281,11 +265,11 @@ export default function Dashboard() {
                         <ProcessItem key={`${p._type}-${p.id}`}>
                             <ProcessInfo>
                                 <strong>{p.nome_fal || p.nome}</strong>
-                                {p._type === "Velório" && (p.dh_inicio_velorio || p.data_velorio) && <span>Velório: {p.dh_inicio_velorio || p.data_velorio}{p.dh_fim_velorio ? ` até ${p.dh_fim_velorio}` : ""}</span>}
-                                {p._type === "Exumação" && p.dh_exu && <span>Exumação: {p.dh_exu}</span>}
+                                {p._type === "Velório" && (p.dh_inicio_velorio || p.data_velorio) && <span>Velório: {formatDateNormalized(p.dh_inicio_velorio || p.data_velorio, "-")}{p.dh_fim_velorio ? ` até ${formatDateNormalized(p.dh_fim_velorio, "-")}` : ""}</span>}
+                                {p._type === "Exumação" && p.dh_exu && <span>Exumação: {formatDateNormalized(p.dh_exu, "-")}</span>}
                                 {p._type === "Sepultamento" && p.dh_sep && (
                                     <span>
-                                        Sepultamento: {p.dh_sep}
+                                        Sepultamento: {formatDateNormalized(p.dh_sep, "-")}
                                         {p.quadra_num ? ` — Quadra: ${p.quadra_num}` : ""}
                                         {p.num_sepultura ? ` — Sepultura: ${p.num_sepultura}` : ""}
                                     </span>

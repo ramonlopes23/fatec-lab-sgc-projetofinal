@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { formatDateDMY, formatDateKey } from "../../utils/date";
+import { formatDateKey, formatDateNormalized } from "../../utils/date";
+import { resolveQuadraDisplay } from "../../utils";
 import { Card, Subtitle, CardHeader, CardBody, CalendarGrid, DayCell, DayButton, Btn, Title } from "./styles";
 
 
@@ -11,15 +12,6 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
     const [sepultamentosDia, setSepultamentosDia] = useState([]);
 
     
-    const quadraMap = useMemo(() => {
-        const m = {};
-        (quadras || []).forEach(q => {
-            const id = q.id ?? q._id ?? q.codigo ?? q.key;
-            if (id != null) m[String(id)] = q.num_quadra ?? q.numero ?? q.nome ?? String(id);
-        });
-        return m;
-    }, [quadras]);
-
     const eventosFonte = useMemo(() => {
         const normalizeSep = (s) => ({
             _type: "Sepultamento",
@@ -62,14 +54,14 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                 })();
 
                 const quadraStr = typeof item.quadraCandidate === "object"
-                    ? (item.quadraCandidate.num_quadra ?? item.quadraCandidate.id ?? "")
+                    ? (item.quadraCandidate.num_quadra ?? item.quadraCandidate.number ?? item.quadraCandidate.id ?? "")
                     : String(item.quadraCandidate ?? "");
                 return {
                     id: `evt-${item._type}-${item.id ?? Math.random().toString(36).slice(2, 9)}`,
                     nomeFalecido: item.nome,
                     data,
                     horario,
-                    quadra: quadraMap[quadraStr] ?? quadraStr,
+                    quadra: resolveQuadraDisplay(quadraStr, quadras),
                     cova: item.cova,
                     status: item.status,
                     tipo: item._type,
@@ -95,7 +87,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
 
         return mapped;
 
-    }, [sepultamentos, exumacoes, quadraMap])
+    }, [sepultamentos, exumacoes, quadras])
 
 
 
@@ -218,7 +210,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200 }}>
                         <div style={{ width: 560, maxHeight: '80vh', overflowY: 'auto', background: '#fff', borderRadius: 8, padding: 16 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Title style={{ margin: 0 }}>Sepultamentos e exumações em {formatDateDMY(dataSelecionada)}</Title>
+                                <Title style={{ margin: 0 }}>Sepultamentos e exumações em {formatDateNormalized(dataSelecionada)}</Title>
                                 <Btn onClick={() => setOpen(false)}>Fechar</Btn>
                             </div>
                             <div style={{ marginTop: 12 }}>
@@ -227,12 +219,12 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                                 ) : sepultamentosDia.map(s => (
                                     <div style={{ marginTop: 8, padding: 8, background: "#f8f9fb", borderRadius: 6 }}>
 
-                                        <div key={s.id ?? s._id ?? `${formatDateDMY(dataSelecionada)}-${s.quadra}-${s.cova}`} style={{ marginBottom: 12 }}>
+                                        <div key={s.id ?? s._id ?? `${formatDateNormalized(dataSelecionada)}-${s.quadra}-${s.cova}`} style={{ marginBottom: 12 }}>
                                             <div style={{ fontWeight: 700 }}>{s.nomeFalecido}</div>
                                             {(s.data || s.horario) ? (
                                                 <div style={{ color: '#555' }}>
                                                     {s.tipo === "Exumação"
-                                                        ? `Data/Hora da exumação: ${formatDateDMY(s.data, s.data ?? '')}${s.horario ? ' ' + s.horario : ''}`
+                                                        ? `Data/Hora da exumação: ${formatDateNormalized(s.data, s.data ?? '')}${s.horario ? ' ' + s.horario : ''}`
                                                         : (s.horario ? `Horario do sepultamento: ${s.horario}` : null)}
                                                 </div>
                                             ) : null}

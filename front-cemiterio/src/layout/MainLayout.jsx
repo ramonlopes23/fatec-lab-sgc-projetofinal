@@ -2,19 +2,30 @@ import Dashboard from "../components/Dashboard";
 import Header from "../components/Header";
 import SidebarMenu from "../components/SidebarMenu";
 import {Content,LayoutContainer,PageContent, SidebarContainer,SidebarExternalToggle,GlobalStyle} from "./styles"
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
+import { useLocation } from "react-router-dom";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 export default function MainLayout ({children}){
     const [isSidebarOpen, setiIsSidebarOpen] = useState (true);
+    const [routeLoading, setRouteLoading] = useState(false);
+    const location = useLocation();
 
     const toggleSidebarMenu = () => {
         setiIsSidebarOpen((prev) => !prev);
     };
 
+    useEffect(() => {
+        setRouteLoading(true);
+        const timer = window.setTimeout(() => setRouteLoading(false), 300);
+        return () => window.clearTimeout(timer);
+    }, [location.pathname]);
+
     return(
 
         <LayoutContainer>
+            <LoadingOverlay open={routeLoading} label="Carregando página..." />
             <SidebarContainer isOpen={isSidebarOpen}>
                 <SidebarMenu isCollapsed={!isSidebarOpen} />
             </SidebarContainer>

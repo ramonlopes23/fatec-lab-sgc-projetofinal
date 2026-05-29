@@ -11,9 +11,9 @@ import sgcLogo from "../../assets/SGC.png";
 import { formatDateDMY, parseDateValue } from "../../utils/date";
 import { formatCurrencyBRL } from "../../utils/taxas";
 import RelatoriosExportActions from "./RelatoriosExportActions";
-import RelatoriosArrecadacaoMensalChart from "./charts/RelatoriosArrecadacaoMensalChart";
-import RelatoriosSepultadosMesChart from "./charts/RelatoriosSepultadosMesChart";
-import RelatoriosTipoSepultamentoPie from "./charts/RelatoriosTipoSepultamentoPie";
+import RelatoriosArrecadacaoMensalChart from "../../charts/RelatoriosArrecadacaoMensalChart.jsx";
+import RelatoriosSepultadosMesChart from "../../charts/RelatoriosSepultadosMesChart.jsx";
+import RelatoriosTipoSepultamentoPie from "../../charts/RelatoriosTipoSepultamentoPie.jsx";
 import {
     Actions,
     ChartBody,
@@ -78,6 +78,7 @@ import { FaCross, FaSkullCrossbones, FaUserGroup } from "react-icons/fa6";
 import { TbFlowerFilled } from "react-icons/tb";
 import { RiContractFill, RiMoneyDollarBoxFill } from "react-icons/ri";
 import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
+import { normalizeText, sortNumericText } from "../../utils/text";
 
 const PAGE_SIZE = 8;
 const PERIOD_OPTIONS = [
@@ -132,8 +133,6 @@ const filterTextFieldSx = {
     "& .MuiOutlinedInput-notchedOutline": { borderRadius: "12px" },
     "& .MuiOutlinedInput-input": { fontSize: "14px" },
 };
-
-const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
 
 const isParticularRecord = (item) => {
     const raw = normalizeText(item?.titulo_posse);
@@ -285,13 +284,6 @@ const buildDestinoSeries = (items) => {
         { key: "transladado", label: getDestinoLabel("transladado"), value: totals.transladado, color: "#ffb05e" },
         { key: "outros", label: getDestinoLabel("outros"), value: totals.outros, color: "#5ec58f" },
     ].filter((item) => item.value > 0);
-};
-
-const sortNumericText = (left, right) => {
-    const leftNumber = Number(left);
-    const rightNumber = Number(right);
-    if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) return leftNumber - rightNumber;
-    return String(left).localeCompare(String(right), "pt-BR", { numeric: true, sensitivity: "base" });
 };
 
 const getTypeText = (item) => {
@@ -640,7 +632,7 @@ export default function RelatoriosComponent() {
                     value: total.toLocaleString("pt-BR"),
                     hint: "Registros filtrados",
                     icon: <TbFlowerFilled />,
-                    tone: "primary",
+                    tone: "success",
                 },
                 {
                     label: "Transferencias",
@@ -654,14 +646,14 @@ export default function RelatoriosComponent() {
                     value: mediaMensal.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
                     hint: "Exumações por mes",
                     icon: <FaChartBar />,
-                    tone: "warning",
+                    tone: "success",
                 },
                 {
                     label: "Arrecadacao",
                     value: formatCurrencyBRL(arrecadacao),
                     hint: "Total no periodo",
                     icon: <RiMoneyDollarBoxFill />,
-                    tone: "danger",
+                    tone: "success",
                 },
             ];
         }
@@ -676,7 +668,7 @@ export default function RelatoriosComponent() {
                 value: total.toLocaleString("pt-BR"),
                 hint: "Registros filtrados",
                 icon: <FaCross />,
-                tone: "primary",
+                tone: "success",
             },
             {
                 label: "Particulares",
@@ -690,14 +682,14 @@ export default function RelatoriosComponent() {
                 value: comuns.toLocaleString("pt-BR"),
                 hint: "Sem título de posse",
                 icon: <FaUserGroup />,
-                tone: "warning",
+                tone: "success",
             },
             {
                 label: "Arrecadação",
                 value: formatCurrencyBRL(arrecadacao),
                 hint: "Total no periodo",
                 icon: <RiMoneyDollarBoxFill />,
-                tone: "danger",
+                tone: "success",
             },
         ];
     }, [filteredItems, isExumacoesReport]);

@@ -3,12 +3,14 @@ import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recha
 import { FaArchive, FaEdit, FaEye, FaFilter, FaSearch, FaUserClock, FaUsers } from "react-icons/fa";
 import { FaPerson, FaPersonDress } from "react-icons/fa6";
 import FormControl from "@mui/material/FormControl";
+import InputAdornment from "@mui/material/InputAdornment";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
 import api from "../../services/index.js";
-import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
-import { formatDateDMY, parseDateValue } from "../../utils/date";
+import { useFormModal, useToastFeedback } from "../../hooks";
+import { formatDateDMY, normalizeText, parseDateValue, resolveQuadraDisplay, sortNumericText } from "../../utils";
 import {
   Actions,
   ChartStatBody,
@@ -39,8 +41,6 @@ import {
   PeriodChipLabel,
   PeriodChipValue,
   PrimaryButton,
-  SearchField,
-  SearchIcon,
   SearchWrapper,
   SecondaryButton,
   StatCard,
@@ -92,6 +92,13 @@ const filterSelectSx = {
   },
 };
 
+const filterTextFieldSx = {
+  "& .MuiInputBase-root": { borderRadius: "12px", backgroundColor: "#fff" },
+  "& .MuiOutlinedInput-root": { borderRadius: "12px" },
+  "& .MuiOutlinedInput-notchedOutline": { borderRadius: "12px" },
+  "& .MuiOutlinedInput-input": { fontSize: "14px" },
+};
+
 const initialFilters = {
   search: "",
   faixaEtaria: "",
@@ -101,7 +108,6 @@ const initialFilters = {
   situacao: "",
 };
 
-const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
 const normalizeId = (value) => (value === undefined || value === null ? "" : String(value));
 
 const getFalecidoIdFromSepultamento = (sepultamento) => normalizeId(
@@ -184,12 +190,14 @@ const getCemiterio = (record) => (
 );
 
 const getQuadra = (record) => (
-  record?.quadra_num ||
-  record?.quadra ||
-  record?.sepultamento?.quadra_num ||
-  record?.sepultamento?.quadra_sep ||
-  record?.sepultamento?.quadra ||
-  ""
+  resolveQuadraDisplay(
+    record?.quadra_num ||
+    record?.quadra ||
+    record?.sepultamento?.quadra_num ||
+    record?.sepultamento?.quadra_sep ||
+    record?.sepultamento?.quadra ||
+    ""
+  )
 );
 
 const getSepultura = (record) => (
@@ -206,13 +214,6 @@ const isCurrentMonth = (value) => {
   if (!date) return false;
   const now = new Date();
   return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-};
-
-const sortNumericText = (left, right) => {
-  const leftNumber = Number(left);
-  const rightNumber = Number(right);
-  if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) return leftNumber - rightNumber;
-  return String(left).localeCompare(String(right), "pt-BR", { numeric: true, sensitivity: "base" });
 };
 
 function AgePieChart({ data = [], loading = false, compact = false }) {
@@ -252,10 +253,15 @@ export default function RegistrosComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const [filters, setFilters] = useState(initialFilters);
   const [page, setPage] = useState(1);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalForm, setModalForm] = useState({});
-  const [selectedRecord, setSelectedRecord] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const {
+    form: modalForm,
+    setForm: setModalForm,
+    editingId,
+    modalOpen,
+    openEdit,
+    closeModal: hookCloseModal,
+  } = useFormModal({ initialForm: {} });
   const { showSuccess, showError, ToastElement } = useToastFeedback();
 
   const loadAll = useCallback(async () => {
@@ -309,7 +315,7 @@ export default function RegistrosComponent() {
             ...falecido,
             sepultamento,
             exumacao,
-            quadra_num: quadra?.num_quadra ?? sepultamento?.quadra_sep ?? sepultamento?.quadra ?? "",
+            quadra_num: resolveQuadraDisplay(quadra?.num_quadra ?? quadra?.number ?? sepultamento?.quadra_sep ?? sepultamento?.quadra ?? "", quadrasData),
             sepultura: sepultamento?.num_sepultura_sep ?? sepultamento?.num_sepultura ?? sepultamento?.sepultura ?? "",
             cemiterio: cemiterio?.nome_cemiterio || cemiterio?.nome || sepultamento?.cemiterio_nome || sepultamento?.cemiterio || "",
             data_obito_sep: sepultamento?.data_obito_sep || "",
@@ -376,14 +382,14 @@ export default function RegistrosComponent() {
         value: total.toLocaleString("pt-BR"),
         hint: "Falecidos no recorte",
         icon: <FaUsers />,
-        tone: "primary",
+        tone: "success",
       },
       {
         label: "Sem sepultamento",
         value: semSepultamento.toLocaleString("pt-BR"),
         hint: "Aguardando processo",
         icon: <FaUserClock />,
-        tone: "warning",
+        tone: "success",
       },
       {
         label: "Registros este mês",
@@ -397,7 +403,7 @@ export default function RegistrosComponent() {
         value: proporcao,
         hint: "Proporção informada",
         icon: masculino >= feminino ? <FaPerson /> : <FaPersonDress />,
-        tone: "danger",
+        tone: "success",
       },
     ];
   }, [filteredRecords]);
@@ -447,12 +453,11 @@ export default function RegistrosComponent() {
 
   const clearFilters = () => {
     setFilters(initialFilters);
-    setSelectedRecord(null);
+    setIsEditing(false);
   };
 
   const openModal = (record, editing = false) => {
-    setSelectedRecord(record);
-    setModalForm({
+    openEdit(record?.id, {
       ...record,
       nome_fal: getFalecidoNome(record),
       data_obito: getObitoDate(record),
@@ -461,13 +466,10 @@ export default function RegistrosComponent() {
       sepultura: getSepultura(record),
     });
     setIsEditing(editing);
-    setModalOpen(true);
   };
 
   const closeModal = () => {
-    setModalOpen(false);
-    setSelectedRecord(null);
-    setModalForm({});
+    hookCloseModal();
     setIsEditing(false);
   };
 
@@ -476,7 +478,9 @@ export default function RegistrosComponent() {
   };
 
   const handleSave = async () => {
-    if (!selectedRecord?.id) return;
+    if (!editingId) return;
+
+    const selectedRecord = records.find((r) => String(r.id) === String(editingId));
 
     const falPayload = {
       nome_fal: modalForm.nome_fal,
@@ -500,7 +504,7 @@ export default function RegistrosComponent() {
     try {
       await api.patch(`/falecidos/${selectedRecord.id}`, falPayload);
 
-      if (selectedRecord.sepultamento?.id) {
+      if (selectedRecord?.sepultamento?.id) {
         await api.patch(`/sepultamentos/${selectedRecord.sepultamento.id}`, {
           nome_sep: modalForm.nome_fal,
           quadra_sep: modalForm.quadra_num,
@@ -511,9 +515,8 @@ export default function RegistrosComponent() {
       }
 
       const updated = await loadAll();
-      const nextSelected = updated.find((item) => String(item.id) === String(selectedRecord.id));
+      const nextSelected = updated.find((item) => String(item.id) === String(editingId));
       if (nextSelected) {
-        setSelectedRecord(nextSelected);
         setModalForm({
           ...nextSelected,
           nome_fal: getFalecidoNome(nextSelected),
@@ -586,14 +589,21 @@ export default function RegistrosComponent() {
       <FilterCard>
         <FilterGrid>
           <SearchWrapper>
-            <SearchField
+            <TextField
+              fullWidth
+              size="medium"
               value={filters.search}
               onChange={updateFilter("search")}
               placeholder="Buscar por nome ou CPF"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <FaSearch />
+                  </InputAdornment>
+                ),
+              }}
+              sx={filterTextFieldSx}
             />
-            <SearchIcon>
-              <FaSearch />
-            </SearchIcon>
           </SearchWrapper>
 
           <FilterRow>

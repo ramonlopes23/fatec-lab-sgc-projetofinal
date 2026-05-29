@@ -23,14 +23,14 @@ export const LoadingOverlayRoot = styled.div`
 `;
 
 export const LoadingCard = styled.div`
-  width: 190px;
-  height: 190px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.92);
+  width: 155px;
+  height: 155px;
+  border-radius: 90px;
+  background: #19197000;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   display: grid;
   place-items: center;
-`;
+`; 
 
 export const LoadingCircle = styled.div`
   width: 155px;
@@ -52,12 +52,12 @@ export const LoadingCircle = styled.div`
 `;
 
 export const LoadingLogo = styled.img`
-  width: 120px;
-  height: 120px;
+  width: 200px;
+  height: 140px;
   object-fit: contain;
   user-select: none;
   pointer-events: none;
-  position: relative;
+  position: fixed;
   z-index: 1;
 `;
 

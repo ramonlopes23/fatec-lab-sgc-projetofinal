@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MdDashboard } from "react-icons/md";
 import { BsGrid3X3GapFill } from "react-icons/bs";
 import { GiArchiveRegister, GiGraveFlowers } from "react-icons/gi";
@@ -7,7 +8,8 @@ import { FaHouse } from "react-icons/fa6";
 import { RiArchiveDrawerFill } from "react-icons/ri";
 import { LuCalendarSearch, LuFileStack } from "react-icons/lu";
 import { FaCross, FaMoneyBillWave } from "react-icons/fa";
-
+import { LuLogs } from "react-icons/lu";
+import { CgLogOut } from "react-icons/cg";
 import sgclogo1 from "../../assets/logoSGCwhite.png";
 import {
     GlobalStyle,
@@ -23,6 +25,7 @@ import {
     NavContainer,
     NavItem,
     NavList,
+    SidebarActionButton,
     SidebarToggle,
     StyledNavLink,
     Title,
@@ -30,9 +33,17 @@ import {
 import { LiaFileContractSolid } from "react-icons/lia";
 import { TbReportAnalytics } from "react-icons/tb";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
+import { useAuthStore } from "../../stores/authStore";
 
 export default function SidebarMenu({ isCollapsed = false }) {
     const [expandedItems, setExpandedItems] = useState({});
+    const navigate = useNavigate();
+    const logout = useAuthStore((state) => state.logout);
+
+    const handleLogout = () => {
+        logout();
+        navigate("/login", { replace: true });
+    };
 
     const menuItems = [
         { name: "Home", icon: <MdDashboard size={20} />, path: "/home" },
@@ -62,6 +73,8 @@ export default function SidebarMenu({ isCollapsed = false }) {
                 { name: "Taxas", icon: <FaMoneyBillWave size={20} />, path: "/taxas" },
             ]
         },
+        { name: "Protocolos", icon: <LuLogs size={20}/>, path: "/protocolos" },
+        { name: "Sair", icon: <CgLogOut size={20} />, action: handleLogout },
     ];
 
     const toggleExpanded = (itemName) => {
@@ -75,8 +88,8 @@ export default function SidebarMenu({ isCollapsed = false }) {
         <>
             <GlobalStyle />
             <LogoContainer>
-{/*                 <LogoImage src={sgclogo1} alt="Logo Memo" $isCollapsed={isCollapsed} />
- */}                {!isCollapsed && <Title>SISTEMA DE CEMITÉRIOS</Title>}
+                <LogoImage src={sgclogo1} alt="Logo Memo" $isCollapsed={isCollapsed} />
+                {!isCollapsed && <Title>SISTEMA DE GERENCIAMENTO DE CEMITÉRIOS</Title>}
 
             </LogoContainer>
 
@@ -98,6 +111,11 @@ export default function SidebarMenu({ isCollapsed = false }) {
                                         </ChevronIcon>
                                     )}
                                 </CollapsedToggle>
+                            ) : item.action ? (
+                                <SidebarActionButton type="button" onClick={item.action} title={item.name}>
+                                    <MenuIconSlot>{item.icon}</MenuIconSlot>
+                                    <MenuLabel $isCollapsed={isCollapsed}>{item.name}</MenuLabel>
+                                </SidebarActionButton>
                             ) : (
                                 <CollapsedNavLink to={item.path} $isCollapsed={isCollapsed} title={item.name}>
                                     <MenuIconSlot>{item.icon}</MenuIconSlot>

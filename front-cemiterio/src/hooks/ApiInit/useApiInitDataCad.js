@@ -4,8 +4,8 @@ import api from "../../services/index.js";
 const normalizeQuadra = (quadra) => ({
   ...quadra,
   id: quadra?.id,
-  num_quadra: quadra?.num_quadra ?? quadra?.number ?? "",
-  nome: quadra?.nome ?? (quadra?.number != null ? `Quadra ${quadra.number}` : `Quadra ${quadra?.id ?? ""}`),
+  num_quadra: quadra?.num_quadra ?? quadra?.number ?? quadra?.numero ?? "",
+  nome: quadra?.nome ?? ((quadra?.num_quadra ?? quadra?.number ?? quadra?.numero) != null ? `Quadra ${quadra.num_quadra ?? quadra.number ?? quadra.numero}` : ""),
 });
 
 const normalizeCova = (cova) => {

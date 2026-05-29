@@ -56,6 +56,16 @@ export const formatDateTimeDMY = (value, fallback = "") => {
     return date ? format(date, "dd/MM/yyyy HH:mm") : fallback;
 };
 
+export const formatDateNormalized = (value, fallback = "") => {
+    const date = parseDateValue(value);
+    if (!date) return fallback;
+
+    const raw = value == null ? "" : String(value).trim();
+    const hasTimePart = /(?:T|\s)\d{2}:\d{2}/.test(raw);
+
+    return format(date, hasTimePart ? "dd/MM/yyyy HH:mm" : "dd/MM/yyyy");
+};
+
 export const formatDateKey = (value, fallback = "") => {
     const date = parseDateValue(value);
     return date ? format(date, "yyyy-MM-dd") : fallback;

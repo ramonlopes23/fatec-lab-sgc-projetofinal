@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import TextField from "@mui/material/TextField";
+import FormControl from "@mui/material/FormControl";
+import InputAdornment from "@mui/material/InputAdornment";
+import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
 import {
     FaCheckCircle,
     FaClock,
@@ -22,7 +26,6 @@ import {
     CardTitle,
     Container,
     FilterGrid,
-    FilterSelect,
     FiltersPanel,
     FormStyled,
     HeaderActions,
@@ -34,8 +37,6 @@ import {
     ModalOverlay,
     PageHeader,
     PrimaryActionButton,
-    SearchField,
-    SearchIcon,
     SearchWrapper,
     SecondaryButton,
     StatCard,
@@ -63,10 +64,9 @@ import {
 import { getContratos, createContrato, updateContrato, deleteContrato } from "../../services/contratoService.js";
 import { getBlocks } from "../../services/blockService.js";
 import { getGrave, createGrave } from "../../services/graveService.js";
-import { useCemeteryStore } from "../../stores/cemeteryStore.js";
-import { formatCurrencyBRL } from "../../utils/taxas";
-import { formatDateDMY, formatDateTimeKey, parseDateValue } from "../../utils/date";
-import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
+import { useCemeteryStore } from "../../stores";
+import { formatCurrencyBRL, formatDateDMY, formatDateTimeKey, getValidityBucket, normalizeSearchText, parseDateValue } from "../../utils";
+import { useFormModal, useToastFeedback } from "../../hooks";
 
 const STATUS_OPTIONS = [
     { value: "ativo", label: "Ativo" },
@@ -96,11 +96,36 @@ const INITIAL_FORM = {
 
 const errorStyle = { margin: "6px 0 0", color: "#b42318", fontSize: 12 };
 
-const normalizeSearchText = (value) => String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+const filterLabelSx = {
+    fontSize: "14px",
+    backgroundColor: "white",
+    paddingX: "4px",
+    marginLeft: "-4px",
+};
+
+const filterSelectSx = {
+    borderRadius: "12px",
+    fontSize: "14px",
+    backgroundColor: "#fff",
+    "& .MuiOutlinedInput-notchedOutline": {
+        top: "0px",
+        borderColor: "rgba(31, 38, 82, 0.12)",
+    },
+    "&:hover .MuiOutlinedInput-notchedOutline": {
+        borderColor: "rgba(31, 38, 82, 0.2)",
+    },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+        borderColor: "#4a2fe3",
+        boxShadow: "0 0 0 4px rgba(74, 47, 227, 0.08)",
+    },
+};
+
+const filterTextFieldSx = {
+    "& .MuiInputBase-root": { borderRadius: "12px", backgroundColor: "#fff" },
+    "& .MuiOutlinedInput-root": { borderRadius: "12px" },
+    "& .MuiOutlinedInput-notchedOutline": { borderRadius: "12px" },
+    "& .MuiOutlinedInput-input": { fontSize: "14px" },
+};
 
 const formatDateBR = (value) => formatDateDMY(value, value || "-");
 
@@ -110,22 +135,6 @@ const statusLabel = (status) => {
     const normalized = normalizeStatus(status);
     const found = STATUS_OPTIONS.find((item) => item.value === normalized);
     return found ? found.label : (status || "-");
-};
-
-const getValidityBucket = (contract) => {
-    const date = parseDateValue(contract?.validade_titulo);
-    if (!date) return "active";
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const limit = new Date(today);
-    limit.setDate(limit.getDate() + 30);
-    limit.setHours(23, 59, 59, 999);
-
-    if (date < today) return "expired";
-    if (date <= limit) return "expiring";
-    return "active";
 };
 
 const formatLocal = (contract, cemeteryNameFallback) => {
@@ -155,14 +164,9 @@ const normalizeContract = (contract) => ({
 export default function ContratosComponent() {
     const [query, setQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
-    const [modalOpen, setModalOpen] = useState(false);
     const [titulos, setTitulos] = useState([]);
     const [quadras, setQuadras] = useState([]);
     const [sepulturas, setSepulturas] = useState([]);
-    const [form, setForm] = useState(INITIAL_FORM);
-    const [errors, setErrors] = useState({});
-    const [editingId, setEditingId] = useState(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { showSuccess, showError, ToastElement } = useToastFeedback();
 
@@ -176,6 +180,22 @@ export default function ContratosComponent() {
     ), [cemeteries, selectedCemeteryId]);
 
     const selectedCemeteryName = selectedCemetery?.name || "";
+
+    const initialFormFactory = () => ({ ...INITIAL_FORM, cemiterio: selectedCemeteryName });
+
+    const {
+        form,
+        setForm,
+        errors,
+        setErrors,
+        editingId,
+        modalOpen,
+        isSubmitting,
+        setIsSubmitting,
+        openCreate,
+        openEdit,
+        closeModal,
+    } = useFormModal({ initialForm: initialFormFactory });
 
     const loadContratos = useCallback(async () => {
         setIsLoading(true);
@@ -223,7 +243,7 @@ export default function ContratosComponent() {
                 formatCurrencyBRL(item.valor),
             ].some((field) => normalizeSearchText(field).includes(q));
 
-            const bucket = getValidityBucket(item);
+            const bucket = getValidityBucket(item.validade_titulo);
             const matchesStatus = statusFilter === "all"
                 || (statusFilter === "active" && bucket === "active")
                 || (statusFilter === "expiring" && bucket === "expiring")
@@ -278,11 +298,11 @@ export default function ContratosComponent() {
 
     const stats = useMemo(() => {
         const total = normalizedTitulos.length;
-        const active = normalizedTitulos.filter((item) => getValidityBucket(item) === "active").length;
-        const expiring = normalizedTitulos.filter((item) => getValidityBucket(item) === "expiring").length;
-        const expired = normalizedTitulos.filter((item) => getValidityBucket(item) === "expired").length;
+        const active = normalizedTitulos.filter((item) => getValidityBucket(item.validade_titulo) === "active").length;
+        const expiring = normalizedTitulos.filter((item) => getValidityBucket(item.validade_titulo) === "expiring").length;
+        const expired = normalizedTitulos.filter((item) => getValidityBucket(item.validade_titulo) === "expired").length;
         const revenueAnnual = normalizedTitulos.reduce((sum, item) => {
-            const bucket = getValidityBucket(item);
+            const bucket = getValidityBucket(item.validade_titulo);
             if (bucket === "expired") return sum;
             return sum + (Number(item.valor) || 0);
         }, 0);
@@ -300,25 +320,7 @@ export default function ContratosComponent() {
         setStatusFilter("all");
     };
 
-    const openModal = () => {
-        setEditingId(null);
-        setForm({
-            ...INITIAL_FORM,
-            cemiterio: selectedCemeteryName,
-        });
-        setErrors({});
-        setModalOpen(true);
-    };
-
-    const closeModal = () => {
-        setModalOpen(false);
-        setEditingId(null);
-        setForm({
-            ...INITIAL_FORM,
-            cemiterio: selectedCemeteryName,
-        });
-        setErrors({});
-    };
+    const openModal = () => openCreate();
 
     const validateForm = () => {
         const nextErrors = {};
@@ -422,8 +424,7 @@ export default function ContratosComponent() {
 
     const handleEditTitulo = (item) => {
         const normalized = normalizeContract(item);
-        setEditingId(normalized.id);
-        setForm({
+        openEdit(normalized.id, {
             nome_titular: normalized.nome_titular,
             cpf_titular: normalized.cpf_titular,
             contato_responsavel: normalized.contato_responsavel,
@@ -435,8 +436,6 @@ export default function ContratosComponent() {
             valor: String(normalized.valor ?? 0),
             cemiterio: normalized.cemiterio || selectedCemeteryName,
         });
-        setErrors({});
-        setModalOpen(true);
     };
 
     const handleDeleteTitulo = async (id) => {
@@ -477,24 +476,33 @@ export default function ContratosComponent() {
                 <FormStyled as="div">
                     <FilterGrid>
                         <SearchWrapper>
-                            <SearchIcon>
-                                <FaSearch />
-                            </SearchIcon>
-                            <SearchField
+                            <TextField
                                 fullWidth
+                                size="medium"
                                 value={query}
                                 onChange={(event) => setQuery(event.target.value)}
                                 placeholder="Buscar por titular, número, local, valor ou vigência..."
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <FaSearch />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                                sx={filterTextFieldSx}
                             />
                         </SearchWrapper>
 
-                        <FilterSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                            {STATUS_FILTER_OPTIONS.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </FilterSelect>
+                        <FormControl fullWidth size="medium">
+                            <InputLabel sx={filterLabelSx}>Situação</InputLabel>
+                            <Select value={statusFilter} label="Situação" onChange={(event) => setStatusFilter(event.target.value)} sx={filterSelectSx}>
+                                {STATUS_FILTER_OPTIONS.map((option) => (
+                                    <MenuItem key={option.value} value={option.value}>
+                                        {option.label.replace(/^Situação:\s*/, "")}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
 
                         <SecondaryButton type="button" onClick={clearFilters}>
                             <FaFilter /> Limpar filtros
@@ -505,7 +513,7 @@ export default function ContratosComponent() {
 
             <StatsGrid>
                 <StatCard>
-                    <StatIcon><FaFileContract /></StatIcon>
+                    <StatIcon $tone="success"><FaFileContract /></StatIcon>
                     <StatCopy>
                         <StatLabel>Total de contratos</StatLabel>
                         <StatValue>{stats.total}</StatValue>
@@ -523,7 +531,7 @@ export default function ContratosComponent() {
                 </StatCard>
 
                 <StatCard>
-                    <StatIcon $tone="warning"><FaClock /></StatIcon>
+                    <StatIcon $tone="success"><FaClock /></StatIcon>
                     <StatCopy>
                         <StatLabel>Contratos a vencer</StatLabel>
                         <StatValue>{stats.expiring}</StatValue>
@@ -532,7 +540,7 @@ export default function ContratosComponent() {
                 </StatCard>
 
                 <StatCard>
-                    <StatIcon $tone="danger"><FaTimesCircle /></StatIcon>
+                    <StatIcon $tone="success"><FaTimesCircle /></StatIcon>
                     <StatCopy>
                         <StatLabel>Contratos vencidos</StatLabel>
                         <StatValue>{stats.expired}</StatValue>
@@ -541,7 +549,7 @@ export default function ContratosComponent() {
                 </StatCard>
 
                 <StatCard>
-                    <StatIcon><FaDollarSign /></StatIcon>
+                    <StatIcon $tone="success"><FaDollarSign /></StatIcon>
                     <StatCopy>
                         <StatLabel>Receita anual</StatLabel>
                         <StatValue>{formatCurrencyBRL(stats.revenueAnnual)}</StatValue>

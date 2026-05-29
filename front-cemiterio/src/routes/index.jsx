@@ -13,6 +13,7 @@ import Ossarios from "../pages/Ossarios";
 import Taxas from "../pages/Taxas";
 import NotFound from "../pages/NotFound";
 import Login from "../pages/Login";
+import Protocolos from "../pages/Protocolos";
 import { useAuthStore } from "../stores/authStore";
 
 function PrivateRoute({ children }) {
@@ -53,6 +54,7 @@ export default function AppRoutes() {
                 <Route path='/vermapa' element={<VerMapa />} />
                 <Route path='/relatorios' element={<Relatorios />} />
                 <Route path='/contratos' element={<Contratos />} />
+                <Route path='/protocolos' element={<Protocolos />} />
                 <Route path='*' element={<NotFound />} />
             </Route>
         </Routes>

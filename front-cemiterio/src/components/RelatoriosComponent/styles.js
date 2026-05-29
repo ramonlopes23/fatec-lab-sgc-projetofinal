@@ -328,7 +328,7 @@ export const SecondaryButton = styled.button`
   background: #ffffff;
   color: #191970;
   border-radius: 12px;
-  height: 42px;
+  height: 50px;
   padding: 0 1rem;
   font-weight: 700;
   cursor: pointer;
@@ -391,12 +391,13 @@ export const StatIcon = styled.div`
   display: grid;
   place-items: center;
   font-size: 1.2rem;
-  color: ${({ $tone }) => (
-    $tone === "success" ? "#17a34a" : $tone === "warning" ? "#f59e0b" : $tone === "danger" ? "#ef4444" : "#6f63ff"
-  )};
-  background: ${({ $tone }) => (
-    $tone === "success" ? "rgba(34, 197, 94, 0.12)" : $tone === "warning" ? "rgba(245, 158, 11, 0.14)" : $tone === "danger" ? "rgba(239, 68, 68, 0.12)" : "rgba(111, 99, 255, 0.12)"
-  )};
+  color: ${({ $tone }) => {
+     $tone == "#191970";
+  }};
+  background: ${({ $tone }) => {
+    if ($tone === "success") return "linear-gradient(135deg, #6c6c8a 0%, rgba(185, 214, 196, 0.08) 100%)";
+    return "linear-gradient(135deg, rgba(74,47,227,0.18) 0%, rgba(74,47,227,0.08) 100%)";
+  }};
   flex: 0 0 52px;
 `;
 

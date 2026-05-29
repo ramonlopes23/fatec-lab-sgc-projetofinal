@@ -142,11 +142,12 @@ export default function NotificationsDropdown() {
         setContratos(Array.isArray(rContratos.data) ? rContratos.data : []);
         setSepultamentos(Array.isArray(rSepultamentos.data) ? rSepultamentos.data : []);
         setFalecidos(Array.isArray(rFalecidos.data) ? rFalecidos.data : []);
-      } catch (err) {
+      } catch ( err)  {
         if (!mounted) return;
         setContratos([]);
         setSepultamentos([]);
         setFalecidos([]);
+        console.error(err)
       } finally {
         if (mounted) setLoading(false);
       }

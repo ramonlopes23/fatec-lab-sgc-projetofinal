@@ -3,7 +3,8 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import { FaChartPie, FaCheckCircle, FaFilter, FaPlus, FaRegEdit, FaSearch, FaTimesCircle, FaTrash } from "react-icons/fa";
 import api from "../../services/index.js";
-import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
+import { normalizeSearchText } from "../../utils";
+import { useFormModal, useToastFeedback } from "../../hooks";
 import {
     Actions,
     BtnPrimaryClose,
@@ -80,12 +81,6 @@ const INITIAL_FORM = {
 
 const errorStyle = { margin: "6px 0 0", color: "#b42318", fontSize: 12 };
 
-const normalizeSearchText = (value) => String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
 const normalizeType = (value) => {
     const raw = String(value || "").trim().toLowerCase();
     if (raw === "individual") return "familiar";
@@ -119,14 +114,24 @@ const isOssarioActive = (item) => {
 export default function OssariosComponent() {
     const [query, setQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
-    const [modalOpen, setModalOpen] = useState(false);
     const [items, setItems] = useState([]);
-    const [form, setForm] = useState(INITIAL_FORM);
-    const [errors, setErrors] = useState({});
-    const [editingId, setEditingId] = useState(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { showSuccess, showError, ToastElement } = useToastFeedback();
+
+    const {
+        form,
+        setForm,
+        errors,
+        setErrors,
+        editingId,
+        modalOpen,
+        isSubmitting,
+        setIsSubmitting,
+        openCreate,
+        openEdit,
+        closeModal,
+        
+    } = useFormModal({ initialForm: INITIAL_FORM });
 
     const loadItems = useCallback(async () => {
         setIsLoading(true);
@@ -185,19 +190,7 @@ export default function OssariosComponent() {
         setErrors((prev) => ({ ...prev, [key]: "" }));
     };
 
-    const openModal = () => {
-        setEditingId(null);
-        setForm(INITIAL_FORM);
-        setErrors({});
-        setModalOpen(true);
-    };
-
-    const closeModal = () => {
-        setModalOpen(false);
-        setEditingId(null);
-        setForm(INITIAL_FORM);
-        setErrors({});
-    };
+    const openModal = () => openCreate();
 
     const validateForm = () => {
         const nextErrors = {};
@@ -252,15 +245,12 @@ export default function OssariosComponent() {
     };
 
     const handleEdit = (item) => {
-        setEditingId(item.id);
-        setForm({
+        openEdit(item.id, {
             numero: item.numero || "",
             tipo: normalizeType(item.tipo) || "coletivo",
             status: normalizeStatus(item.status) || "disponivel",
             obs: item.obs || "",
         });
-        setErrors({});
-        setModalOpen(true);
     };
 
     const handleDelete = async (id) => {
@@ -334,7 +324,7 @@ export default function OssariosComponent() {
 
             <StatsGrid>
                 <StatCard>
-                    <StatIcon><RiArchiveDrawerFill /></StatIcon>
+                    <StatIcon $tone="success"><RiArchiveDrawerFill /></StatIcon>
                     <StatCopy>
                         <StatLabel>Ossários cadastrados</StatLabel>
                         <StatValue>{stats.total}</StatValue>
@@ -352,7 +342,7 @@ export default function OssariosComponent() {
                 </StatCard>
 
                 <StatCard>
-                    <StatIcon $tone="danger"><FaTimesCircle /></StatIcon>
+                    <StatIcon $tone="success"><FaTimesCircle /></StatIcon>
                     <StatCopy>
                         <StatLabel>Ossários inativos</StatLabel>
                         <StatValue>{stats.inactive}</StatValue>
@@ -361,7 +351,7 @@ export default function OssariosComponent() {
                 </StatCard>
 
                 <StatCard>
-                    <StatIcon $tone="warning"><FaChartPie /></StatIcon>
+                    <StatIcon $tone="success"><FaChartPie /></StatIcon>
                     <StatCopy>
                         <StatLabel>Coletivos x familiares</StatLabel>
                         <StatValue>{stats.collective} / {stats.familiar}</StatValue>

@@ -83,6 +83,11 @@ export default function useFormValidation(form, processType, isIndigente, search
 
     if (processType === PROCESS_TYPES.sepultamento) {
       rules = { ...RULES_SEPULTAMENTO };
+      if (String(form?.titulo_posse ?? "").toLowerCase() !== "sim") {
+        delete rules.numero_titulo;
+        delete rules.nome_titular;
+      }
+
       if (isEmpty(searchFal) && isEmpty(form.nome_sep)) {
         extraErrors.nome_fal = "Informe o nome do falecido.";
       }

@@ -4,9 +4,8 @@ import { FaChevronDown, FaRegUserCircle, FaChevronUp } from "react-icons/fa";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { FiLogOut } from 'react-icons/fi';
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../../stores/authStore";
-import { useCemeteryStore } from "../../stores/cemeteryStore";
-import { formatDateDMY } from "../../utils/date";
+import { useAuthStore, useCemeteryStore } from "../../stores";
+import { formatDateDMY } from "../../utils";
 import NotificationsDropdown from "../NotificationsDropdown";
 import {
     CemeteryButton,
@@ -53,6 +52,12 @@ export default function Header( ) {
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const cemeteryDropdownRef = useRef(null);
     const userDropdownRef = useRef(null);
+
+    const handleLogout = () => {
+        logout();
+        setIsUserDropdownOpen(false);
+        navigate("/login", { replace: true });
+    };
 
     useEffect(() => {
         const load = () => {
@@ -105,12 +110,7 @@ export default function Header( ) {
         setSelectedCemeteryId(cemeteryId);
         setIsCemeteryDropdownOpen(false);
     };
-
-    const handleLogout = () => {
-        logout();
-        setIsUserDropdownOpen(false);
-        navigate("/login", { replace: true });
-    };
+    
 
     return (
         <HeaderContainer>

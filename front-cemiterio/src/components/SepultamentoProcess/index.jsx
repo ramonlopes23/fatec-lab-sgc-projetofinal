@@ -17,6 +17,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LuChevronDown } from "react-icons/lu";
 import { formatDateKey, formatDateTimeKey, parseDateValue } from "../../utils/date";
+import { resolveQuadraDisplay } from "../../utils";
 import { hasErrors } from "../../utils/validation"
 import {
     BtnAction,
@@ -42,7 +43,9 @@ function SepultamentoProcess({
     isSubmitting,
     handleChange,
     handleQuadraSepChange,
+    handleSelectContrato,
     quadras,
+    contratos,
     availableCovas,
     tipoCovaSelecionada,
     handleClearSepultamento,
@@ -54,6 +57,7 @@ function SepultamentoProcess({
     selectSxStyle,
 }) {
     const [expandedSteps, setExpandedSteps] = useState({ 0: true });
+    const isTituloPosse = String(form.titulo_posse ?? "").toLowerCase() === "sim";
 
     const toggleStepExpanded = (stepIndex) => {
         setExpandedSteps((prev) => ({
@@ -258,7 +262,7 @@ function SepultamentoProcess({
                         </Grid>
 
                         <Grid size={{ xs: 12, md: 6 }}>
-                            <DatePicker
+                            <DateTimePicker
                                 label="Data do falecimento"
                                 format="dd/MM/yyyy"
                                 value={parseDateValue(form.data_obito_sep)}
@@ -309,6 +313,43 @@ function SepultamentoProcess({
                         </Grid>
 
                         <Grid size={{ xs: 12, md: 6 }}>
+                            <FormControl fullWidth error={!!fieldErrors.numero_titulo} disabled={!isTituloPosse || isSubmitting}>
+                                <InputLabel sx={labelSxStyle}>Nº do título</InputLabel>
+                                <Select
+                                    label="Nº do título"
+                                    name="numero_titulo"
+                                    value={form.contrato_id || ""}
+                                    onChange={(event) => handleSelectContrato(event.target.value)}
+                                    disabled={!isTituloPosse || isSubmitting}
+                                    sx={selectSxStyle}
+                                >
+                                    <MenuItem value="">Selecione o título</MenuItem>
+                                    {(Array.isArray(contratos) ? contratos : []).map((contrato) => (
+                                        <MenuItem key={String(contrato.id ?? contrato.numero_titulo)} value={String(contrato.id ?? contrato.numero_titulo)}>
+                                            {contrato.numero_titulo || contrato.id}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                                {fieldErrors.numero_titulo && <FormHelperText>{fieldErrors.numero_titulo}</FormHelperText>}
+                            </FormControl>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Nome do titular do contrato"
+                                name="nome_titular"
+                                value={form.nome_titular || ""}
+                                disabled={!isTituloPosse || isSubmitting}
+                                error={!!fieldErrors.nome_titular}
+                                helperText={fieldErrors.nome_titular}
+                                sx={fieldSxStyle}
+                                slotProps={{ inputLabel: { sx: labelSxStyle } }}
+                            />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
                             <FormControl fullWidth error={!!fieldErrors.quadra_sep}>
                                 <InputLabel sx={labelSxStyle}>Quadra</InputLabel>
                                 <Select
@@ -316,13 +357,13 @@ function SepultamentoProcess({
                                     name="quadra_sep"
                                     value={form.quadra_sep ?? ""}
                                     onChange={(event) => handleQuadraSepChange(event.target.value)}
-                                    disabled={isSubmitting}
+                                    disabled={isSubmitting || isTituloPosse}
                                     sx={selectSxStyle}
                                 >
                                     <MenuItem value="">Selecione a quadra</MenuItem>
                                     {quadras.map((quadra) => (
                                         <MenuItem key={String(quadra.id)} value={String(quadra.id)}>
-                                            {`Quadra número ${quadra.num_quadra ?? quadra.number ?? quadra.nome ?? quadra.id}`}
+                                            {`Quadra número ${resolveQuadraDisplay(quadra)}`}
                                         </MenuItem>
                                     ))}
                                 </Select>
@@ -338,7 +379,7 @@ function SepultamentoProcess({
                                     name="num_sepultura_sep"
                                     value={form.num_sepultura_sep ?? ""}
                                     onChange={handleChange}
-                                    disabled={isSubmitting}
+                                    disabled={isSubmitting || isTituloPosse}
                                     sx={selectSxStyle}
                                 >
                                     <MenuItem value="">Selecione a sepultura</MenuItem>

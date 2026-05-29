@@ -1,6 +1,18 @@
-import React, { useEffect, useMemo, useState } from "react";
-import TextField from "@mui/material/TextField";
+import React, { forwardRef, useEffect, useMemo, useState } from "react";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import FormControl from "@mui/material/FormControl";
+import InputAdornment from "@mui/material/InputAdornment";
+import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import Slide from "@mui/material/Slide";
+import TextField from "@mui/material/TextField";
 import {
     FaCheckCircle,
     FaClock,
@@ -21,7 +33,6 @@ import {
     CardTitle,
     Container,
     FilterGrid,
-    FilterSelect,
     FiltersPanel,
     FormStyled,
     HeaderActions,
@@ -33,8 +44,6 @@ import {
     ModalOverlay,
     PageHeader,
     PrimaryActionButton,
-    SearchField,
-    SearchIcon,
     SearchWrapper,
     SecondaryButton,
     StatCard,
@@ -57,11 +66,9 @@ import {
     Tr,
     Subtitle,
 } from "./styles";
-import useTaxas from "../../hooks/Taxas/useTaxas";
 import { createTaxa, patchTaxaStatus, updateTaxa } from "../../services/taxaService";
-import { formatDateDMY, parseDateValue } from "../../utils/date";
-import { formatCurrencyBRL, formatTaxaLabel, normalizeTaxa } from "../../utils/taxas";
-import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
+import { useFormModal, useTaxas, useToastFeedback } from "../../hooks";
+import { formatCurrencyBRL, formatDateDMY, formatTaxaLabel, isDateWithinNextDays, normalizeSearchText, normalizeTaxa } from "../../utils";
 
 const INITIAL_FORM = {
     codigo: "",
@@ -76,6 +83,41 @@ const INITIAL_FORM = {
 
 const errorStyle = { margin: "6px 0 0", color: "#b42318", fontSize: 12 };
 
+const DialogTransition = forwardRef(function DialogTransition(props, ref) {
+    return <Slide direction="up" ref={ref} {...props} />;
+});
+
+const filterLabelSx = {
+    fontSize: "14px",
+    backgroundColor: "white",
+    paddingX: "4px",
+    marginLeft: "-4px",
+};
+
+const filterSelectSx = {
+    borderRadius: "12px",
+    fontSize: "14px",
+    backgroundColor: "#fff",
+    "& .MuiOutlinedInput-notchedOutline": {
+        top: "0px",
+        borderColor: "rgba(31, 38, 82, 0.12)",
+    },
+    "&:hover .MuiOutlinedInput-notchedOutline": {
+        borderColor: "rgba(31, 38, 82, 0.2)",
+    },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+        borderColor: "#4a2fe3",
+        boxShadow: "0 0 0 4px rgba(74, 47, 227, 0.08)",
+    },
+};
+
+const filterTextFieldSx = {
+    "& .MuiInputBase-root": { borderRadius: "12px", backgroundColor: "#fff" },
+    "& .MuiOutlinedInput-root": { borderRadius: "12px" },
+    "& .MuiOutlinedInput-notchedOutline": { borderRadius: "12px" },
+    "& .MuiOutlinedInput-input": { fontSize: "14px" },
+};
+
 const normalizeCode = (value) => String(value || "")
     .trim()
     .toLowerCase()
@@ -84,25 +126,7 @@ const normalizeCode = (value) => String(value || "")
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
 
-const normalizeSearchText = (value) => String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
-const isVencendoEm30Dias = (taxa) => {
-    const date = parseDateValue(taxa?.vigencia_fim);
-    if (!date) return false;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const limit = new Date(today);
-    limit.setDate(limit.getDate() + 30);
-    limit.setHours(23, 59, 59, 999);
-
-    return date >= today && date <= limit;
-};
+const isVencendoEm30Dias = (taxa) => isDateWithinNextDays(taxa?.vigencia_fim, 30);
 
 const formatVigencia = (taxa) => {
     const inicio = formatDateDMY(taxa?.vigencia_inicio, "");
@@ -116,15 +140,27 @@ const formatVigencia = (taxa) => {
 
 function TaxasComponent() {
     const { taxas, loading, error, loadTaxas, setTaxas } = useTaxas({ autoLoad: false, onlyActive: false });
-    const [form, setForm] = useState(INITIAL_FORM);
-    const [errors, setErrors] = useState({});
-    const [editingId, setEditingId] = useState(null);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [typeFilter, setTypeFilter] = useState("all");
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [pendingStatusTaxa, setPendingStatusTaxa] = useState(null);
     const { showSuccess, showError, ToastElement } = useToastFeedback();
+
+    const {
+        form,
+        setForm,
+        errors,
+        setErrors,
+        editingId,
+        modalOpen,
+        isSubmitting,
+        setIsSubmitting,
+        openCreate,
+        openEdit,
+        closeModal,
+        
+    } = useFormModal({ initialForm: INITIAL_FORM });
 
     useEffect(() => {
         loadTaxas();
@@ -186,19 +222,7 @@ function TaxasComponent() {
         setErrors((prev) => ({ ...prev, [key]: "" }));
     };
 
-    const openModal = () => {
-        setEditingId(null);
-        setForm(INITIAL_FORM);
-        setErrors({});
-        setModalOpen(true);
-    };
-
-    const closeModal = () => {
-        setModalOpen(false);
-        setEditingId(null);
-        setForm(INITIAL_FORM);
-        setErrors({});
-    };
+    const openModal = () => openCreate();
 
     const validateForm = () => {
         const nextErrors = {};
@@ -260,8 +284,7 @@ function TaxasComponent() {
 
     const handleEdit = (taxa) => {
         const normalized = normalizeTaxa(taxa);
-        setEditingId(normalized.id);
-        setForm({
+        openEdit(normalized.id, {
             codigo: normalized.codigo,
             descricao: normalized.descricao,
             valor: String(normalized.valor ?? 0),
@@ -271,25 +294,36 @@ function TaxasComponent() {
             vigencia_inicio: normalized.vigencia_inicio || "",
             vigencia_fim: normalized.vigencia_fim || "",
         });
-        setErrors({});
-        setModalOpen(true);
     };
 
-    const handleToggleStatus = async (taxa) => {
-        const normalized = normalizeTaxa(taxa);
-        const nextActive = !normalized.active;
-        const ok = window.confirm(`${nextActive ? "Ativar" : "Inativar"} a taxa ${normalized.descricao}?`);
-        if (!ok) return;
+    const closeConfirmDialog = () => {
+        if (isSubmitting) return;
+        setConfirmDialogOpen(false);
+        setPendingStatusTaxa(null);
+    };
 
+    const requestToggleStatus = (taxa) => {
+        const normalized = normalizeTaxa(taxa);
+        setPendingStatusTaxa(normalized);
+        setConfirmDialogOpen(true);
+    };
+
+    const confirmToggleStatus = async () => {
+        if (!pendingStatusTaxa?.id) return;
+
+        const nextActive = !pendingStatusTaxa.active;
         setIsSubmitting(true);
         try {
-            await patchTaxaStatus(normalized.id, nextActive);
+            await patchTaxaStatus(pendingStatusTaxa.id, nextActive);
             setTaxas((prev) => prev.map((item) => (
-                String(item.id) === String(normalized.id)
+                String(item.id) === String(pendingStatusTaxa.id)
                     ? { ...item, active: nextActive, status: nextActive ? "active" : "inactive" }
                     : item
             )));
             await loadTaxas();
+            setConfirmDialogOpen(false);
+            setPendingStatusTaxa(null);
+            showSuccess(nextActive ? "Taxa ativada com sucesso." : "Taxa inativada com sucesso.");
         } catch (err) {
             console.error("Erro ao alterar status da taxa", err);
             showError(err?.response?.data?.message || err?.message || "Erro ao alterar status da taxa.");
@@ -319,30 +353,43 @@ function TaxasComponent() {
                 <FormStyled as="div">
                     <FilterGrid>
                         <SearchWrapper>
-                            <SearchIcon>
-                                <FaSearch />
-                            </SearchIcon>
-                            <SearchField
+                            <TextField
+                                fullWidth
+                                size="medium"
                                 value={search}
                                 onChange={(event) => setSearch(event.target.value)}
                                 placeholder="Buscar por descrição, código, valor ou tipo..."
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <FaSearch />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                                sx={filterTextFieldSx}
                             />
                         </SearchWrapper>
 
-                        <FilterSelect value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
-                            <option value="all">Tipo: Todos</option>
-                            {typeOptions.map((type) => (
-                                <option key={type} value={type}>
-                                    Tipo: {type}
-                                </option>
-                            ))}
-                        </FilterSelect>
+                        <FormControl fullWidth size="medium">
+                            <InputLabel sx={filterLabelSx}>Tipo</InputLabel>
+                            <Select value={typeFilter} label="Tipo" onChange={(event) => setTypeFilter(event.target.value)} sx={filterSelectSx}>
+                                <MenuItem value="all">Todos</MenuItem>
+                                {typeOptions.map((type) => (
+                                    <MenuItem key={type} value={type}>
+                                        {type}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
 
-                        <FilterSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                            <option value="all">Situação: Todas</option>
-                            <option value="active">Situação: Ativas</option>
-                            <option value="inactive">Situação: Inativas</option>
-                        </FilterSelect>
+                        <FormControl fullWidth size="medium">
+                            <InputLabel sx={filterLabelSx}>Situação</InputLabel>
+                            <Select value={statusFilter} label="Situação" onChange={(event) => setStatusFilter(event.target.value)} sx={filterSelectSx}>
+                                <MenuItem value="all">Todas</MenuItem>
+                                <MenuItem value="active">Ativas</MenuItem>
+                                <MenuItem value="inactive">Inativas</MenuItem>
+                            </Select>
+                        </FormControl>
 
                         <SecondaryButton type="button" onClick={clearFilters}>
                             <FaFilter /> Limpar filtros
@@ -355,7 +402,7 @@ function TaxasComponent() {
 
             <StatsGrid>
                 <StatCard>
-                    <StatIcon $tone="primary"><FaDollarSign /></StatIcon>
+                    <StatIcon $tone="success"><FaDollarSign /></StatIcon>
                     <StatCopy>
                         <StatLabel>Total de Taxas</StatLabel>
                         <StatValue>{totalTaxas}</StatValue>
@@ -373,7 +420,7 @@ function TaxasComponent() {
                 </StatCard>
 
                 <StatCard>
-                    <StatIcon $tone="warning"><FaClock /></StatIcon>
+                    <StatIcon $tone="success"><FaClock /></StatIcon>
                     <StatCopy>
                         <StatLabel>A vencer</StatLabel>
                         <StatValue>{vencerTaxas}</StatValue>
@@ -382,7 +429,7 @@ function TaxasComponent() {
                 </StatCard>
 
                 <StatCard>
-                    <StatIcon $tone="danger"><FaTimesCircle /></StatIcon>
+                    <StatIcon $tone="success"><FaTimesCircle /></StatIcon>
                     <StatCopy>
                         <StatLabel>Inativas</StatLabel>
                         <StatValue>{inactiveTaxas}</StatValue>
@@ -432,7 +479,7 @@ function TaxasComponent() {
                                                         <IconBtn type="button" onClick={() => handleEdit(normalized)} disabled={isSubmitting}>
                                                             <FaRegEdit />
                                                         </IconBtn>
-                                                        <IconBtn type="button" onClick={() => handleToggleStatus(normalized)} disabled={isSubmitting} data-danger={normalized.active ? "true" : undefined}>
+                                                        <IconBtn type="button" onClick={() => requestToggleStatus(normalized)} disabled={isSubmitting} data-danger={normalized.active ? "true" : undefined}>
                                                             <FaPowerOff />
                                                         </IconBtn>
                                                     </Actions>
@@ -446,6 +493,36 @@ function TaxasComponent() {
                     </TableWrapper>
                 </CardBody>
             </Card>
+
+            <Dialog
+                open={confirmDialogOpen}
+                TransitionComponent={DialogTransition}
+                keepMounted
+                onClose={closeConfirmDialog}
+                aria-describedby="taxa-status-dialog-description"
+                fullWidth
+                maxWidth="sm"
+            >
+                <DialogTitle >
+                    {pendingStatusTaxa?.active ? "Inativar taxa" : "Ativar taxa"}
+                </DialogTitle>
+                <DialogContent>
+                    <Alert severity={pendingStatusTaxa?.active ? "warning" : "success"} variant="outlined" sx={{ mb: 2 }}>
+                        {pendingStatusTaxa?.active ? "A taxa ficará indisponível para novos lançamentos." : "A taxa voltará a ficar disponível para uso."}
+                    </Alert>
+                    <DialogContentText id="taxa-status-dialog-description">
+                        {pendingStatusTaxa ? `Deseja ${pendingStatusTaxa.active ? "inativar" : "ativar"} a taxa ${pendingStatusTaxa.descricao}?` : "Confirme a alteração de status da taxa."}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions sx={{ padding: 2, paddingTop: 0 }}>
+                    <Button onClick={closeConfirmDialog} disabled={isSubmitting} variant="outlined" color="inherit">
+                        Cancelar
+                    </Button>
+                    <Button onClick={confirmToggleStatus} disabled={isSubmitting || !pendingStatusTaxa} variant="contained" color={pendingStatusTaxa?.active ? "error" : "success"}>
+                        {isSubmitting ? "Processando..." : (pendingStatusTaxa?.active ? "Inativar" : "Ativar")}
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {modalOpen && (
                 <ModalOverlay>

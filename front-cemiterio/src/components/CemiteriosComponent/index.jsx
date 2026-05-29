@@ -1,4 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import FormControl from "@mui/material/FormControl";
+import InputAdornment from "@mui/material/InputAdornment";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
 import {
     FaChartPie,
     FaCheckCircle,
@@ -20,7 +26,6 @@ import {
     CardTitle,
     Container,
     FilterGrid,
-    FilterSelect,
     FiltersPanel,
     FormStyled,
     HeaderActions,
@@ -32,8 +37,6 @@ import {
     ModalOverlay,
     PageHeader,
     PrimaryActionButton,
-    SearchField,
-    SearchIcon,
     SearchWrapper,
     SecondaryButton,
     StatCard,
@@ -61,8 +64,8 @@ import { getBlocks } from "../../services/blockService.js";
 import { getGrave } from "../../services/graveService.js";
 import { getSepultamentos } from "../../services/sepultamentoService.js";
 import { getExumacoes } from "../../services/exumacaoService.js";
-import { formatDateDMY, formatDateTimeDMY, parseDateValue } from "../../utils/date";
-import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
+import { formatDateDMY, formatDateTimeDMY, normalizeSearchText, parseDateValue } from "../../utils";
+import { useFormModal, useToastFeedback } from "../../hooks";
 
 const INITIAL_FORM = {
     name: "",
@@ -72,11 +75,36 @@ const INITIAL_FORM = {
 
 const errorStyle = { margin: "6px 0 0", color: "#b42318", fontSize: 12 };
 
-const normalizeSearchText = (value) => String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+const filterLabelSx = {
+    fontSize: "14px",
+    backgroundColor: "white",
+    paddingX: "4px",
+    marginLeft: "-4px",
+};
+
+const filterSelectSx = {
+    borderRadius: "12px",
+    fontSize: "14px",
+    backgroundColor: "#fff",
+    "& .MuiOutlinedInput-notchedOutline": {
+        top: "0px",
+        borderColor: "rgba(31, 38, 82, 0.12)",
+    },
+    "&:hover .MuiOutlinedInput-notchedOutline": {
+        borderColor: "rgba(31, 38, 82, 0.2)",
+    },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+        borderColor: "#4a2fe3",
+        boxShadow: "0 0 0 4px rgba(74, 47, 227, 0.08)",
+    },
+};
+
+const filterTextFieldSx = {
+    "& .MuiInputBase-root": { borderRadius: "12px", backgroundColor: "#fff" },
+    "& .MuiOutlinedInput-root": { borderRadius: "12px" },
+    "& .MuiOutlinedInput-notchedOutline": { borderRadius: "12px" },
+    "& .MuiOutlinedInput-input": { fontSize: "14px" },
+};
 
 const getCemeteryActive = (cemetery) => cemetery?.active !== false && String(cemetery?.status ?? "").trim().toLowerCase() !== "inactive";
 
@@ -108,17 +136,27 @@ const formatMovementLabel = (movement) => {
 export default function CemiteriosComponent() {
     const [query, setQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
-    const [modalOpen, setModalOpen] = useState(false);
     const [cemeteries, setCemeteries] = useState([]);
     const [blocks, setBlocks] = useState([]);
     const [graves, setGraves] = useState([]);
     const [sepultamentos, setSepultamentos] = useState([]);
     const [exumacoes, setExumacoes] = useState([]);
-    const [form, setForm] = useState(INITIAL_FORM);
-    const [errors, setErrors] = useState({});
-    const [editingId, setEditingId] = useState(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+
+    const {
+        form,
+        setForm,
+        errors,
+        setErrors,
+        editingId,
+        modalOpen,
+        isSubmitting,
+        setIsSubmitting,
+        openCreate,
+        openEdit,
+        closeModal,
+        
+    } = useFormModal({ initialForm: INITIAL_FORM });
     const { showSuccess, showError, ToastElement } = useToastFeedback();
 
     const loadItems = useCallback(async () => {
@@ -282,19 +320,7 @@ export default function CemiteriosComponent() {
         setErrors((prev) => ({ ...prev, [key]: "" }));
     };
 
-    const openModal = () => {
-        setEditingId(null);
-        setForm(INITIAL_FORM);
-        setErrors({});
-        setModalOpen(true);
-    };
-
-    const closeModal = () => {
-        setModalOpen(false);
-        setEditingId(null);
-        setForm(INITIAL_FORM);
-        setErrors({});
-    };
+    const openModal = () => openCreate();
 
     const validateForm = () => {
         const nextErrors = {};
@@ -349,14 +375,11 @@ export default function CemiteriosComponent() {
     };
 
     const handleEdit = (item) => {
-        setEditingId(item.id);
-        setForm({
+        openEdit(item.id, {
             name: item.name || "",
             foundation: item.foundation || "",
             active: item.active !== false,
         });
-        setErrors({});
-        setModalOpen(true);
     };
 
     const handleToggleStatus = async (item) => {
@@ -400,21 +423,31 @@ export default function CemiteriosComponent() {
                 <FormStyled as="div">
                     <FilterGrid>
                         <SearchWrapper>
-                            <SearchIcon>
-                                <FaSearch />
-                            </SearchIcon>
-                            <SearchField
+                            <TextField
+                                fullWidth
+                                size="medium"
                                 value={query}
                                 onChange={(event) => setQuery(event.target.value)}
                                 placeholder="Buscar por nome ou fundação..."
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <FaSearch />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                                sx={filterTextFieldSx}
                             />
                         </SearchWrapper>
 
-                        <FilterSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                            <option value="all">Situação: Todas</option>
-                            <option value="active">Situação: Ativos</option>
-                            <option value="inactive">Situação: Inativos</option>
-                        </FilterSelect>
+                        <FormControl fullWidth size="medium">
+                            <InputLabel sx={filterLabelSx}>Situação</InputLabel>
+                            <Select value={statusFilter} label="Situação" onChange={(event) => setStatusFilter(event.target.value)} sx={filterSelectSx}>
+                                <MenuItem value="all">Todas</MenuItem>
+                                <MenuItem value="active">Ativos</MenuItem>
+                                <MenuItem value="inactive">Inativos</MenuItem>
+                            </Select>
+                        </FormControl>
 
                         <SecondaryButton type="button" onClick={clearFilters}>
                             <FaFilter /> Limpar filtros
@@ -428,7 +461,7 @@ export default function CemiteriosComponent() {
 
             <StatsGrid>
                 <StatCard>
-                    <StatIcon><FaMapMarkerAlt /></StatIcon>
+                    <StatIcon $tone="success"><FaMapMarkerAlt /></StatIcon>
                     <StatCopy>
                         <StatLabel>Cemitérios cadastrados</StatLabel>
                         <StatValue>{stats.totalCemeteries}</StatValue>
@@ -446,7 +479,7 @@ export default function CemiteriosComponent() {
                 </StatCard>
 
                 <StatCard>
-                    <StatIcon $tone="danger"><FaTimesCircle /></StatIcon>
+                    <StatIcon $tone="success"><FaTimesCircle /></StatIcon>
                     <StatCopy>
                         <StatLabel>Cemitérios inativos</StatLabel>
                         <StatValue>{stats.inactiveCemeteries}</StatValue>
@@ -455,7 +488,7 @@ export default function CemiteriosComponent() {
                 </StatCard>
 
                 <StatCard>
-                    <StatIcon $tone="warning"><FaChartPie /></StatIcon>
+                    <StatIcon $tone="success"><FaChartPie /></StatIcon>
                     <StatCopy>
                         <StatLabel>Capacidade x ocupação</StatLabel>
                         <StatValue>{stats.utilization.toFixed(1).replace(".", ",")}%</StatValue>
@@ -464,7 +497,7 @@ export default function CemiteriosComponent() {
                 </StatCard>
 
                 <StatCard>
-                    <StatIcon><FaClock /></StatIcon>
+                    <StatIcon $tone="success"><FaClock /></StatIcon>
                     <StatCopy>
                         <StatLabel>Última movimentação</StatLabel>
                         <StatValue>{stats.latestMovement?.cemeteryName || "Sem registro"}</StatValue>

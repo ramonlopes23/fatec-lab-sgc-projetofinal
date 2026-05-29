@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { Tile, Grid, GridWrap, TileBadge, TileLabel } from "./styles"
+import { formatQuadraDisplay, resolveQuadraDisplay } from "../../utils";
 
 const safeKey = (v, idx) => {
   if (v === undefined || v === null) return `idx-${idx}`;
@@ -20,7 +21,6 @@ function GridQuadras({
 /*   showStatus = true, */
 }) {
   const [internalSelected, setInternalSelected] = useState(null);
-  const lastEmittedRef = useRef(null);
 
   const normalizeId = (v) => {
     if (v === undefined || v === null || v === "") return null;
@@ -35,7 +35,9 @@ function GridQuadras({
       id: normalizeId(q.id),
       num_quadra: q.num_quadra ?? q.nome ?? String(q.id ?? ""),
     }));
-  }, [JSON.stringify(quadrasDesc)]);
+  }, [quadrasDesc]);
+
+  const selectedId = value !== undefined ? normalizeId(value) : internalSelected;
 
   useEffect(() => {
     const resolvedQid = normalizeId(qid);
@@ -61,26 +63,14 @@ function GridQuadras({
       return;
     }
     setInternalSelected(null);
-  }, [qid, created, num, JSON.stringify(quadrasArr)]);
-
-  useEffect(() => {
-    if (value === undefined) return;
-    const next = normalizeId(value);
-    if (String(next) === String(internalSelected)) return;
-    setInternalSelected(next);
-  }, [value]);
-
-  useEffect(() => {
-    if (!onChange) return;
-    const item = normalizedQuadras.find((q) => q.id === internalSelected) ?? null;
-    const idToEmit = item?.id ?? null;
-    if (String(lastEmittedRef.current) === String(idToEmit)) return;
-    lastEmittedRef.current = idToEmit;
-    onChange(item);
-  }, [internalSelected, JSON.stringify(normalizedQuadras)]);
+  }, [qid, created?.id, num, quadrasArr]);
 
   const handleToggle = (q) => {
-    const next = internalSelected === q.id ? null : q.id;
+    const next = selectedId === q.id ? null : q.id;
+    if (onChange) {
+      onChange(next == null ? null : normalizedQuadras.find((item) => item.id === next) ?? null);
+      return;
+    }
     setInternalSelected(next);
   };
 
@@ -88,7 +78,7 @@ function GridQuadras({
     <GridWrap className="gridquad-wrap">
       <Grid className="gridquad" tileMinWidth={`${columnsMinWidth}px`}>
         {normalizedQuadras.map((q, idx) => {
-          const isSelected = internalSelected === q.id;
+          const isSelected = selectedId === q.id;
           return (
             <Tile
               key={safeKey(q.id, idx)}
@@ -103,9 +93,9 @@ function GridQuadras({
                 }
               }}
               aria-pressed={isSelected}
-              title={`${q.num_quadra}${q.status ? ` - ${q.status}` : ""}`}
+              title={`${formatQuadraDisplay(q)}${q.status ? ` - ${q.status}` : ""}`}
             >
-              <TileLabel>{q.num_quadra}</TileLabel>
+              <TileLabel>{resolveQuadraDisplay(q)}</TileLabel>
 
             </Tile>
           );

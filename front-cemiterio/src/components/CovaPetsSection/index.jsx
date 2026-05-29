@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../../services/index.js";
+import { useToastFeedback } from "../../hooks";
 import {
     AddPetButton,
     BtnCancel,
@@ -54,6 +55,7 @@ export default function CovaPetsSection({
     const [saving, setSaving] = useState(false);
     const [formPet, setFormPet] = useState(makeInitialForm(sepultamentos[0] ?? null));
     const [editingPetId, setEditingPetId] = useState(null);
+    const { showSuccess, showError, ToastElement } = useToastFeedback();
 
     const resetPetForm = () => {
         setFormPet(makeInitialForm(sepultamentos[0] ?? null))
@@ -139,31 +141,31 @@ export default function CovaPetsSection({
     }
 
     const handleDeletePet = async (pet) => {
-        if (!pet?.id) return alert("Não foi possivel excluir. Pet sem ID");
+        if (!pet?.id) return showError("Não foi possivel excluir. Pet sem ID");
         const ok = confirm(`Excluir o pet ${pet.nome_pet || "sem nome"}"?`);
         if (!ok) return;
 
         try {
             await api.delete(`/pets/${pet.id}`);
             if (typeof onPetDeleted === "function") onPetDeleted(pet.id);
-            alert("Pet excluído com sucesso.");
+            showSuccess("Pet excluído com sucesso.");
         } catch (err) {
             console.error("Erro ao excluir pet", err);
-            alert("Erro ao excluir pet")
+            showError("Erro ao excluir pet");
         }
     };
 
     const submitPet = async (ev) => {
         ev.preventDefault();
-        if (!formPet.nome_pet?.trim()) return alert("Informe o nome do pet.");
-        if (!formPet.especie?.trim()) return alert("Informe a espécie do pet.");
-        if (!formPet.sepultamento_id) return alert("Selecione o sepultamento para vincular o pet.");
+        if (!formPet.nome_pet?.trim()) return showError("Informe o nome do pet.");
+        if (!formPet.especie?.trim()) return showError("Informe a espécie do pet.");
+        if (!formPet.sepultamento_id) return showError("Selecione o sepultamento para vincular o pet.");
 
         const sep = (sepultamentos || []).find(
             (s) => String(s.id) === String(formPet.sepultamento_id)
         );
 
-        if (!sep) return alert("Sepultamento selecionado é inválido.");
+        if (!sep) return showError("Sepultamento selecionado é inválido.");
 
         const payload = {
             nome_pet: formPet.nome_pet.trim(),
@@ -193,13 +195,13 @@ export default function CovaPetsSection({
 
                 const updated = res?.data ?? { ...payload, id: editingPetId };
                 if (typeof onPetCreated === "function") onPetCreated(updated);
-                alert("Dados do pet atualizados com sucesso");
+                showSuccess("Dados do pet atualizados com sucesso");
             } else {
                 const res = await api.post("/pets", payload);
                 const created = res?.data ?? payload;
 
                 if (typeof onPetCreated === "function") onPetCreated(created);
-                alert("Pet cadastrado com sucesso")
+                showSuccess("Pet cadastrado com sucesso");
             }
 
             setModalAddPetOpen(false);
@@ -207,7 +209,7 @@ export default function CovaPetsSection({
             resetPetForm();
         } catch (err) {
             console.error("Erro ao cadastrar pet", err);
-            alert("Erro ao cadastrar pet.");
+            showError("Erro ao cadastrar pet.");
         } finally {
             setSaving(false);
         }
@@ -215,6 +217,7 @@ export default function CovaPetsSection({
 
     return (
         <>
+            {ToastElement}
             <TabsBar>
                 <TabButton
                     type="button"

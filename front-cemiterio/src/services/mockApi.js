@@ -22,6 +22,7 @@ for (const collectionName of [
     "pets",
     "ossarios",
     "sepultamentos",
+    "logs",
     "taxas",
     "velorios",
 ]) {

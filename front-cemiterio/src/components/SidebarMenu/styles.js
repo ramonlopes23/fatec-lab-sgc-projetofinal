@@ -172,7 +172,9 @@ export const StyledNavLink = styled(NavLink)`
   text-decoration: none;
   color: #fff;
   font-weight: 800;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
   align-self: stretch;
   position: relative;
 
@@ -182,39 +184,102 @@ export const StyledNavLink = styled(NavLink)`
 
   &:hover {
     background-color: #326bdd;
+    border-color: rgba(255, 255, 255, 0.12);
     transform: translateX(2px);
   }
 
   &.active {
     background-color: #326bdd;
+    border-color: rgba(255, 255, 255, 0.12);
     font-weight: 600;
     box-shadow: 0 10px 24px rgba(50, 107, 221, 0.28);
   }
 `;
 
-export const DropdownToggle = styled(StyledNavLink).attrs({ as: "button" })`
+export const SidebarActionButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  min-width: 0;
+  min-height: 3.15rem;
+  box-sizing: border-box;
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.7rem;
+  text-decoration: none;
+  color: #fff;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  align-self: stretch;
+  position: relative;
   justify-content: flex-start;
-  border: none;
-  background: transparent;
   cursor: pointer;
   font-size: inherit;
   font-family: inherit;
   text-align: left;
   appearance: none;
   -webkit-appearance: none;
-  width: 100%;
-  min-width: 0;
-  align-self: stretch;
-  position: relative;
+
+  svg {
+    flex: 0 0 auto;
+  }
 
   &:hover {
     background-color: #326bdd;
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateX(2px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.75);
+    outline-offset: 2px;
+  }
+`;
+
+export const DropdownToggle = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  min-width: 0;
+  min-height: 3.15rem;
+  box-sizing: border-box;
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.7rem;
+  text-decoration: none;
+  color: #fff;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  align-self: stretch;
+  position: relative;
+  justify-content: flex-start;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+  text-align: left;
+  appearance: none;
+  -webkit-appearance: none;
+
+  &:hover {
+    background-color: #326bdd;
+    border-color: rgba(255, 255, 255, 0.12);
     transform: translateX(2px);
   }
 
   ${props => props.isExpanded && `
     background-color: #326bdd;
+    border-color: rgba(255, 255, 255, 0.12);
   `}
+
+  &:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.75);
+    outline-offset: 2px;
+  }
 `;
 
 export const ChevronIcon = styled.span`

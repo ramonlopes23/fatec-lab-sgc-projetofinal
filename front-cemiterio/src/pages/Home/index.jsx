@@ -1,6 +1,6 @@
 import React from "react";
 import Dashboard from "../../components/Dashboard";
-import SepultadosMedia from "../../components/SepultadosMedia";
+import SepultadosMedia from "../../charts/SepultadosMedia";
 import Calendar from "../../components/Calendar";
 import SepultadosTotal from "../../components/SepultadosTotal";
 import SepultadosMes from "../../components/SepultadosMes";

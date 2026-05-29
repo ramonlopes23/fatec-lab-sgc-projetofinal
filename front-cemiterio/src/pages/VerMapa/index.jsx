@@ -1,9 +1,6 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import { useBlocks } from "../../hooks/Blocks/useBlocks";
-import { useCreateBlocks } from "../../hooks/Blocks/useCreateBlocks.js";
-import { useCreateGraves } from "../../hooks/Graves/useCreateGraves";
-import { useCemeteryStore } from "../../stores/cemeteryStore.js";
-import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx"
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useBlocks, useCreateBlocks, useCreateGraves, useToastFeedback } from "../../hooks";
+import { useCemeteryStore } from "../../stores";
 import api from "../../services/index.js";
 import { patchGraveStatus } from "../../services/graveService";
 import LoadingOverlay from "../../components/LoadingOverlay";
@@ -15,7 +12,7 @@ import { FaChartPie } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
 import { MdPets } from "react-icons/md";
 import { PiFlowerTulipLight, PiFlowerTulipBold } from "react-icons/pi";
-import { formatDateTimeKey } from "../../utils/date";
+import { formatDateTimeKey, formatQuadraDisplay } from "../../utils";
 import {
     BtnAction,
     QuadraDropdownWrapper,
@@ -178,9 +175,15 @@ export default function VerMapa() {
     const [sepultamentosAll, setSepultamentosAll] = useState([]);
     const [selectedQuadraId, setSelectedQuadraId] = useState(null);
 
-    const visibleBlocks = mapHelpers.getVisibleBlocks(blocks, selectedCemeteryId);
+    const visibleBlocks = useMemo(
+        () => mapHelpers.getVisibleBlocks(blocks, selectedCemeteryId),
+        [blocks, selectedCemeteryId]
+    );
 
-    const quadras = mapHelpers.buildQuadrasFromData(visibleBlocks, covasData, sepultamentosAll);
+    const quadras = useMemo(
+        () => mapHelpers.buildQuadrasFromData(visibleBlocks, covasData, sepultamentosAll),
+        [visibleBlocks, covasData, sepultamentosAll]
+    );
 
     const [isQuadraDropdownOpen, setIsQuadraDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -235,15 +238,17 @@ export default function VerMapa() {
 
     useEffect(() => {
         if (!visibleBlocks.length) {
-            setSelectedQuadraId(null);
+            setSelectedQuadraId((current) => (current === null ? current : null));
             return;
         }
 
-        const selectedExists = visibleBlocks.some((block) => String(block.id) === String(selectedQuadraId));
-        if (!selectedExists) {
-            setSelectedQuadraId(visibleBlocks[0].id);
-        }
-    }, [visibleBlocks, selectedQuadraId]);
+        const firstVisibleId = visibleBlocks[0]?.id ?? null;
+        setSelectedQuadraId((current) => {
+            const selectedExists = visibleBlocks.some((block) => String(block.id) === String(current));
+            if (selectedExists) return current;
+            return firstVisibleId;
+        });
+    }, [visibleBlocks]);
 
     // Load cemeteries on component mount
     useEffect(() => {
@@ -480,13 +485,13 @@ export default function VerMapa() {
         updateQuadraFieldByName(name, incoming);
     }
 
-    const handleGridChange = (item) => {
+    const handleGridChange = useCallback((item) => {
         const newId = item?.id ?? null;
         setSelectedQuadraId(prev => {
             if (prev === newId) return prev;
             return newId;
         })
-    }
+    }, []);
 
     const handleCovaChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -1038,7 +1043,7 @@ export default function VerMapa() {
                     <QuadraDropdownWrapper ref={dropdownRef}>
                         <QuadraSelectButton disabled={isMapLoading} onClick={() => { if (isMapLoading) return; setIsQuadraDropdownOpen(!isQuadraDropdownOpen) }}
                         >
-                            {selectedQuadraId ? `Quadra ${quadrasDesc.find(q => String(q.id) === String(selectedQuadraId))?.num_quadra || selectedQuadraId}` : "Selecione uma quadra"}
+                            {selectedQuadraId ? formatQuadraDisplay(quadrasDesc.find((q) => String(q.id) === String(selectedQuadraId)) || selectedQuadraId) : "Selecione uma quadra"}
                             <DropdownIcon>
                                 {isQuadraDropdownOpen ? "▲" : "▼"}
                             </DropdownIcon>
@@ -1050,9 +1055,7 @@ export default function VerMapa() {
                             <GridQuadras
                                 quadrasDesc={quadrasDesc}
                                 value={selectedQuadraId}
-                                onChange={(quadra) => {
-                                    handleGridChange(quadra);
-                                }}
+                                onChange={handleGridChange}
                                 columnsMinWidth={40}
                             />
                         </QuadraDropdown>
@@ -1254,7 +1257,7 @@ export default function VerMapa() {
                                                 const full = max > 0 && used >= max;
                                                 return (
                                                     <option key={`${String(q.id ?? q.num_sepultura ?? idx)}`} value={String(q.id)} disabled={full}>
-                                                        {q.num_quadra ? `Quadra ${q.num_quadra}` : q.nome || `Quadra ${q.id}`} {full ? `(lotada)` : ''}
+                                                        {formatQuadraDisplay(q)} {full ? `(lotada)` : ''}
                                                     </option>
                                                 )
                                             })}

@@ -124,15 +124,10 @@ export const StatIcon = styled.div`
   font-size: 20px;
   flex: 0 0 auto;
   color: ${({ $tone }) => {
-    if ($tone === "success") return "#16a34a";
-    if ($tone === "warning") return "#ea8c00";
-    if ($tone === "danger") return "#e11d48";
-    return "#4a2fe3";
+     $tone == "#191970";
   }};
   background: ${({ $tone }) => {
-    if ($tone === "success") return "linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(34,197,94,0.08) 100%)";
-    if ($tone === "warning") return "linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(245,158,11,0.08) 100%)";
-    if ($tone === "danger") return "linear-gradient(135deg, rgba(239,68,68,0.18) 0%, rgba(239,68,68,0.08) 100%)";
+    if ($tone === "success") return "linear-gradient(135deg, #6c6c8a 0%, rgba(185, 214, 196, 0.08) 100%)";
     return "linear-gradient(135deg, rgba(74,47,227,0.18) 0%, rgba(74,47,227,0.08) 100%)";
   }};
 `;
@@ -240,6 +235,7 @@ export const SecondaryButton = styled.button`
   align-items: center;
   justify-content: center;
   gap: 8px;
+  height:50px;
   border: 1px solid rgba(74, 47, 227, 0.14);
   border-radius: 12px;
   padding: 13px 16px;

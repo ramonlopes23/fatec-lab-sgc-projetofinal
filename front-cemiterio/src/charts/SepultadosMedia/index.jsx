@@ -1,5 +1,5 @@
 import api from "../../services/index.js";
-import { Card, CardBody, CardHeader, DashboardWrapper, ChartWrapper, Controls, PeriodButton } from "./styles";
+import { Card, CardBody, CardHeader, DashboardWrapper, ChartWrapper, Controls, PeriodButton } from "./styles.js";
 import React, { useMemo, useEffect, useState } from "react";
 import {Bar} from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend, } from "chart.js"
