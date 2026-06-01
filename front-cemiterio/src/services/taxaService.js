@@ -10,7 +10,7 @@ export const updateTaxa = async (id, payload) => service.update(id, payload);
 
 export const deleteTaxa = async (id) => service.remove(id);
 
-export const patchTaxaStatus = async (id, active) => service.update(id, {
+export const patchTaxaStatus = async (id, active) => service.patch(id, {
     active,
     status: active ? "active" : "inactive",
 });

@@ -163,7 +163,7 @@ export const BtnPrimary = styled.button`
   color: #fff;
   border: none;
   padding: 12px 28px;
-  border-radius: 24px;
+  border-radius: 16px;
   cursor: pointer;
   font-weight: 600;
   box-shadow: 0 6px 16px rgba(15,13,58,0.18);
@@ -297,7 +297,7 @@ export const BtnClear = styled.button`
   color: #000;
   border: none;
   padding: 12px 28px;
-  border-radius: 24px;
+  border-radius: 16px;
   margin-right:15px;
   cursor: pointer;
   font-weight: 600;

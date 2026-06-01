@@ -27,6 +27,7 @@ import {
     Container,
     FilterGrid,
     FiltersPanel,
+    FilterSelect,
     FormStyled,
     HeaderActions,
     HeaderCopy,

@@ -1228,12 +1228,9 @@ export default function VerMapa() {
                                     Cancelar
                                 </CompactCancelButton>
 
-                                <CompactButton
                                     type="submit"
                                     disabled={creatingBlock}
-                                >
-                                    {creatingBlock ? "Criando..." : "Criar"}
-                                </CompactButton>
+                                
                             </ModalActions>
                         </ModalSurface>
                     </ModalOverlay>
@@ -1336,9 +1333,6 @@ export default function VerMapa() {
                             </FormGrid>
                             <ButtonsRow>
                                 <CompactCancelButton type="button" onClick={handleCloseAddCovaModal}>Cancelar</CompactCancelButton>
-                                <CompactButton type="submit" disabled={creatingGrave}>
-                                    {creatingGrave ? "Criando..." : "Criar"}
-                                </CompactButton>
                             </ButtonsRow>
                         </ModalSurface>
                     </ModalOverlay>
@@ -1590,9 +1584,6 @@ export default function VerMapa() {
 
                                 <ModalActions>
                                     <BtnClose type="button" onClick={closeExumacaoForm} disabled={isSubmittingExumacao}>Voltar</BtnClose>
-                                    <BtnAdd type="submit" onClick={submitExumacao} disabled={isSubmittingExumacao}>
-                                        {isSubmittingExumacao ? "Enviando..." : "Confirmar"}
-                                    </BtnAdd>
                                 </ModalActions>
                             </DrawerBody>
                         </CovaDrawer>
