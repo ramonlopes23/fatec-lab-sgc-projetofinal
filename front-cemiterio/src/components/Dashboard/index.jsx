@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
-import { DashboardWrapper, Card, CardHeader, CardBody, ProcessItem, ProcessInfo, ProcessAction, ProcessType, EmptyState, Btn } from "./styles";
+import { DashboardWrapper, Card, CardHeader, CardBody, ProcessItem, ProcessInfo, ProcessAction, ProcessType, EmptyState } from "./styles";
 import { FaCross } from "react-icons/fa";
 import { FaSkullCrossbones } from "react-icons/fa";
 import { FaTools } from "react-icons/fa";
 import api from "../../services/index.js";
 import { useToastFeedback } from "../../hooks";
 import { formatDateNormalized, parseDateValue, resolveQuadraDisplay } from "../../utils";
+import SystemButton from "../SystemButton";
 
 export default function Dashboard() {
 
@@ -281,7 +282,7 @@ export default function Dashboard() {
                                     {p._type}
                                 </ProcessType>
                                 {p.local && <span> {p.local} </span>}
-                                <Btn onClick={() => handleConfirm(p)}>Confirmar conclusão</Btn>
+                                <SystemButton type="button" onClick={() => handleConfirm(p)}>Confirmar conclusão</SystemButton>
                             </ProcessAction>
                         </ProcessItem>
                     )) : <EmptyState>Nenhum processo pendente.</EmptyState>}                </CardBody>

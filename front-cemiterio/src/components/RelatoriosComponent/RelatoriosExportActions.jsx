@@ -1,7 +1,7 @@
 import React from "react";
 import { FaFileCsv, FaFileExcel, FaFilePdf, FaPrint } from "react-icons/fa";
+import SystemButton from "../SystemButton";
 import {
-    ExportActionButton,
     ExportActionsGrid,
     ExportCard,
     ExportCopy,
@@ -29,16 +29,16 @@ export default function RelatoriosExportActions({ loadingFormat, error, onExport
 
             <ExportActionsGrid>
                 {EXPORT_ACTIONS.map((action) => (
-                    <ExportActionButton
+                    <SystemButton
                         key={action.format}
                         type="button"
-                        $tone={action.tone}
                         disabled={isBusy}
                         onClick={() => onExport(action.format)}
+                        sx={{ justifyContent: "flex-start", minHeight: 46 }}
                     >
                         {action.icon}
                         {loadingFormat === action.format ? "Gerando..." : action.label}
-                    </ExportActionButton>
+                    </SystemButton>
                 ))}
             </ExportActionsGrid>
         </ExportCard>

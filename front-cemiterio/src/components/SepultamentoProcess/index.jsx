@@ -20,14 +20,13 @@ import { formatDateKey, formatDateTimeKey, parseDateValue } from "../../utils/da
 import { resolveQuadraDisplay } from "../../utils";
 import { hasErrors } from "../../utils/validation"
 import {
-    BtnAction,
-    BtnAction2,
     SearchFieldWrapper,
     SearchResults,
     SearchResultItem,
     StepHeader,
     ChevronIcon,
 } from "./styles";
+import SystemButton from "../SystemButton";
 
 function SepultamentoProcess({
     form,
@@ -433,8 +432,8 @@ function SepultamentoProcess({
                     </Grid>
 
                     <Box sx={{ mb: 2, mt: 3, display: "flex", gap: 1 }}>
-                        <BtnAction2 type="button" onClick={handleClearSepultamento} disabled={isSubmitting}>LIMPAR</BtnAction2>
-                        <BtnAction type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>SALVAR</BtnAction>
+                        <SystemButton type="button" tone="cancel" onClick={handleClearSepultamento} disabled={isSubmitting}>Limpar</SystemButton>
+                        <SystemButton type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>Salvar</SystemButton>
                     </Box>
                 </StepContent>
             </Step>

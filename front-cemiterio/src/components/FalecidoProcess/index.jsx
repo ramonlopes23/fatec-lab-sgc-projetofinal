@@ -23,7 +23,8 @@ import {
     RULES_FALECIDO,
     RULES_RESPONSAVEL,
 } from "../../utils/validation";
-import { BtnAction, BtnAction2, ChevronIcon, FilePreview, InlineFeedback, ReviewPanel, StepHeader } from "./styles";
+import { ChevronIcon, FilePreview, InlineFeedback, ReviewPanel, StepHeader } from "./styles";
+import SystemButton from "../SystemButton";
 
 function FalecidoProcess({
     form,
@@ -275,7 +276,7 @@ function FalecidoProcess({
                         </Grid>
                     </Grid>
                     <Box sx={{ mb: 2, mt: 3 }}>
-                        <BtnAction type="button" onClick={handleNextStep} disabled={isSubmitting}>PROXIMO</BtnAction>
+                        <SystemButton type="button" onClick={handleNextStep} disabled={isSubmitting}>Próximo</SystemButton>
                     </Box>
                 </StepContent>
             </Step>
@@ -310,8 +311,8 @@ function FalecidoProcess({
                         </Grid>
                     </Grid>
                     <Box sx={{ mb: 2, mt: 3, display: "flex", gap: 1 }}>
-                        <BtnAction2 type="button" onClick={handleBackStep} disabled={isSubmitting}>VOLTAR</BtnAction2>
-                        <BtnAction type="button" onClick={handleNextStep} disabled={isSubmitting}>PROXIMO</BtnAction>
+                        <SystemButton type="button" tone="cancel" onClick={handleBackStep} disabled={isSubmitting}>Voltar</SystemButton>
+                        <SystemButton type="button" onClick={handleNextStep} disabled={isSubmitting}>Próximo</SystemButton>
                     </Box>
                 </StepContent>
             </Step>
@@ -365,8 +366,8 @@ function FalecidoProcess({
                         </Grid>
                     </Grid>
                     <Box sx={{ mb: 2, mt: 3, display: "flex", gap: 1 }}>
-                        <BtnAction2 type="button" onClick={handleBackStep} disabled={isSubmitting}>VOLTAR</BtnAction2>
-                        <BtnAction type="button" onClick={handleNextStep} disabled={isSubmitting}>PROXIMO</BtnAction>
+                        <SystemButton type="button" tone="cancel" onClick={handleBackStep} disabled={isSubmitting}>Voltar</SystemButton>
+                        <SystemButton type="button" onClick={handleNextStep} disabled={isSubmitting}>Próximo</SystemButton>
                     </Box>
                 </StepContent>
             </Step>
@@ -409,9 +410,9 @@ function FalecidoProcess({
                         </Grid>
                     </ReviewPanel>
                     <Box sx={{ mb: 2, mt: 3, display: "flex", gap: 1 }}>
-                        <BtnAction2 type="button" onClick={handleClearFalecido} disabled={isSubmitting}>LIMPAR</BtnAction2>
-                        <BtnAction2 type="button" onClick={handleBackStep} disabled={isSubmitting}>VOLTAR</BtnAction2>
-                        <BtnAction type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>SALVAR</BtnAction>
+                        <SystemButton type="button" tone="cancel" onClick={handleClearFalecido} disabled={isSubmitting}>Limpar</SystemButton>
+                        <SystemButton type="button" tone="cancel" onClick={handleBackStep} disabled={isSubmitting}>Voltar</SystemButton>
+                        <SystemButton type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>Salvar</SystemButton>
                     </Box>
                 </StepContent>
             </Step>

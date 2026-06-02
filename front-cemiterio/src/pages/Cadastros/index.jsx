@@ -1,12 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
 import api from "../../services/index.js";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogActions from "@mui/material/DialogActions";
+import ConfirmationDialog from "../../components/ConfirmationDialog";
 import { useApiInitDataCad, useAvailableCovas, useCidadeBusca, useFalecidoSearch, useFileUpload, useFormClear, useFormValidation, useLocalStorage, useTaxas, useToastFeedback, useViacepLookup, useCadastrosSubmit } from "../../hooks";
 import { applyMaskByFieldName, capitalizeWords, findTaxaByCodigo } from "../../utils";
 import SepultamentoProcess from "../../components/SepultamentoProcess";
@@ -24,8 +20,6 @@ import {
     VELORIO_FIELDS,
 } from "./constants";
 import {
-    BtnClear,
-    BtnPrimary,
     CheckboxInput,
     CheckboxLabel,
     CheckboxWrapper,
@@ -415,16 +409,20 @@ export default function Cadastros() {
                     </Box>
                 </FormStyled>
 
-                <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-                    <DialogTitle>Confirmar envio</DialogTitle>
-                    <DialogContent>
-                        <DialogContentText>Deseja confirmar o envio deste cadastro?</DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                        <BtnClear type="button" onClick={() => setConfirmOpen(false)} disabled={isSubmitting}>CANCELAR</BtnClear>
-                        <BtnPrimary type="button" onClick={() => { setConfirmOpen(false); handleConfirmSubmit(); }} disabled={isSubmitting} autoFocus>CONFIRMAR</BtnPrimary>
-                    </DialogActions>
-                </Dialog>
+                <ConfirmationDialog
+                    open={confirmOpen}
+                    onClose={() => setConfirmOpen(false)}
+                    onConfirm={() => { setConfirmOpen(false); handleConfirmSubmit(); }}
+                    title="Confirmar envio"
+                    alertSeverity="info"
+                    alertMessage="Revise os dados antes de enviar o cadastro."
+                    description="Deseja confirmar o envio deste cadastro?"
+                    confirmLabel="CONFIRMAR"
+                    cancelLabel="CANCELAR"
+                    confirmTone="confirm"
+                    isSubmitting={isSubmitting}
+                    ariaDescriptionId="cadastro-confirm-dialog-description"
+                />
             </Container>
         </>
     );

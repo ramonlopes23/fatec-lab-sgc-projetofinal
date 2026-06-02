@@ -19,8 +19,6 @@ import {
 } from "react-icons/fa";
 import {
     Actions,
-    BtnPrimaryClose,
-    BtnPrimarySave,
     Card,
     CardBody,
     CardTitle,
@@ -37,9 +35,7 @@ import {
     ModalGrid,
     ModalOverlay,
     PageHeader,
-    PrimaryActionButton,
     SearchWrapper,
-    SecondaryButton,
     StatCard,
     StatCopy,
     StatHint,
@@ -67,6 +63,8 @@ import { getSepultamentos } from "../../services/sepultamentoService.js";
 import { getExumacoes } from "../../services/exumacaoService.js";
 import { formatDateDMY, formatDateTimeDMY, normalizeSearchText, parseDateValue } from "../../utils";
 import { useFormModal, useToastFeedback } from "../../hooks";
+import ConfirmationDialog from "../ConfirmationDialog";
+import SystemButton from "../SystemButton";
 
 const INITIAL_FORM = {
     name: "",
@@ -143,6 +141,7 @@ export default function CemiteriosComponent() {
     const [sepultamentos, setSepultamentos] = useState([]);
     const [exumacoes, setExumacoes] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [pendingToggleCemetery, setPendingToggleCemetery] = useState(null);
 
     const {
         form,
@@ -384,17 +383,26 @@ export default function CemiteriosComponent() {
     };
 
     const handleToggleStatus = async (item) => {
-        const nextActive = !item.active;
-        const ok = window.confirm(`${nextActive ? "Ativar" : "Inativar"} o cemitério ${item.name}?`);
-        if (!ok) return;
+        setPendingToggleCemetery(item);
+    };
+
+    const closeToggleDialog = () => {
+        setPendingToggleCemetery(null);
+    };
+
+    const confirmToggleStatus = async () => {
+        const item = pendingToggleCemetery;
+        if (!item) return;
 
         setIsSubmitting(true);
         try {
+            const nextActive = !item.active;
             await updateCemeteries(item.id, {
                 ...item,
                 active: nextActive,
             });
             await loadItems();
+            closeToggleDialog();
         } catch (error) {
             console.error("Erro ao alterar status do cemitério", error);
             showError(error?.response?.data?.message || error?.message || "Não foi possível alterar o status do cemitério");
@@ -406,6 +414,20 @@ export default function CemiteriosComponent() {
     return (
         <>
             {ToastElement}
+            <ConfirmationDialog
+                open={Boolean(pendingToggleCemetery)}
+                onClose={closeToggleDialog}
+                onConfirm={confirmToggleStatus}
+                title={pendingToggleCemetery?.active ? "Inativar cemitério" : "Ativar cemitério"}
+                alertSeverity={pendingToggleCemetery?.active ? "warning" : "success"}
+                alertMessage={pendingToggleCemetery?.active ? "O cemitério ficará indisponível para novos registros." : "O cemitério voltará a ficar disponível para uso."}
+                description={pendingToggleCemetery ? `Deseja ${pendingToggleCemetery.active ? "inativar" : "ativar"} o cemitério ${pendingToggleCemetery.name}?` : "Confirme a alteração de status do cemitério."}
+                confirmLabel={pendingToggleCemetery?.active ? "Inativar" : "Ativar"}
+                confirmTone={pendingToggleCemetery?.active ? "delete" : "confirm"}
+                confirmDisabled={!pendingToggleCemetery}
+                isSubmitting={isSubmitting}
+                ariaDescriptionId="cemiterio-status-dialog-description"
+            />
         <Container>
             <PageHeader>
                 <HeaderCopy>
@@ -414,9 +436,9 @@ export default function CemiteriosComponent() {
                 </HeaderCopy>
 
                 <HeaderActions>
-                    <PrimaryActionButton type="button" onClick={openModal} disabled={isSubmitting}>
+                    <SystemButton type="button" onClick={openModal} disabled={isSubmitting}>
                         <FaPlus /> Novo Cemitério
-                    </PrimaryActionButton>
+                    </SystemButton>
                 </HeaderActions>
             </PageHeader>
 
@@ -450,9 +472,9 @@ export default function CemiteriosComponent() {
                             </Select>
                         </FormControl>
 
-                        <SecondaryButton type="button" onClick={clearFilters}>
+                        <SystemButton type="button" tone="cancel" onClick={clearFilters} sx={{ minHeight: 50 }}>
                             <FaFilter /> Limpar filtros
-                        </SecondaryButton>
+                        </SystemButton>
                     </FilterGrid>
 
                     {isLoading ? <p style={{ margin: 0, color: "#6c7293" }}>Carregando dados...</p> : null}
@@ -604,12 +626,12 @@ export default function CemiteriosComponent() {
                             </ModalGrid>
 
                             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                                <BtnPrimaryClose type="button" onClick={closeModal} disabled={isSubmitting}>
+                                <SystemButton type="button" tone="cancel" onClick={closeModal} disabled={isSubmitting}>
                                     Cancelar
-                                </BtnPrimaryClose>
-                                <BtnPrimarySave type="submit" disabled={isSubmitting}>
+                                </SystemButton>
+                                <SystemButton type="submit" disabled={isSubmitting}>
                                     {isSubmitting ? "Salvando..." : "Salvar"}
-                                </BtnPrimarySave>
+                                </SystemButton>
                             </div>
                         </form>
                     </ModalContent>

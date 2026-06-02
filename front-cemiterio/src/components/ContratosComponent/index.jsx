@@ -19,8 +19,6 @@ import {
 } from "react-icons/fa";
 import {
     Actions,
-    BtnPrimaryClose,
-    BtnPrimarySave,
     Card,
     CardBody,
     CardTitle,
@@ -36,9 +34,7 @@ import {
     ModalGrid,
     ModalOverlay,
     PageHeader,
-    PrimaryActionButton,
     SearchWrapper,
-    SecondaryButton,
     StatCard,
     StatCopy,
     StatHint,
@@ -67,6 +63,8 @@ import { getGrave, createGrave } from "../../services/graveService.js";
 import { useCemeteryStore } from "../../stores";
 import { formatCurrencyBRL, formatDateDMY, formatDateTimeKey, getValidityBucket, normalizeSearchText, parseDateValue } from "../../utils";
 import { useFormModal, useToastFeedback } from "../../hooks";
+import ConfirmationDialog from "../ConfirmationDialog";
+import SystemButton from "../SystemButton";
 
 const STATUS_OPTIONS = [
     { value: "ativo", label: "Ativo" },
@@ -168,6 +166,7 @@ export default function ContratosComponent() {
     const [quadras, setQuadras] = useState([]);
     const [sepulturas, setSepulturas] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [pendingDeleteTitulo, setPendingDeleteTitulo] = useState(null);
     const { showSuccess, showError, ToastElement } = useToastFeedback();
 
     const cemeteries = useCemeteryStore((state) => state.cemeteries);
@@ -439,14 +438,23 @@ export default function ContratosComponent() {
     };
 
     const handleDeleteTitulo = async (id) => {
-        const ok = window.confirm("Deseja realmente excluir este título?");
-        if (!ok) return;
+        const target = titulos.find((item) => String(item.id) === String(id)) || null;
+        setPendingDeleteTitulo(target ? { id: target.id, numero_titulo: target.numero_titulo } : { id });
+    };
+
+    const closeDeleteDialog = () => {
+        setPendingDeleteTitulo(null);
+    };
+
+    const confirmDeleteTitulo = async () => {
+        if (!pendingDeleteTitulo?.id) return;
 
         setIsSubmitting(true);
         try {
-            await deleteContrato(id);
+            await deleteContrato(pendingDeleteTitulo.id);
             showSuccess("Título excluído com sucesso");
             await loadContratos();
+            closeDeleteDialog();
         } catch (error) {
             console.error("Erro ao excluir título", error);
             showError(error?.response?.data?.message || error?.message || "Não foi possível excluir o título");
@@ -458,6 +466,20 @@ export default function ContratosComponent() {
     return (
         <>
             {ToastElement}
+            <ConfirmationDialog
+                open={Boolean(pendingDeleteTitulo)}
+                onClose={closeDeleteDialog}
+                onConfirm={confirmDeleteTitulo}
+                title="Excluir título"
+                alertSeverity="error"
+                alertMessage="Esta ação removerá o contrato do sistema."
+                description={pendingDeleteTitulo ? `Deseja realmente excluir o título ${pendingDeleteTitulo.numero_titulo || pendingDeleteTitulo.id}?` : "Confirme a exclusão do título."}
+                confirmLabel="Excluir"
+                confirmTone="delete"
+                confirmDisabled={!pendingDeleteTitulo}
+                isSubmitting={isSubmitting}
+                ariaDescriptionId="contrato-delete-dialog-description"
+            />
         <Container>
             <PageHeader>
                 <HeaderCopy>
@@ -466,9 +488,9 @@ export default function ContratosComponent() {
                 </HeaderCopy>
 
                 <HeaderActions>
-                    <PrimaryActionButton type="button" onClick={openModal} disabled={isSubmitting}>
+                    <SystemButton type="button" onClick={openModal} disabled={isSubmitting}>
                         <FaPlus /> Novo Contrato
-                    </PrimaryActionButton>
+                    </SystemButton>
                 </HeaderActions>
             </PageHeader>
 
@@ -504,9 +526,9 @@ export default function ContratosComponent() {
                             </Select>
                         </FormControl>
 
-                        <SecondaryButton type="button" onClick={clearFilters}>
+                        <SystemButton type="button" tone="cancel" onClick={clearFilters} sx={{ minHeight: 50 }}>
                             <FaFilter /> Limpar filtros
-                        </SecondaryButton>
+                        </SystemButton>
                     </FilterGrid>
                 </FormStyled>
             </FiltersPanel>
@@ -767,12 +789,12 @@ export default function ContratosComponent() {
                             </ModalGrid>
 
                             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                                <BtnPrimaryClose type="button" onClick={closeModal} disabled={isSubmitting}>
+                                <SystemButton type="button" tone="cancel" onClick={closeModal} disabled={isSubmitting}>
                                     Cancelar
-                                </BtnPrimaryClose>
-                                <BtnPrimarySave type="submit" disabled={isSubmitting}>
+                                </SystemButton>
+                                <SystemButton type="submit" disabled={isSubmitting}>
                                     {isSubmitting ? "Salvando..." : "Salvar título"}
-                                </BtnPrimarySave>
+                                </SystemButton>
                             </div>
                         </form>
                     </ModalContent>

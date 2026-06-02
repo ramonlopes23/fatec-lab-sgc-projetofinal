@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../../services/index.js";
 import { useToastFeedback } from "../../hooks";
+import ConfirmationDialog from "../ConfirmationDialog";
+import SystemButton from "../SystemButton";
 import {
-    AddPetButton,
-    BtnCancel,
     BtnDelete,
-    BtnSave,
     BtnUpdate,
     EmptyText,
     Field,
@@ -55,6 +54,7 @@ export default function CovaPetsSection({
     const [saving, setSaving] = useState(false);
     const [formPet, setFormPet] = useState(makeInitialForm(sepultamentos[0] ?? null));
     const [editingPetId, setEditingPetId] = useState(null);
+    const [pendingDeletePet, setPendingDeletePet] = useState(null);
     const { showSuccess, showError, ToastElement } = useToastFeedback();
 
     const resetPetForm = () => {
@@ -142,13 +142,22 @@ export default function CovaPetsSection({
 
     const handleDeletePet = async (pet) => {
         if (!pet?.id) return showError("Não foi possivel excluir. Pet sem ID");
-        const ok = confirm(`Excluir o pet ${pet.nome_pet || "sem nome"}"?`);
-        if (!ok) return;
+        setPendingDeletePet(pet);
+    };
+
+    const closeDeletePetDialog = () => {
+        setPendingDeletePet(null);
+    };
+
+    const confirmDeletePet = async () => {
+        const pet = pendingDeletePet;
+        if (!pet?.id) return;
 
         try {
             await api.delete(`/pets/${pet.id}`);
             if (typeof onPetDeleted === "function") onPetDeleted(pet.id);
             showSuccess("Pet excluído com sucesso.");
+            closeDeletePetDialog();
         } catch (err) {
             console.error("Erro ao excluir pet", err);
             showError("Erro ao excluir pet");
@@ -218,6 +227,19 @@ export default function CovaPetsSection({
     return (
         <>
             {ToastElement}
+            <ConfirmationDialog
+                open={Boolean(pendingDeletePet)}
+                onClose={closeDeletePetDialog}
+                onConfirm={confirmDeletePet}
+                title="Excluir pet"
+                alertSeverity="error"
+                alertMessage="Esta ação removerá o pet do sistema."
+                description={pendingDeletePet ? `Deseja excluir o pet ${pendingDeletePet.nome_pet || "sem nome"}?` : "Confirme a exclusão do pet."}
+                confirmLabel="Excluir"
+                confirmTone="delete"
+                confirmDisabled={!pendingDeletePet}
+                ariaDescriptionId="pet-delete-dialog-description"
+            />
             <TabsBar>
                 <TabButton
                     type="button"
@@ -237,9 +259,9 @@ export default function CovaPetsSection({
                     </TabButton>
                 )}
 
-                <AddPetButton type="button" onClick={openPetModal}>
+                <SystemButton type="button" onClick={openPetModal}>
                     Incluir pet
-                </AddPetButton>
+                </SystemButton>
             </TabsBar>
 
             {activeTab === "sepultamentos" ? (
@@ -355,12 +377,12 @@ export default function CovaPetsSection({
                         </FormGrid>
 
                         <ModalButtonsRow>
-                            <BtnCancel type="button" onClick={() => setModalAddPetOpen(false)}>
+                            <SystemButton type="button" tone="cancel" onClick={() => setModalAddPetOpen(false)}>
                                 Cancelar
-                            </BtnCancel>
-                            <BtnSave type="submit" disabled={saving}>
+                            </SystemButton>
+                            <SystemButton type="submit" disabled={saving}>
                                 {saving ? "Salvando..." : (editingPetId ? "Atualizar" : "Salvar")}
-                            </BtnSave>
+                            </SystemButton>
                         </ModalButtonsRow>
                     </ModalCard>
                 </ModalOverlay>

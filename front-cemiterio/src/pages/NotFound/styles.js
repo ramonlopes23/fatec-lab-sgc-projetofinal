@@ -8,7 +8,7 @@ export const Container = styled.div`
     height:100vh;
     color:#191970;
     text-align:center;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubutu', sans-serif;
+    font-family: "Satoshi", sans-serif;
 `;
 
 export const Button = styled.button`

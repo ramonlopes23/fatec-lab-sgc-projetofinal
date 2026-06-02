@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { formatDateKey, formatDateNormalized } from "../../utils/date";
 import { resolveQuadraDisplay } from "../../utils";
 import { Card, Subtitle, CardHeader, CardBody, CalendarGrid, DayCell, DayButton, Btn, Title } from "./styles";
+import SystemButton from "../SystemButton";
 
 
 export default function Calendar({ sepultamentos = [], quadras = [], exumacoes = [] }) {
@@ -211,7 +212,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                         <div style={{ width: 560, maxHeight: '80vh', overflowY: 'auto', background: '#fff', borderRadius: 8, padding: 16 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Title style={{ margin: 0 }}>Sepultamentos e exumações em {formatDateNormalized(dataSelecionada)}</Title>
-                                <Btn onClick={() => setOpen(false)}>Fechar</Btn>
+                                <SystemButton type="button" tone="cancel" onClick={() => setOpen(false)}>Fechar</SystemButton>
                             </div>
                             <div style={{ marginTop: 12 }}>
                                 {sepultamentosDia.length === 0 ? (

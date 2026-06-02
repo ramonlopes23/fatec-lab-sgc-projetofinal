@@ -40,9 +40,7 @@ import {
   PeriodChip,
   PeriodChipLabel,
   PeriodChipValue,
-  PrimaryButton,
   SearchWrapper,
-  SecondaryButton,
   StatCard,
   StatCopy,
   StatHint,
@@ -65,6 +63,7 @@ import {
   Title,
   Tr,
 } from "./styles";
+import SystemButton from "../SystemButton";
 
 const PAGE_SIZE = 8;
 
@@ -661,9 +660,9 @@ export default function RegistrosComponent() {
               </Select>
             </FormControl>
 
-            <SecondaryButton type="button" onClick={clearFilters}>
+            <SystemButton type="button" tone="cancel" onClick={clearFilters} sx={{ minHeight: 50 }}>
               <FaFilter /> Limpar filtros
-            </SecondaryButton>
+            </SystemButton>
           </FilterRow>
         </FilterGrid>
       </FilterCard>
@@ -798,18 +797,18 @@ export default function RegistrosComponent() {
 
             <ModalActions>
               {!isEditing && (
-                <PrimaryButton type="button" onClick={() => setIsEditing(true)}>
+                <SystemButton type="button" onClick={() => setIsEditing(true)}>
                   <FaEdit /> Editar
-                </PrimaryButton>
+                </SystemButton>
               )}
               {isEditing && (
-                <PrimaryButton type="button" onClick={handleSave}>
+                <SystemButton type="button" onClick={handleSave}>
                   Salvar
-                </PrimaryButton>
+                </SystemButton>
               )}
-              <SecondaryButton type="button" onClick={closeModal}>
+              <SystemButton type="button" tone="cancel" onClick={closeModal}>
                 Fechar
-              </SecondaryButton>
+              </SystemButton>
             </ModalActions>
           </ModalContent>
         </ModalOverlay>

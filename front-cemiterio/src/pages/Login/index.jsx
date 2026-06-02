@@ -19,10 +19,9 @@ import {
     Select,
     HelperLink,
     ErrorText,
-    PrimaryButton,
-    SecondaryButton,
     PrefeituraLogo,
 } from "./styles";
+import SystemButton from "../../components/SystemButton";
 
 export default function Login() {
     const navigate = useNavigate();
@@ -101,11 +100,11 @@ export default function Login() {
 
                     {error ? <ErrorText>{error}</ErrorText> : null}
 
-                    <PrimaryButton type="submit" disabled={isLoading}>
+                    <SystemButton type="submit" disabled={isLoading} sx={{ width: "100%", minHeight: 46 }}>
                         {isLoading ? "ENTRANDO..." : "ENTRAR"}
-                    </PrimaryButton>
+                    </SystemButton>
 
-                    <SecondaryButton type="button">CRIAR CONTA</SecondaryButton>
+                    <SystemButton type="button" tone="cancel" sx={{ width: "100%", minHeight: 46 }}>CRIAR CONTA</SystemButton>
                 </Card>
             </FormSide>
         </Page>

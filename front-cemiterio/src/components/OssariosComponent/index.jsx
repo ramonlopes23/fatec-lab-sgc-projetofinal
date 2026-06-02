@@ -5,10 +5,10 @@ import { FaChartPie, FaCheckCircle, FaFilter, FaPlus, FaRegEdit, FaSearch, FaTim
 import api from "../../services/index.js";
 import { normalizeSearchText } from "../../utils";
 import { useFormModal, useToastFeedback } from "../../hooks";
+import ConfirmationDialog from "../ConfirmationDialog";
+import SystemButton from "../SystemButton";
 import {
     Actions,
-    BtnPrimaryClose,
-    BtnPrimarySave,
     Card,
     CardBody,
     CardTitle,
@@ -30,11 +30,9 @@ import {
     ModalGrid,
     ModalOverlay,
     PageHeader,
-    PrimaryActionButton,
     SearchField,
     SearchIcon,
     SearchWrapper,
-    SecondaryButton,
     StatCard,
     StatCopy,
     StatHint,
@@ -116,6 +114,7 @@ export default function OssariosComponent() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [items, setItems] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [pendingDeleteItem, setPendingDeleteItem] = useState(null);
     const { showSuccess, showError, ToastElement } = useToastFeedback();
 
     const {
@@ -254,14 +253,23 @@ export default function OssariosComponent() {
     };
 
     const handleDelete = async (id) => {
-        const ok = window.confirm("Deseja realmente excluir este ossário?");
-        if (!ok) return;
+        const target = items.find((item) => String(item.id) === String(id)) || null;
+        setPendingDeleteItem(target ? { id: target.id, numero: target.numero } : { id });
+    };
+
+    const closeDeleteDialog = () => {
+        setPendingDeleteItem(null);
+    };
+
+    const confirmDelete = async () => {
+        if (!pendingDeleteItem?.id) return;
 
         setIsSubmitting(true);
         try {
-            await api.delete(`/ossarios/${id}`);
+            await api.delete(`/ossarios/${pendingDeleteItem.id}`);
             showSuccess("Ossário excluído com sucesso");
             await loadItems();
+            closeDeleteDialog();
         } catch (error) {
             console.error("Erro ao excluir ossário", error);
             showError(error?.response?.data?.message || error?.message || "Não foi possível excluir o ossário");
@@ -278,6 +286,20 @@ export default function OssariosComponent() {
     return (
         <>
             {ToastElement}
+            <ConfirmationDialog
+                open={Boolean(pendingDeleteItem)}
+                onClose={closeDeleteDialog}
+                onConfirm={confirmDelete}
+                title="Excluir ossário"
+                alertSeverity="error"
+                alertMessage="Esta ação removerá o ossário do sistema."
+                description={pendingDeleteItem ? `Deseja realmente excluir o ossário ${pendingDeleteItem.numero || pendingDeleteItem.id}?` : "Confirme a exclusão do ossário."}
+                confirmLabel="Excluir"
+                confirmTone="delete"
+                confirmDisabled={!pendingDeleteItem}
+                isSubmitting={isSubmitting}
+                ariaDescriptionId="ossario-delete-dialog-description"
+            />
         <Container>
             <PageHeader>
                 <HeaderCopy>
@@ -286,9 +308,9 @@ export default function OssariosComponent() {
                 </HeaderCopy>
 
                 <HeaderActions>
-                    <PrimaryActionButton type="button" onClick={openModal} disabled={isSubmitting}>
+                    <SystemButton type="button" onClick={openModal} disabled={isSubmitting}>
                         <FaPlus /> Novo Ossário
-                    </PrimaryActionButton>
+                    </SystemButton>
                 </HeaderActions>
             </PageHeader>
 
@@ -312,9 +334,9 @@ export default function OssariosComponent() {
                             <option value="inactive">Situação: Inativos</option>
                         </FilterSelect>
 
-                        <SecondaryButton type="button" onClick={clearFilters}>
+                        <SystemButton type="button" tone="cancel" onClick={clearFilters} sx={{ minHeight: 50 }}>
                             <FaFilter /> Limpar filtros
-                        </SecondaryButton>
+                        </SystemButton>
                     </FilterGrid>
 
                     {isLoading ? <p style={{ margin: 0, color: "#6c7293" }}>Carregando dados...</p> : null}
@@ -487,12 +509,12 @@ export default function OssariosComponent() {
                             </ModalGrid>
 
                             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                                <BtnPrimaryClose type="button" onClick={closeModal} disabled={isSubmitting}>
+                                <SystemButton type="button" tone="cancel" onClick={closeModal} disabled={isSubmitting}>
                                     Cancelar
-                                </BtnPrimaryClose>
-                                <BtnPrimarySave type="submit" disabled={isSubmitting}>
+                                </SystemButton>
+                                <SystemButton type="submit" disabled={isSubmitting}>
                                     {isSubmitting ? "Salvando..." : "Salvar ossário"}
-                                </BtnPrimarySave>
+                                </SystemButton>
                             </div>
                         </form>
                     </ModalContent>

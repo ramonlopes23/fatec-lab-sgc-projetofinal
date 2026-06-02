@@ -51,7 +51,6 @@ import {
     SearchField,
     SearchIcon,
     SearchWrapper,
-    SecondaryButton,
     StatCard,
     StatCopy,
     StatHint,
@@ -78,6 +77,7 @@ import { FaCross, FaSkullCrossbones, FaUserGroup } from "react-icons/fa6";
 import { TbFlowerFilled } from "react-icons/tb";
 import { RiContractFill, RiMoneyDollarBoxFill } from "react-icons/ri";
 import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
+import SystemButton from "../SystemButton";
 import { normalizeText, sortNumericText } from "../../utils/text";
 
 const PAGE_SIZE = 8;
@@ -435,7 +435,7 @@ const renderPrintHtml = (payload) => {
   <title>${escapeHtml(payload.reportTitle)}</title>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; padding: 28px; font-family: Inter, Arial, sans-serif; color: #1f2652; background: #f6f7fb; }
+    body { margin: 0; padding: 28px; font-family: "Satoshi", sans-serif; color: #1f2652; background: #f6f7fb; }
     .page { background: #fff; border: 1px solid #e6e9f5; border-radius: 18px; padding: 28px; }
     header { display: flex; justify-content: space-between; gap: 24px; border-bottom: 3px solid #191970; padding-bottom: 18px; }
     .brand { display: flex; gap: 14px; align-items: center; }
@@ -1135,9 +1135,9 @@ export default function RelatoriosComponent() {
                                     ))}
                                 </Select>
                             </FormControl>
-                            <SecondaryButton type="button" onClick={clearFilters}>
+                            <SystemButton type="button" tone="cancel" onClick={clearFilters} sx={{ minHeight: 50 }}>
                                 <FaFilter /> Limpar filtros
-                            </SecondaryButton>
+                            </SystemButton>
                         </FilterRow>
                     )}
 
@@ -1168,9 +1168,9 @@ export default function RelatoriosComponent() {
 
                     {!isExumacoesReport && (
                         <FilterActionRow>
-                            <SecondaryButton type="button" onClick={clearFilters}>
+                            <SystemButton type="button" tone="cancel" onClick={clearFilters} sx={{ minHeight: 50 }}>
                                 <FaFilter /> Limpar filtros
-                            </SecondaryButton>
+                            </SystemButton>
                         </FilterActionRow>
                     )}
                 </FilterGrid>
@@ -1300,7 +1300,7 @@ export default function RelatoriosComponent() {
                                     </PageButton>
                                 ))}
                                 <PageButton type="button" onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={currentPage === totalPages}>
-                                    Proxima
+                                    Próxima
                                 </PageButton>
                             </Pagination>
                         )}

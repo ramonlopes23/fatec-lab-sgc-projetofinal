@@ -26,6 +26,7 @@ import { ptBR } from "date-fns/locale";
 import { formatDateTimeDMY } from "../../utils/date.js";
 import { useSystemLogs } from "../../hooks";
 import { LOG_ACTION_META, LOG_STATUS_META } from "../../services/logsData.js";
+import SystemButton from "../SystemButton";
 import {
     ActionButton,
     Badge,
@@ -59,13 +60,11 @@ import {
     InfoLabel,
     InfoTile,
     InfoValue,
-    LinkButton,
     PageHeader,
     PaginationBar,
     PaginationButton,
     PaginationButtons,
     PaginationSummary,
-    PrimaryActionButton,
     RowActionGroup,
     SearchWrapper,
     SectionCard,
@@ -101,7 +100,6 @@ import {
     Title,
     Subtitle,
     Tr,
-    SecondaryButton,
 } from "./styles.js";
 
 const filterLabelSx = {
@@ -269,10 +267,10 @@ export default function LogsComponent() {
                 </HeaderCopy>
 
                 <HeaderActions>
-                    <PrimaryActionButton type="button" onClick={exportLogs} disabled={loading || filteredLogs.length === 0}>
+                    <SystemButton type="button" onClick={exportLogs} disabled={loading || filteredLogs.length === 0}>
                         <FaDownload />
                         Exportar logs
-                    </PrimaryActionButton>
+                    </SystemButton>
                 </HeaderActions>
             </PageHeader>
 
@@ -309,10 +307,10 @@ export default function LogsComponent() {
                         />
                     </SearchWrapper>
 
-                    <SecondaryButton type="button" onClick={clearFilters}>
+                    <SystemButton type="button" tone="cancel" onClick={clearFilters} sx={{ minHeight: 50 }}>
                         <FaFilter />
                         Limpar filtros
-                    </SecondaryButton>
+                    </SystemButton>
 
                 </FilterTopRow>
 
@@ -622,10 +620,10 @@ export default function LogsComponent() {
                                     </InfoTile>
                                 </InfoGrid>
                                 <DrawerActionRow style={{ marginTop: 12 }}>
-                                    <LinkButton type="button" onClick={viewEntity} disabled={!selectedLog.entity?.route}>
+                                    <SystemButton type="button" onClick={viewEntity} disabled={!selectedLog.entity?.route}>
                                         <FaExternalLinkAlt size={14} />
                                         Visualizar entidade
-                                    </LinkButton>
+                                    </SystemButton>
                                 </DrawerActionRow>
                             </SectionCard> */}
 
@@ -715,18 +713,18 @@ export default function LogsComponent() {
                                 </SectionHeader>
 
                                 <DrawerActionRow>
-                                    <LinkButton type="button" onClick={exportEvent}>
+                                    <SystemButton type="button" onClick={exportEvent}>
                                         <FaDownload size={14} />
                                         Exportar evento
-                                    </LinkButton>
-                                    <LinkButton type="button" onClick={copyEventId}>
+                                    </SystemButton>
+                                    <SystemButton type="button" onClick={copyEventId}>
                                         <FaCopy size={14} />
                                         Copiar ID
-                                    </LinkButton>
-                                    <LinkButton type="button" onClick={viewEntity} disabled={!selectedLog.entity?.route}>
+                                    </SystemButton>
+                                    <SystemButton type="button" onClick={viewEntity} disabled={!selectedLog.entity?.route}>
                                         <FaExternalLinkAlt size={14} />
                                         Visualizar entidade
-                                    </LinkButton>
+                                    </SystemButton>
                                 </DrawerActionRow>
                             </SectionCard>
                         </DrawerBody>

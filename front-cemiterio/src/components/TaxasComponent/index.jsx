@@ -1,17 +1,9 @@
-import React, { forwardRef, useEffect, useMemo, useState } from "react";
-import Alert from "@mui/material/Alert";
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
+import React, { useEffect, useMemo, useState } from "react";
 import FormControl from "@mui/material/FormControl";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
-import Slide from "@mui/material/Slide";
 import TextField from "@mui/material/TextField";
 import {
     FaCheckCircle,
@@ -26,8 +18,6 @@ import {
 } from "react-icons/fa";
 import {
     Actions,
-    BtnPrimaryClose,
-    BtnPrimarySave,
     Card,
     CardBody,
     CardTitle,
@@ -43,9 +33,7 @@ import {
     ModalGrid,
     ModalOverlay,
     PageHeader,
-    PrimaryActionButton,
     SearchWrapper,
-    SecondaryButton,
     StatCard,
     StatCopy,
     StatHint,
@@ -67,6 +55,8 @@ import {
     Subtitle,
 } from "./styles";
 import { createTaxa, patchTaxaStatus, updateTaxa } from "../../services/taxaService";
+import ConfirmationDialog from "../ConfirmationDialog";
+import SystemButton from "../SystemButton";
 import { useFormModal, useTaxas, useToastFeedback } from "../../hooks";
 import { formatCurrencyBRL, formatDateDMY, formatTaxaLabel, isDateWithinNextDays, normalizeSearchText, normalizeTaxa } from "../../utils";
 
@@ -82,10 +72,6 @@ const INITIAL_FORM = {
 };
 
 const errorStyle = { margin: "6px 0 0", color: "#b42318", fontSize: 12 };
-
-const DialogTransition = forwardRef(function DialogTransition(props, ref) {
-    return <Slide direction="up" ref={ref} {...props} />;
-});
 
 const filterLabelSx = {
     fontSize: "14px",
@@ -343,9 +329,9 @@ function TaxasComponent() {
                 </HeaderCopy>
 
                 <HeaderActions>
-                    <PrimaryActionButton type="button" onClick={openModal} disabled={isSubmitting}>
+                    <SystemButton type="button" onClick={openModal} disabled={isSubmitting}>
                         <FaPlus /> Nova Taxa
-                    </PrimaryActionButton>
+                    </SystemButton>
                 </HeaderActions>
             </PageHeader>
 
@@ -391,9 +377,9 @@ function TaxasComponent() {
                             </Select>
                         </FormControl>
 
-                        <SecondaryButton type="button" onClick={clearFilters}>
+                        <SystemButton type="button" tone="cancel" onClick={clearFilters} sx={{ minHeight: 50 }}>
                             <FaFilter /> Limpar filtros
-                        </SecondaryButton>
+                        </SystemButton>
                     </FilterGrid>
 
                     {error ? <p style={{ ...errorStyle, color: "#8a5a00", marginTop: 8 }}>{error}</p> : null}
@@ -494,35 +480,20 @@ function TaxasComponent() {
                 </CardBody>
             </Card>
 
-            <Dialog
+            <ConfirmationDialog
                 open={confirmDialogOpen}
-                TransitionComponent={DialogTransition}
-                keepMounted
                 onClose={closeConfirmDialog}
-                aria-describedby="taxa-status-dialog-description"
-                fullWidth
-                maxWidth="sm"
-            >
-                <DialogTitle >
-                    {pendingStatusTaxa?.active ? "Inativar taxa" : "Ativar taxa"}
-                </DialogTitle>
-                <DialogContent>
-                    <Alert severity={pendingStatusTaxa?.active ? "warning" : "success"} variant="outlined" sx={{ mb: 2 }}>
-                        {pendingStatusTaxa?.active ? "A taxa ficará indisponível para novos lançamentos." : "A taxa voltará a ficar disponível para uso."}
-                    </Alert>
-                    <DialogContentText id="taxa-status-dialog-description">
-                        {pendingStatusTaxa ? `Deseja ${pendingStatusTaxa.active ? "inativar" : "ativar"} a taxa ${pendingStatusTaxa.descricao}?` : "Confirme a alteração de status da taxa."}
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions sx={{ padding: 2, paddingTop: 0 }}>
-                    <Button onClick={closeConfirmDialog} disabled={isSubmitting} variant="outlined" color="inherit">
-                        Cancelar
-                    </Button>
-                    <Button onClick={confirmToggleStatus} disabled={isSubmitting || !pendingStatusTaxa} variant="contained" color={pendingStatusTaxa?.active ? "error" : "success"}>
-                        {isSubmitting ? "Processando..." : (pendingStatusTaxa?.active ? "Inativar" : "Ativar")}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                onConfirm={confirmToggleStatus}
+                title={pendingStatusTaxa?.active ? "Inativar taxa" : "Ativar taxa"}
+                alertSeverity={pendingStatusTaxa?.active ? "warning" : "success"}
+                alertMessage={pendingStatusTaxa?.active ? "A taxa ficará indisponível para novos lançamentos." : "A taxa voltará a ficar disponível para uso."}
+                description={pendingStatusTaxa ? `Deseja ${pendingStatusTaxa.active ? "inativar" : "ativar"} a taxa ${pendingStatusTaxa.descricao}?` : "Confirme a alteração de status da taxa."}
+                confirmLabel={pendingStatusTaxa?.active ? "Inativar" : "Ativar"}
+                confirmTone={pendingStatusTaxa?.active ? "delete" : "confirm"}
+                confirmDisabled={!pendingStatusTaxa}
+                isSubmitting={isSubmitting}
+                ariaDescriptionId="taxa-status-dialog-description"
+            />
 
             {modalOpen && (
                 <ModalOverlay>
@@ -620,12 +591,12 @@ function TaxasComponent() {
                             </ModalGrid>
 
                             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                                <BtnPrimaryClose type="button" onClick={closeModal} disabled={isSubmitting}>
+                                <SystemButton type="button" tone="cancel" onClick={closeModal} disabled={isSubmitting}>
                                     Cancelar
-                                </BtnPrimaryClose>
-                                <BtnPrimarySave type="submit" disabled={isSubmitting}>
+                                </SystemButton>
+                                <SystemButton type="submit" disabled={isSubmitting}>
                                     {isSubmitting ? "Salvando..." : "Salvar"}
-                                </BtnPrimarySave>
+                                </SystemButton>
                             </div>
                         </form>
                     </ModalContent>

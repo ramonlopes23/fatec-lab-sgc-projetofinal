@@ -7,6 +7,8 @@ import LoadingOverlay from "../../components/LoadingOverlay";
 import GridQuadras from "../../components/GridQuadras";
 import PieChartSepulturas from "../../components/PieChartSepulturas";
 import CovaPetsSection from "../../components/CovaPetsSection";
+import ConfirmationDialog from "../../components/ConfirmationDialog";
+import SystemButton from "../../components/SystemButton";
 import { GiCoffin } from "react-icons/gi";
 import { FaChartPie } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
@@ -14,7 +16,6 @@ import { MdPets } from "react-icons/md";
 import { PiFlowerTulipLight, PiFlowerTulipBold } from "react-icons/pi";
 import { formatDateTimeKey, formatQuadraDisplay } from "../../utils";
 import {
-    BtnAction,
     QuadraDropdownWrapper,
     Container,
     CovaGrid,
@@ -30,9 +31,6 @@ import {
     ActiveFilterPill,
     EmptyMapState,
     SmallSelect,
-    BtnAdd,
-    BtnActionCancel,
-    BtnClose,
     Input,
     Label,
     ModalOverlay,
@@ -50,7 +48,6 @@ import {
     CovaDrawer,
     DrawerHeader,
     DrawerTitle,
-    DrawerCloseButton,
     DrawerBody,
     DrawerSection,
     DrawerSectionTitle,
@@ -79,7 +76,6 @@ import {
     InputTiny,
     InputMedium,
     ToggleStatusLabel,
-    BtnDanger,
     ChartModalContent,
     ChartModalHeader,
     ChartModalTitle,
@@ -90,8 +86,6 @@ import {
     ToggleStatusText,
     QuadraSelectButton,
     QuadraDropdown,
-    CompactCancelButton,
-    CompactButton,
     CompactField,
 } from "./styles";
 
@@ -161,7 +155,7 @@ export default function VerMapa() {
         }
     });
 
-    const { handleCreateGrave, loading: creatingGrave } = useCreateGraves();
+    const { handleCreateGrave } = useCreateGraves();
 
     const [formQuadra, setFormQuadra] = useState({
         num_quadra: "",
@@ -192,6 +186,7 @@ export default function VerMapa() {
     const [modalSepList, setModalSepList] = useState([]);
     const [modalExpandedIndex, setModalExpandedIndex] = useState(null);
     const [exumacoesPending, setExumacoesPending] = useState({});
+    const [pendingCancelExumacao, setPendingCancelExumacao] = useState(null);
     const [exumacoesModalIsOpen, setExumacoesModalIsOpen] = useState(false);
     const [exumacoesErrors, setExumacoesErrors] = useState({});
     const [isSubmittingExumacao, setIsSubmittingExumacao] = useState(false);
@@ -377,16 +372,27 @@ export default function VerMapa() {
         if (!ex || !ex.id) {
             return showError("Nenhuma exumação pendente para este registro");
         }
-        if (!confirm(`Cancelar exumação pendente para ${sep.nome_sep || "este registro"}?`)) return;
+        setPendingCancelExumacao({ sep, ex });
+    };
+
+    const closeCancelExumacaoDialog = () => {
+        setPendingCancelExumacao(null);
+    };
+
+    const confirmCancelExumacao = async () => {
+        const pending = pendingCancelExumacao;
+        if (!pending?.sep?.id || !pending?.ex?.id) return;
+        const key = String(pending.sep.id);
         try {
-            await api.delete(`/exumacoes/${ex.id}`);
+            await api.delete(`/exumacoes/${pending.ex.id}`);
             setExumacoesPending(prev => {
                 const clone = { ...prev };
                 delete clone[key];
                 return clone;
             });
-            try { window.dispatchEvent(new CustomEvent("processoCancelado", { detail: ex })); } catch (e) { e };
+            try { window.dispatchEvent(new CustomEvent("processoCancelado", { detail: pending.ex })); } catch (e) { e };
             showError("Exumação cancelada. ");
+            closeCancelExumacaoDialog();
         } catch (err) {
             console.error("Erro ao cancelar exumação", err);
             showError("Erro ao cancelar exumação");
@@ -1031,6 +1037,20 @@ export default function VerMapa() {
     return (
         <>
             {ToastElement}
+            <ConfirmationDialog
+                open={Boolean(pendingCancelExumacao)}
+                onClose={closeCancelExumacaoDialog}
+                onConfirm={confirmCancelExumacao}
+                title="Cancelar exumação"
+                alertSeverity="error"
+                alertMessage="Esta ação removerá a exumação pendente do sistema."
+                description={pendingCancelExumacao ? `Cancelar exumação pendente para ${pendingCancelExumacao.sep?.nome_sep || "este registro"}?` : "Confirme o cancelamento da exumação."}
+                confirmLabel="Cancelar exumação"
+                confirmTone="delete"
+                confirmDisabled={!pendingCancelExumacao}
+                isSubmitting={isMapLoading}
+                ariaDescriptionId="exumacao-cancel-dialog-description"
+            />
             <Container>
                 <Title>Controle de Sepulturas</Title>
                 <Subtitle>Controle e visualização das quadras e sepulturas do cemitério vigente.</Subtitle>
@@ -1132,10 +1152,11 @@ export default function VerMapa() {
                         </CovaGrid>
                     )}
 
-                    <BtnAction disabled={isMapLoading} onClick={() => setIsPieChartOpen(true)}>
-                        <FaChartPie /> DISTRIBUIÇÃO DE SEPULTURAS
-                    </BtnAction>
+                    
                 </QuadraWrapper>
+                <SystemButton style={{position:"relative", width:"360px", left:"740px"}} type="button" disabled={isMapLoading} onClick={() => setIsPieChartOpen(true)}>
+                        <FaChartPie /> Distribuição de Sepulturas
+                    </SystemButton>
 
                 <LegendRow>
                     {statusList.map(s => (
@@ -1161,8 +1182,8 @@ export default function VerMapa() {
                     )}
 
                     <LegendActions>
-                        <BtnAction disabled={isMapLoading} onClick={handleAddQuadra}>ADICIONAR QUADRA</BtnAction>
-                        <BtnAction disabled={isMapLoading} onClick={handleAddCova}>ADICIONAR SEPULTURA</BtnAction>
+                        <SystemButton type="button" disabled={isMapLoading} onClick={handleAddQuadra}>Adicionar Quadra</SystemButton>
+                        <SystemButton type="button" disabled={isMapLoading} onClick={handleAddCova}>Adicionar Sepultura</SystemButton>
                     </LegendActions>
 
                 </LegendRow>
@@ -1221,16 +1242,17 @@ export default function VerMapa() {
                             </Field>
 
                             <ModalActions>
-                                <CompactCancelButton
+                                <SystemButton
                                     type="button"
+                                    tone="cancel"
                                     onClick={handleCloseAddQuadraModal}
                                 >
                                     Cancelar
-                                </CompactCancelButton>
+                                </SystemButton>
 
-                                    type="submit"
-                                    disabled={creatingBlock}
-                                
+                                <SystemButton type="submit" disabled={creatingBlock}>
+                                    {creatingBlock ? "Criando..." : "Criar quadra"}
+                                </SystemButton>
                             </ModalActions>
                         </ModalSurface>
                     </ModalOverlay>
@@ -1332,7 +1354,8 @@ export default function VerMapa() {
 
                             </FormGrid>
                             <ButtonsRow>
-                                <CompactCancelButton type="button" onClick={handleCloseAddCovaModal}>Cancelar</CompactCancelButton>
+                                <SystemButton type="button" tone="cancel" onClick={handleCloseAddCovaModal}>Cancelar</SystemButton>
+                                <SystemButton type="submit">Criar sepultura</SystemButton>
                             </ButtonsRow>
                         </ModalSurface>
                     </ModalOverlay>
@@ -1346,7 +1369,7 @@ export default function VerMapa() {
                                     <strong>Sepultura {numeroForModal}</strong>
                                     <span>{quadraSelecionada.nome || "Quadra selecionada"}</span>
                                 </DrawerTitle>
-                                <DrawerCloseButton type="button" onClick={closeCovaDrawer}>Fechar</DrawerCloseButton>
+                                <SystemButton type="button" tone="cancel" onClick={closeCovaDrawer}>Fechar</SystemButton>
                             </DrawerHeader>
                             <DrawerBody>
                                 <DrawerSection>
@@ -1472,9 +1495,9 @@ export default function VerMapa() {
                                                                         <SepDetailText><strong>Responsável: </strong>{modalForm.nome_resp || modalForm.falecido?.nome_resp || "-"}</SepDetailText>
                                                                         <SepDetailText><strong>Contato do responsável: </strong>{modalForm.tel_resp || modalForm.falecido?.tel_resp || "-"}</SepDetailText>
                                                                         {exumacoesPending[String(s.id)] ? (
-                                                                            <BtnDanger type="button" onClick={() => cancelExumacao(s)}>Cancelar exumação</BtnDanger>
+                                                                            <SystemButton type="button" tone="delete" onClick={() => cancelExumacao(s)}>Cancelar exumação</SystemButton>
                                                                         ) : (
-                                                                            <BtnAdd type="button" onClick={() => openExumacaoForm(s)}>Iniciar exumação</BtnAdd>
+                                                                            <SystemButton type="button" onClick={() => openExumacaoForm(s)}>Iniciar exumação</SystemButton>
                                                                         )}
                                                                     </SepDetailPanel>
                                                                 ) : null}
@@ -1508,12 +1531,12 @@ export default function VerMapa() {
                                     <strong>Iniciar exumação</strong>
                                     <span>{`Quadra ${exumacoesForm.quadra_sep || "-"} · Sepultura ${exumacoesForm.num_sepultura_sep || "-"}`}</span>
                                 </DrawerTitle>
-                                <DrawerCloseButton type="button" onClick={closeExumacaoForm} disabled={isSubmittingExumacao}>
+                                <SystemButton type="button" tone="cancel" onClick={closeExumacaoForm} disabled={isSubmittingExumacao}>
                                     Fechar
-                                </DrawerCloseButton>
+                                </SystemButton>
                             </DrawerHeader>
 
-                            <DrawerBody>
+                            <DrawerBody as="form" onSubmit={submitExumacao}>
                                 <DrawerSection>
                                     <DrawerSectionTitle>Dados da exumação</DrawerSectionTitle>
                                     <ModalGrid>
@@ -1583,7 +1606,10 @@ export default function VerMapa() {
                                 </DrawerSection>
 
                                 <ModalActions>
-                                    <BtnClose type="button" onClick={closeExumacaoForm} disabled={isSubmittingExumacao}>Voltar</BtnClose>
+                                    <SystemButton type="button" tone="cancel" onClick={closeExumacaoForm} disabled={isSubmittingExumacao}>Voltar</SystemButton>
+                                    <SystemButton type="submit" disabled={isSubmittingExumacao}>
+                                        {isSubmittingExumacao ? "Enviando..." : "Registrar exumação"}
+                                    </SystemButton>
                                 </ModalActions>
                             </DrawerBody>
                         </CovaDrawer>
