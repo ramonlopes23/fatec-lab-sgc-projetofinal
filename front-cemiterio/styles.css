@@ -7,6 +7,14 @@
 --app-border: rgba(25, 25, 112, 0.1);
 }
 
+body,
+button,
+input,
+select,
+textarea {
+font-family: "Satoshi", sans-serif;
+}
+
 html {
 font-size: calc(16px * var(--app-font-scale));
 }
