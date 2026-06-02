@@ -24,14 +24,12 @@ const BUTTON_COLORS = {
 const baseSx = {
     position: "relative",
     borderRadius: "10px",
-    minHeight: 40,
+    minHeight: 10,
     px: 3,
     gap: 1,
-    fontSize: 14,
-    fontWeight: 700,
+    fontSize: 15,
+    fontWeight: 500,
     textTransform: "none",
-    letterSpacing: 0,
-
     transition: "all 0.2s ease",
     boxShadow: "rgba(0, 0, 0, 0.54) 0 3px 5px -1px,rgba(0, 0, 0, 0.07) 0 6px 10px 0,rgba(0, 0, 0, 0.24) 0 1px 18px 0",
 

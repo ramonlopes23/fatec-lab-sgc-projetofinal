@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaBell, FaChevronDown, FaChevronUp, FaFileContract, FaMapMarkedAlt, FaTimes } from "react-icons/fa";
-import { TbFlowerFilled } from "react-icons/tb";
+import { LuFlower2 } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/index.js";
 import { formatDateDMY, parseDateValue } from "../../utils/date";
@@ -106,7 +106,7 @@ const buildExumacaoNotification = (sepultamento, falecidos) => {
     badgeLabel: statusLabel,
     actionLabel: "Abrir mapa",
     path: "/vermapa",
-    icon: TbFlowerFilled,
+    icon: LuFlower2,
   };
 };
 

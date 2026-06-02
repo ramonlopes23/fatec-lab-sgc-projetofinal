@@ -74,7 +74,7 @@ import {
     Tr,
 } from "./styles";
 import { FaCross, FaSkullCrossbones, FaUserGroup } from "react-icons/fa6";
-import { TbFlowerFilled } from "react-icons/tb";
+import { LuFlower2 } from "react-icons/lu";
 import { RiContractFill, RiMoneyDollarBoxFill } from "react-icons/ri";
 import { useToastFeedback } from "../../hooks/ToastFeedback/useToastFeedback.jsx";
 import SystemButton from "../SystemButton";
@@ -631,7 +631,7 @@ export default function RelatoriosComponent() {
                     label: "Total de exumacoes",
                     value: total.toLocaleString("pt-BR"),
                     hint: "Registros filtrados",
-                    icon: <TbFlowerFilled />,
+                    icon: <LuFlower2 />,
                     tone: "success",
                 },
                 {
@@ -1036,7 +1036,7 @@ export default function RelatoriosComponent() {
                     <FaCross /> Sepultamentos
                 </ReportModeButton>
                 <ReportModeButton type="button" $active={isExumacoesReport} onClick={() => handleReportMode("exumacoes")}>
-                    <TbFlowerFilled /> Exumações
+                    <LuFlower2 /> Exumações
                 </ReportModeButton>
             </ReportModeTabs>
 

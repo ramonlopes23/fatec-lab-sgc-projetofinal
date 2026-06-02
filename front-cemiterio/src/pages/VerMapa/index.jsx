@@ -1154,7 +1154,7 @@ export default function VerMapa() {
 
                     
                 </QuadraWrapper>
-                <SystemButton style={{position:"relative", width:"360px", left:"740px"}} type="button" disabled={isMapLoading} onClick={() => setIsPieChartOpen(true)}>
+                <SystemButton style={{position:"relative", width:"370px", left:"730px", backgroundColor:"#fff", color:"#191970"}} type="button" disabled={isMapLoading} onClick={() => setIsPieChartOpen(true)}>
                         <FaChartPie /> Distribuição de Sepulturas
                     </SystemButton>
 
