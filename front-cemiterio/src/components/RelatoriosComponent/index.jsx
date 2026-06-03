@@ -628,30 +628,30 @@ export default function RelatoriosComponent() {
 
             return [
                 {
-                    label: "Total de exumacoes",
+                    label: "Total de exumações",
                     value: total.toLocaleString("pt-BR"),
                     hint: "Registros filtrados",
                     icon: <LuFlower2 />,
                     tone: "success",
                 },
                 {
-                    label: "Transferencias",
+                    label: "Transferências",
                     value: transferencias.toLocaleString("pt-BR"),
                     hint: "Destinos transferidos",
                     icon: <FaExchangeAlt />,
                     tone: "success",
                 },
                 {
-                    label: "Media mensal",
+                    label: "Média mensal",
                     value: mediaMensal.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
-                    hint: "Exumações por mes",
+                    hint: "Exumações por mês",
                     icon: <FaChartBar />,
                     tone: "success",
                 },
                 {
-                    label: "Arrecadacao",
+                    label: "Arrecadação",
                     value: formatCurrencyBRL(arrecadacao),
-                    hint: "Total no periodo",
+                    hint: "Total no período",
                     icon: <RiMoneyDollarBoxFill />,
                     tone: "success",
                 },

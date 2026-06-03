@@ -75,6 +75,7 @@ export const NavContainer = styled.nav`
   background: linear-gradient(180deg, #191970 0%, #18195d 100%);
   overflow-y: auto;
   overflow-x: hidden;
+
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
 

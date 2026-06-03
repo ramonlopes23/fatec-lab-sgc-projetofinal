@@ -10,6 +10,10 @@ import { LuCalendarSearch, LuFileStack } from "react-icons/lu";
 import { FaCross, FaMoneyBillWave } from "react-icons/fa";
 import { LuLogs } from "react-icons/lu";
 import { CgLogOut } from "react-icons/cg";
+import { FaGears } from "react-icons/fa6";
+import { MdManageAccounts } from "react-icons/md";
+import { GrDocumentConfig } from "react-icons/gr";
+import { MdOutlineContentPasteSearch } from "react-icons/md";
 import sgclogo1 from "../../assets/logoSGCwhite.png";
 import {
     GlobalStyle,
@@ -48,32 +52,45 @@ export default function SidebarMenu({ isCollapsed = false }) {
     const menuItems = [
         { name: "Home", icon: <MdDashboard size={20} />, path: "/home" },
         {
-            name: "Sepultamento",
-            icon: <FaCross size={20} />,
+            name: "Operações",
+            icon: <FaGears size={20} />,
             children: [
-                { name: "Falecido", icon: <PiFlowerTulip size={20} />, path: "/cadastros/falecido" },
+                { name: "Cadastrar Falecido", icon: <PiFlowerTulip size={20} />, path: "/cadastros/falecido" },
                 { name: "Cadastrar Sepultamento", icon: <FaCross size={20} />, path: "/cadastros/sepultamento" },
             ],
         },
         {
-            name: "Sepulturas",
+            name: "Estrutura Cemiterial",
             icon: <GiGraveFlowers size={20} />,
             children: [
-                { name: "Mapa", icon: <BsGrid3X3GapFill size={20} />, path: "/vermapa" },
                 { name: "Cemitério", icon: <FaHouse size={20} />, path: "/sepulturas/cemiterio" },
+                { name: "Mapa", icon: <BsGrid3X3GapFill size={20} />, path: "/vermapa" },
                 { name: "Ossário", icon: <RiArchiveDrawerFill size={20} />, path: "/sepulturas/ossario" },
             ],
         },
-        { name: "Calendário", icon: <LuCalendarSearch size={20} />, path: "/calendario" },
         {
-            name: "Registros", icon: <LuFileStack size={20} />, children: [
-                { name: "Contratos", icon: <LiaFileContractSolid size={20} />, path: "/contratos" },
+            name: "Gestão Documental",
+            icon: <GrDocumentConfig size={20} />,
+            children: [
+                { name: "Contratos/Títulos de posse", icon: <LiaFileContractSolid size={20} />, path: "/contratos" },
+            ],
+        },
+        {
+            name: "Consultas",
+            icon: <MdOutlineContentPasteSearch size={20} />,
+            children: [
+                { name: "Calendário", icon: <LuCalendarSearch size={20} />, path: "/calendario" },
                 { name: "Falecidos", icon: <GiArchiveRegister size={20} />, path: "/registros" },
                 { name: "Relatórios", icon: <TbReportAnalytics size={20} />, path: "/relatorios" },
+            ],
+        },
+        {
+            name: "Administração", icon: <MdManageAccounts size={20} />, children: [
+                { name: "Logs do Sistema", icon: <LuLogs size={20} />, path: "/protocolos" },
                 { name: "Taxas", icon: <FaMoneyBillWave size={20} />, path: "/taxas" },
+
             ]
         },
-        { name: "Protocolos", icon: <LuLogs size={20}/>, path: "/protocolos" },
         { name: "Sair", icon: <CgLogOut size={20} />, action: handleLogout },
     ];
 
