@@ -86,7 +86,7 @@ export const CovaItem = styled.button`
   justify-content: center;
   gap: 3px;
   width: 64px;
-  height: ${p => (p.hasPets ? "88px" : "70px")};
+  height: ${p => (p.hasPets ? "88px" : "88px")};
   border-radius: 8px;
   cursor: pointer;
   box-sizing: border-box;
@@ -110,7 +110,7 @@ export const CovaItem = styled.button`
     return "#191970"
   }};
 
-  border: ${p => (p.borderColor ? `${p.borderWidth ?? 2}px solid ${p.borderColor}` : "transparent")};
+  border: ${p => `${p.borderWidth ?? 2}px solid ${p.borderColor ?? "transparent"}`};
   opacity: ${p => (p.$dimmed ? 0.28 : 1)};
   outline: ${p => (p.$selected ? "3px solid rgba(25, 25, 112, 0.28)" : "none")};
   outline-offset: 3px;
@@ -119,17 +119,6 @@ export const CovaItem = styled.button`
     width: 14px; 
     height: 14px; 
     flex-shrink:0; 
-  }
-
-  & .cova-number {
-    position:absolute;
-    top: 4px;
-    right: 6px;
-    margin: 0;
-    font-weight: 700;
-    font-size: 17px;
-    line-height: 1;
-    pointer-events: none;
   }
 
   & .cova-capacity{
@@ -163,18 +152,33 @@ export const CovaItem = styled.button`
   }
 
   &:hover {
-    transform: translateY(-2px);
     border-color:#000;
-    border-width:1.5px;
     box-shadow: 0 10px 20px rgba(15,13,58,0.12);
   }
 `;
 
+export const CovaNumber = styled.span`
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 20px;
+  height: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin: 0;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+`;
+
 export const LegendRow = styled.div`
   display:flex;
-  gap:18px;
+  gap:15px;
   align-items:center;
-  margin-top:12px;
+  margin-top:-12px;
   flex-wrap:wrap;
 `;
 
@@ -454,102 +458,6 @@ export const ModalContent = styled.div`
   box-sizing: border-box;
 `;
 
-export const DrawerOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 1200;
-  background: rgba(12, 16, 36, 0.28);
-  display: flex;
-  justify-content: flex-end;
-`;
-
-export const CovaDrawer = styled.aside`
-  width: min(440px, 100vw);
-  height: 100%;
-  background: #fff;
-  color: #191970;
-  box-shadow: -18px 0 42px rgba(0, 0, 0, 0.18);
-  display: flex;
-  flex-direction: column;
-  animation: drawerIn 180ms ease-out;
-
-  @keyframes drawerIn {
-    from {
-      transform: translateX(24px);
-      opacity: 0.72;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-`;
-
-export const DrawerHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 18px 18px 14px;
-  border-bottom: 1px solid #e6e8f2;
-`;
-
-export const DrawerTitle = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-
-  strong {
-    color: #191970;
-    font-size: 18px;
-  }
-
-  span {
-    color: #6b6f85;
-    font-size: 13px;
-  }
-`;
-
-export const DrawerCloseButton = styled.button`
-  border: 0;
-  background: #eef2ff;
-  color: #191970;
-  border-radius: 8px;
-  padding: 8px 10px;
-  cursor: pointer;
-  font-weight: 800;
-
-  &:hover {
-    background: #e2e7ff;
-  }
-
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.55;
-  }
-`;
-
-export const DrawerBody = styled.div`
-  flex: 1;
-  overflow: auto;
-  padding: 16px 18px 22px;
-`;
-
-export const DrawerSection = styled.section`
-  padding: 12px 0;
-  border-bottom: 1px solid #eef0ff;
-
-  &:last-child {
-    border-bottom: 0;
-  }
-`;
-
-export const DrawerSectionTitle = styled.h3`
-  margin: 0 0 10px;
-  color: #191970;
-  font-size: 20px;
-`;
-
 export const SepDivider = styled.hr`
   border: 0;
   border-top: 1px solid #eee;
@@ -770,6 +678,7 @@ export const BtnDanger = styled(BtnAdd)`
 
 export const LegendActions = styled.div`
   margin-left: auto;
+  margin-top:10px;
   display: flex;
   gap: 12px;
   align-items: center;
@@ -919,6 +828,73 @@ export const ToggleStatusText = styled.span`
   font-weight: 600;
 `;
 
+export const SectionCard = styled.section`
+  background: #ffffff;
+  border: 1px solid rgba(31, 38, 82, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 10px 24px rgba(22, 28, 70, 0.04);
+
+  & + & {
+    margin-top: 16px;
+  }
+`;
+
+export const SectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+`;
+
+export const SectionTitle = styled.h3`
+  margin: 0;
+  color: #1f2652;
+  font-size: 15px;
+  font-weight: 800;
+`;
+
+export const SectionHint = styled.p`
+  margin: 6px 0 0;
+  color: #6c7293;
+  font-size: 12px;
+`;
+
+export const InfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  @media (max-width: 540px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const InfoTile = styled.div`
+  border: 1px solid rgba(25, 25, 112, 0.08);
+  border-radius: 14px;
+  background: #fafbff;
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+`;
+
+export const InfoLabel = styled.span`
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6c7293;
+  font-weight: 800;
+`;
+
+export const InfoValue = styled.span`
+  color: #1f2652;
+  font-size: 13px;
+  font-weight: 700;
+  word-break: break-word;
+`;
+
 
 export const SepItemContent = styled.div`
   display: flex;
@@ -930,10 +906,6 @@ export const SepDetailPanel = styled.div`
   padding: 8px 12px 12px;
   border-left: 3px solid #eef0ff;
   background: #fff;
-`;
-
-export const SepDetailText = styled.p`
-  margin: 6px 0;
 `;
 
 export const ChartModalContent = styled(ModalSurface)`
