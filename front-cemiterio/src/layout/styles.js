@@ -21,6 +21,8 @@ export const Content = styled.div`
   margin-left:${({isSidebarOpen}) => (isSidebarOpen ? '16rem' : '5.5rem')};
   transition:width 0.3s ease, margin-left 0.3s ease;
   height:100vh;
+  box-sizing: border-box;
+  padding-top: 60px;
 `;
 
 export const PageContent = styled.main`

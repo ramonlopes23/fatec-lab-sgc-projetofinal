@@ -6,6 +6,7 @@ import React, {useEffect, useState} from "react";
 import { useLocation } from "react-router-dom";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import LoadingOverlay from "../components/LoadingOverlay";
+import Footer from "../components/Footer";
 
 export default function MainLayout ({children}){
     const [isSidebarOpen, setiIsSidebarOpen] = useState (true);
@@ -38,8 +39,9 @@ export default function MainLayout ({children}){
                 {isSidebarOpen ? <LuChevronLeft size={16} /> : <LuChevronRight size={16} />}
             </SidebarExternalToggle>
             <Content isSidebarOpen={isSidebarOpen}>
-                <Header onMenuClick={toggleSidebarMenu} />
+                <Header onMenuClick={toggleSidebarMenu} isSidebarOpen={isSidebarOpen} />
                 <PageContent>{children}</PageContent>
+                <Footer />
             </Content>
       
         </LayoutContainer>

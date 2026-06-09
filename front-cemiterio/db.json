@@ -587,18 +587,8 @@
       "bodyCapacity": 1
     },
     {
-      "id": "ad23",
-      "number": 2,
-      "graveType": "EARTH",
-      "bodyCapacity": 0,
-      "areaType": "PERPETUAL",
-      "blockId": "a80d",
-      "status": "OCCUPIED",
-      "blocked": false,
-      "contractTitle": "01",
-      "holderName": "teste",
-      "holderCpf": "12345678909",
-      "holderContact": "1165656565"
+      "status": "AVAILABLE",
+      "id": "ad23"
     },
     {
       "id": "bfa4",
@@ -609,20 +599,6 @@
       "blockId": "9a85",
       "status": "OCCUPIED",
       "blocked": false
-    },
-    {
-      "id": "4ed2",
-      "number": 6,
-      "graveType": "EARTH",
-      "bodyCapacity": 1,
-      "areaType": "PERPETUAL",
-      "blockId": "a80d",
-      "status": "AVAILABLE",
-      "blocked": false,
-      "contractTitle": "005",
-      "holderName": "teste",
-      "holderCpf": "121644499",
-      "holderContact": "1165656565"
     }
   ],
   "contratos": [
@@ -658,6 +634,23 @@
       "falecido_id": "45e4",
       "quadra_sep": "a80d",
       "num_sepultura_sep": "1",
+      "nome_sep": "John Doe"
+    },
+    {
+      "id": "4222",
+      "nome_pet": "teste",
+      "especie": "test",
+      "raca": "teste",
+      "data_obito_pet": "2026-06-09",
+      "dh_sep_pet": "2026-06-09T13:25",
+      "obs_pet": "teste",
+      "status": "concluido",
+      "confirmado": true,
+      "foi_exumado": false,
+      "sepultamento_id": "1836",
+      "falecido_id": "45e4",
+      "quadra_sep": "a80d",
+      "num_sepultura_sep": "2",
       "nome_sep": "John Doe"
     }
   ],

@@ -47,7 +47,7 @@ const baseSx = {
         boxShadow: "0 10px 20px rgba(0, 0, 0, 0.15)",
 
         "&::after": {
-            transform: "scaleX(1.2) scaleY(1.4)",
+            transform: "scaleX(1.1) scaleY(1.1)",
             opacity: 0,
         },
     },
