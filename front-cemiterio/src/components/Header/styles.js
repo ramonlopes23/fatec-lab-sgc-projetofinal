@@ -19,8 +19,9 @@ const FadeInScale = keyframes`
 `;
 
 export const HeaderContainer = styled.header`
-  width: 100%;
+  width: auto;
   height: 60px;
+  flex-shrink: 0;
   background-color: #ffffff;
   border-bottom: 1px solid rgba(25,25,112, 0.1);
   display: grid;
@@ -28,7 +29,12 @@ export const HeaderContainer = styled.header`
   align-items: center;
   gap: 1rem;
   padding: 0 1rem;
-  position: relative;
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: ${({ $isSidebarOpen }) => ($isSidebarOpen ? "16rem" : "5.5rem")};
+  z-index: 950;
+  transition: left 0.3s ease;
 `;
 
 export const HeaderLeft = styled.div`

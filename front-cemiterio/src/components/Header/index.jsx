@@ -35,7 +35,7 @@ import {
     UserDropdownNote
 } from "./styles";
 
-export default function Header( ) {
+export default function Header({ isSidebarOpen }) {
     const navigate = useNavigate();
     const user = useAuthStore((s) => s.user);
     const hydrated = useAuthStore((s) => s.hydrated);
@@ -113,7 +113,7 @@ export default function Header( ) {
     
 
     return (
-        <HeaderContainer>
+        <HeaderContainer $isSidebarOpen={isSidebarOpen}>
             <HeaderLeft>
                 
             </HeaderLeft>
