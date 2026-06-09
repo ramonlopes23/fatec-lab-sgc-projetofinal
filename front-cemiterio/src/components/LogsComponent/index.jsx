@@ -17,7 +17,6 @@ import {
     FaFilter,
     FaSearch,
     FaShieldAlt,
-    FaTimes,
     FaExclamationTriangle,
     FaUsers,
 } from "react-icons/fa";
@@ -27,6 +26,7 @@ import { formatDateTimeDMY } from "../../utils/date.js";
 import { useSystemLogs } from "../../hooks";
 import { LOG_ACTION_META, LOG_STATUS_META } from "../../services/logsData.js";
 import SystemButton from "../SystemButton";
+import DrawerComponent, { DrawerActionRow } from "../DrawerComponent";
 import {
     ActionButton,
     Badge,
@@ -38,14 +38,6 @@ import {
     DiffGrid,
     DiffLabel,
     DiffValue,
-    DrawerActionRow,
-    DrawerBody,
-    DrawerHeader,
-    DrawerHeaderCopy,
-    DrawerOverlay,
-    DrawerPanel,
-    DrawerSubtitle,
-    DrawerTitle,
     EmptyState,
     EmptyText,
     EmptyTitle,
@@ -498,22 +490,12 @@ export default function LogsComponent() {
             </TableCard>
 
             {drawerOpen && selectedLog ? (
-                <DrawerOverlay onClick={closeLog}>
-                    <DrawerPanel onClick={(event) => event.stopPropagation()}>
-                        <DrawerHeader>
-                            <DrawerHeaderCopy>
-                                <DrawerTitle>Detalhe da auditoria</DrawerTitle>
-                                <DrawerSubtitle>
-                                    {selectedLog.eventCode} · {selectedRelative || formatRelative(selectedLog.timestamp)}
-                                </DrawerSubtitle>
-                            </DrawerHeaderCopy>
-
-                            <ActionButton type="button" title="Fechar" onClick={closeLog}>
-                                <FaTimes size={14} />
-                            </ActionButton>
-                        </DrawerHeader>
-
-                        <DrawerBody>
+                <DrawerComponent
+                    open={drawerOpen}
+                    title="Detalhe da auditoria"
+                    subtitle={`${selectedLog.eventCode} · ${selectedRelative || formatRelative(selectedLog.timestamp)}`}
+                    onClose={closeLog}
+                >
                             <SectionCard>
                                 <SectionHeader>
                                     <div>
@@ -727,9 +709,7 @@ export default function LogsComponent() {
                                     </SystemButton>
                                 </DrawerActionRow>
                             </SectionCard>
-                        </DrawerBody>
-                    </DrawerPanel>
-                </DrawerOverlay>
+                </DrawerComponent>
             ) : null}
         </Container>
     );

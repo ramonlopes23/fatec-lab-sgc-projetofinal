@@ -522,72 +522,6 @@ export const EmptyText = styled.p`
 	line-height: 1.5;
 `;
 
-export const DrawerOverlay = styled.div`
-	position: fixed;
-	inset: 0;
-	background: rgba(15, 23, 42, 0.48);
-	z-index: 2400;
-	display: flex;
-	justify-content: flex-end;
-	padding-left: 18px;
-
-	@media (max-width: 720px) {
-		padding-left: 0;
-	}
-`;
-
-export const DrawerPanel = styled.aside`
-	width: min(560px, 100%);
-	height: 100%;
-	background: #fff;
-	border-left: 1px solid rgba(31, 38, 82, 0.08);
-	box-shadow: -30px 0 80px rgba(15, 23, 42, 0.28);
-	display: flex;
-	flex-direction: column;
-	overflow: hidden;
-
-	@media (max-width: 720px) {
-		width: 100%;
-	}
-`;
-
-export const DrawerHeader = styled.div`
-	display: flex;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: 12px;
-	padding: 20px 20px 16px;
-	border-bottom: 1px solid rgba(31, 38, 82, 0.08);
-	background: linear-gradient(180deg, #fbfcff 0%, #ffffff 100%);
-`;
-
-export const DrawerHeaderCopy = styled.div`
-	display: grid;
-	gap: 6px;
-`;
-
-export const DrawerTitle = styled.h2`
-	margin: 0;
-	font-size: 22px;
-	line-height: 1.15;
-	font-weight: 800;
-	letter-spacing: -0.02em;
-	color: #191970;
-`;
-
-export const DrawerSubtitle = styled.p`
-	margin: 0;
-	font-size: 13px;
-	color: #6c7293;
-`;
-
-export const DrawerBody = styled.div`
-	padding: 18px 20px 22px;
-	overflow: auto;
-	display: grid;
-	gap: 16px;
-`;
-
 export const SectionCard = styled.section`
 	background: #ffffff;
 	border: 1px solid rgba(31, 38, 82, 0.08);
@@ -772,12 +706,6 @@ export const DiffValue = styled.div`
 	border-radius: 12px;
 	padding: 10px 12px;
 	word-break: break-word;
-`;
-
-export const DrawerActionRow = styled.div`
-	display: flex;
-	flex-wrap: wrap;
-	gap: 10px;
 `;
 
 export const LinkButton = styled.button`
