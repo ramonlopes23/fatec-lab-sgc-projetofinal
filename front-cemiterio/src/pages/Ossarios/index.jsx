@@ -1,4 +1,4 @@
-import OssariosComponent from "../../components/OssariosComponent";
+import OssariosComponent from "../../components/domain/OssariosComponent";
 import React from "react";
 
 export default function Ossarios() {

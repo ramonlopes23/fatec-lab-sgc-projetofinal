@@ -1,12 +1,12 @@
-import Dashboard from "../components/Dashboard";
-import Header from "../components/Header";
-import SidebarMenu from "../components/SidebarMenu";
+import Dashboard from "../components/domain/Dashboard";
+import Header from "../components/common/Header";
+import SidebarMenu from "../components/common/SidebarMenu";
 import {Content,LayoutContainer,PageContent, SidebarContainer,SidebarExternalToggle,GlobalStyle} from "./styles"
 import React, {useEffect, useState} from "react";
 import { useLocation } from "react-router-dom";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
-import LoadingOverlay from "../components/LoadingOverlay";
-import Footer from "../components/Footer";
+import LoadingOverlay from "../components/common/LoadingOverlay";
+import Footer from "../components/common/Footer";
 
 export default function MainLayout ({children}){
     const [isSidebarOpen, setiIsSidebarOpen] = useState (true);

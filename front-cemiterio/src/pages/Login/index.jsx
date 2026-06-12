@@ -21,7 +21,7 @@ import {
     ErrorText,
     PrefeituraLogo,
 } from "./styles";
-import SystemButton from "../../components/SystemButton";
+import SystemButton from "../../components/common/SystemButton";
 
 export default function Login() {
     const navigate = useNavigate();

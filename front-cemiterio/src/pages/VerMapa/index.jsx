@@ -3,19 +3,21 @@ import { useBlocks, useCreateBlocks, useCreateGraves, useToastFeedback } from ".
 import { useCemeteryStore } from "../../stores";
 import api from "../../services/index.js";
 import { patchGraveStatus } from "../../services/graveService";
-import LoadingOverlay from "../../components/LoadingOverlay";
-import GridQuadras from "../../components/GridQuadras";
-import PieChartSepulturas from "../../components/PieChartSepulturas";
-import CovaPetsSection from "../../components/CovaPetsSection";
-import ConfirmationDialog from "../../components/ConfirmationDialog";
-import SystemButton from "../../components/SystemButton";
-import DrawerComponent from "../../components/DrawerComponent";
+import LoadingOverlay from "../../components/common/LoadingOverlay";
+import GridQuadras from "../../components/domain/GridQuadras";
+import PieChartSepulturas from "../../components/domain/PieChartSepulturas";
+import CovaPetsSection from "../../components/domain/CovaPetsSection";
+import ConfirmationDialog from "../../components/common/ConfirmationDialog";
+import SystemButton from "../../components/common/SystemButton";
+import DrawerComponent from "../../components/common/DrawerComponent";
+import EventTimeline from "../../components/common/EventTimeline";
+import DefaultModal, { DefaultModalActions, DefaultModalGrid } from "../../components/common/DefaultModal";
 import { GiCoffin } from "react-icons/gi";
 import { FaChartPie } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
 import { MdPets } from "react-icons/md";
 import { PiFlowerTulipLight, PiFlowerTulipBold } from "react-icons/pi";
-import { formatDateTimeKey, formatQuadraDisplay } from "../../utils";
+import { formatDateTimeDMY, formatDateTimeKey, formatQuadraDisplay, parseDateValue } from "../../utils";
 import {
     QuadraDropdownWrapper,
     Container,
@@ -35,17 +37,10 @@ import {
     SmallSelect,
     Input,
     Label,
-    ModalOverlay,
-    FormGrid,
     Textarea,
     Field,
     FormStyled,
-    ColumnLeft,
     Subtitle,
-    ColumnRight,
-    ButtonsRow,
-    TwoCols,
-    ModalButtonsRow,
     SepDivider,
     SepHeader,
     SepItemButton,
@@ -59,8 +54,6 @@ import {
     ToolbarLabel,
     DropdownIcon,
     LegendActions,
-    ModalSurface,
-    ModalTitle,
     ModalActions,
     ModalGrid,
     ModalGridFull,
@@ -70,9 +63,6 @@ import {
     InputTiny,
     InputMedium,
     ToggleStatusLabel,
-    ChartModalContent,
-    ChartModalHeader,
-    ChartModalTitle,
     ChartModalBody,
     ChartArea,
     ChartLegend,
@@ -167,6 +157,8 @@ export default function VerMapa() {
     const [covasData, setCovasData] = useState([]);
     const [ossariosAll, setOssariosAll] = useState([]);
     const [petsAll, setPetsAll] = useState([]);
+    const [exumacoesAll, setExumacoesAll] = useState([]);
+    const [falecidosAll, setFalecidosAll] = useState([]);
     const [isMapLoading, setIsMapLoading] = useState(true);
     const [sepultamentosAll, setSepultamentosAll] = useState([]);
     const [selectedQuadraId, setSelectedQuadraId] = useState(null);
@@ -622,6 +614,11 @@ export default function VerMapa() {
             return;
         }
 
+        if (selectedCovaSepultadosCount > 0) {
+            showError("Não é possível alterar a indisponibilidade de uma sepultura com falecidos sepultados.");
+            return;
+        }
+
         try {
             const currentStatus = String(grave?.status || "").toUpperCase();
             const nextStatus = currentStatus === "AVAILABLE" ? "MAINTENANCE" : "AVAILABLE";
@@ -781,11 +778,12 @@ export default function VerMapa() {
 
             setCovasData(normalizedCovasData);
 
-            const [rSep, rExu, rPets, rOss] = await Promise.allSettled([
+            const [rSep, rExu, rPets, rOss, rFal] = await Promise.allSettled([
                 api.get("/sepultamentos"),
                 api.get("/exumacoes"),
                 api.get("/pets"),
                 api.get("/ossarios"),
+                api.get("/falecidos"),
             ]);
 
             const sepData =
@@ -804,8 +802,14 @@ export default function VerMapa() {
                 rOss.status === "fulfilled" && Array.isArray(rOss.value?.data)
                     ? rOss.value.data
                     : [];
+            const falecidosData =
+                rFal.status === "fulfilled" && Array.isArray(rFal.value?.data)
+                    ? rFal.value.data
+                    : [];
 
             setSepultamentosAll(sepData);
+            setExumacoesAll(exuData);
+            setFalecidosAll(falecidosData);
             setPetsAll(petsData);
             setOssariosAll(ossariosData);
 
@@ -1015,6 +1019,142 @@ export default function VerMapa() {
         selectedCova?.cova?.grave?.number ??
         "-";    /* const nomeSepForModal = sepDataForModal?.nome_sep ?? sepDataForModal?.falecido?.nome_fal ?? sepDataForModal?.falecido?.nome ?? null; */
 
+    const selectedCovaQuadraKey = String(
+        selectedQuadraId ??
+        selectedCova?.cova?.quadra_cova ??
+        selectedCova?.quadra_cova ??
+        selectedCova?.quadra_sep ??
+        selectedCova?.sep?.quadra_sep ??
+        selectedGraveForModal?.blockId ??
+        selectedGraveForModal?.block ??
+        ""
+    );
+    const selectedCovaNumeroKey = String(
+        selectedCova?.numero ??
+        selectedCova?.num_cova ??
+        selectedCova?.num_sepultura_sep ??
+        selectedCova?.cova?.num_cova ??
+        selectedGraveForModal?.number ??
+        ""
+    );
+    const selectedCovaSepultadosCount = selectedCova
+        ? getSepultadosCountBySepLocal(selectedCova, selectedCovaQuadraKey || selectedQuadraId)
+        : 0;
+    const statusToggleBlocked = selectedCovaSepultadosCount > 0;
+    const statusToggleTitle = statusToggleBlocked
+        ? "Não é possível alterar: há falecidos sepultados nesta sepultura."
+        : String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"
+            ? "Liberar para uso"
+            : "Marcar indisponível (manutenção)";
+
+    const covaTimelineItems = useMemo(() => {
+        if (!selectedCovaQuadraKey || !selectedCovaNumeroKey) return [];
+
+        const sameSepultura = (item) => {
+            const quadra = String(item?.quadra_sep ?? item?.quadra ?? item?.quadra_cova ?? "");
+            const numero = String(item?.num_sepultura_sep ?? item?.num_sepultura ?? item?.numero ?? item?.num_cova ?? "");
+            return quadra === selectedCovaQuadraKey && numero === selectedCovaNumeroKey;
+        };
+
+        const resolveDate = (...values) => values.find((value) => parseDateValue(value));
+        const formatMeta = (date) => formatDateTimeDMY(date, "Data não informada");
+        const sepultamentosDaCova = (sepultamentosAll || []).filter(sameSepultura);
+        const sepIds = new Set(sepultamentosDaCova.map((sep) => String(sep.id ?? sep._id ?? "")).filter(Boolean));
+        const falecidoIds = new Set(
+            sepultamentosDaCova
+                .map((sep) => sep?.falecido ?? sep?.falecido_id ?? sep?.falecidoId)
+                .filter((id) => id !== null && id !== undefined && id !== "")
+                .map(String)
+        );
+        const events = [];
+
+        if (selectedGraveForModal?.id) {
+            const date = resolveDate(selectedGraveForModal.createdAt, selectedGraveForModal.created_at, selectedGraveForModal.updatedAt);
+            events.push({
+                id: `grave-${selectedGraveForModal.id}`,
+                label: "Sepultura cadastrada",
+                text: `Quadra ${selectedCovaQuadraKey} · Sepultura ${selectedCovaNumeroKey}`,
+                timestamp: date,
+                meta: formatMeta(date),
+                tone: "neutral",
+            });
+        }
+
+        sepultamentosDaCova.forEach((sep) => {
+            const date = resolveDate(sep.dh_sep, sep.data_hora, sep.createdAt, sep.created_at, sep.data_obito_sep);
+            const name = sep.nome_sep || sep.falecido?.nome_fal || sep.falecido?.nome || "Falecido não identificado";
+            events.push({
+                id: `sep-${sep.id ?? `${selectedCovaQuadraKey}-${selectedCovaNumeroKey}-${date || name}`}`,
+                label: "Sepultamento registrado",
+                text: name,
+                timestamp: date,
+                meta: formatMeta(date),
+                tone: sep.foi_exumado ? "neutral" : "success",
+            });
+        });
+
+        (falecidosAll || [])
+            .filter((falecido) => falecidoIds.has(String(falecido?.id ?? falecido?._id ?? "")))
+            .forEach((falecido) => {
+                const date = resolveDate(falecido.createdAt, falecido.created_at, falecido.data_obito_fal, falecido.data_obito);
+                events.push({
+                    id: `fal-${falecido.id ?? falecido._id}`,
+                    label: "Falecido vinculado",
+                    text: falecido.nome_fal || falecido.nome || "Cadastro de falecido",
+                    timestamp: date,
+                    meta: formatMeta(date),
+                    tone: "neutral",
+                });
+            });
+
+        (exumacoesAll || [])
+            .filter((exumacao) => {
+                const sepId = exumacao?.sepultamentoId ?? exumacao?.sepultamento_id ?? exumacao?.sepultamento?.id;
+                return (sepId != null && sepIds.has(String(sepId))) || sameSepultura(exumacao);
+            })
+            .forEach((exumacao) => {
+                const date = resolveDate(exumacao.dh_exu, exumacao.data_exumacao, exumacao.createdAt, exumacao.created_at);
+                const statusRaw = String(exumacao.status ?? "").toLowerCase();
+                const isPending = statusRaw.includes("pend") || exumacao.confirmado === false || exumacao.confirmado == null;
+                events.push({
+                    id: `exu-${exumacao.id ?? exumacao._id ?? `${date}-${exumacao.destino}`}`,
+                    label: isPending ? "Exumação pendente" : "Exumação registrada",
+                    text: exumacao.destino ? `Destino: ${exumacao.destino}` : exumacao.motivo || "Movimentação de exumação",
+                    timestamp: date,
+                    meta: formatMeta(date),
+                    tone: isPending ? "warning" : "danger",
+                });
+            });
+
+        (petsAll || [])
+            .filter(sameSepultura)
+            .forEach((pet) => {
+                const date = resolveDate(pet.dh_sep_pet, pet.createdAt, pet.created_at, pet.data_obito_pet);
+                events.push({
+                    id: `pet-${pet.id ?? pet._id ?? `${date}-${pet.nome_pet}`}`,
+                    label: "Pet vinculado",
+                    text: pet.nome_pet || pet.nome || "Pet sepultado",
+                    timestamp: date,
+                    meta: formatMeta(date),
+                    tone: "success",
+                });
+            });
+
+        return events.sort((a, b) => {
+            const dateA = parseDateValue(a.timestamp)?.getTime() ?? 0;
+            const dateB = parseDateValue(b.timestamp)?.getTime() ?? 0;
+            return dateB - dateA;
+        });
+    }, [
+        exumacoesAll,
+        falecidosAll,
+        petsAll,
+        selectedCovaNumeroKey,
+        selectedCovaQuadraKey,
+        selectedGraveForModal,
+        sepultamentosAll,
+    ]);
+
     const getPetsCountBySepLocal = (cova, quadraId) => mapHelpers.getPetsCountBySep(cova, quadraId, petsAll);
 
     /* getCovaDisplayMeta moved to src/utils/mapHelpers.js */
@@ -1154,7 +1294,7 @@ export default function VerMapa() {
                         </CovaGrid>
                     )}
 
-                    
+
                 </QuadraWrapper>
                 <LegendRow>
                     {statusList.map(s => (
@@ -1186,45 +1326,38 @@ export default function VerMapa() {
 
                 </LegendRow>
 
-                <SystemButton style={{position:"relative", width:"370px", left:"730px", backgroundColor:"#fff", color:"#191970"}} type="button" disabled={isMapLoading} onClick={() => setIsPieChartOpen(true)}>
-                        <FaChartPie /> Distribuição de Sepulturas
-                    </SystemButton>
-
-                {isPieChartOpen && (
-                    <ModalOverlay onMouseDown={(e) => {
-                        if (e.target === e.currentTarget) setIsPieChartOpen(false);
-                    }}>
-                        <ChartModalContent>
-                            <ChartModalHeader>
-                                <ChartModalTitle>Distribuição de Sepulturas </ChartModalTitle>
-                            </ChartModalHeader>
-                            <ChartModalBody>
-                                <ChartArea>
-                                    <PieChartSepulturas />
-                                </ChartArea>
-                                <ChartLegend>
-                                    {statusList.map(s => (
-                                        <LegendItem key={s.key} color={s.color} borderColor={s.borderColor} borderWidth={s.borderWidth}>
-                                            <span className="color" />
-                                            <span>{s.label}</span>
-                                        </LegendItem>
-                                    ))}
-                                </ChartLegend>
-                            </ChartModalBody>
-                        </ChartModalContent>
-                    </ModalOverlay>
-                )}
-
-
-                {modalAddQuadraOpen && (
-                    <ModalOverlay
-                        onMouseDown={(e) => {
-                            if (e.target === e.currentTarget) handleCloseAddQuadraModal();
-                        }}
-                    >
-                        <ModalSurface as="form" onSubmit={handleCreateQuadra} $width="400px">
-                            <ModalTitle>Criar quadra</ModalTitle>
-
+                <SystemButton style={{ position: "relative", width: "370px", left: "730px", backgroundColor: "#fff", color: "#191970" }} type="button" disabled={isMapLoading} onClick={() => setIsPieChartOpen(true)}>
+                    <FaChartPie /> Distribuição de Sepulturas
+                </SystemButton>
+                <DefaultModal
+                    open={isPieChartOpen}
+                    title="Distribuição de Sepulturas"
+                    subtitle={"Visualização da ocupação das sepulturas."}
+                    width="500px"
+                    onClose={() => setIsPieChartOpen(false)}
+                >
+                    <ChartModalBody>
+                        <ChartArea>
+                            <PieChartSepulturas />
+                        </ChartArea>
+                        <ChartLegend>
+                            {statusList.map(s => (
+                                <LegendItem key={s.key} color={s.color} borderColor={s.borderColor} borderWidth={s.borderWidth}>
+                                    <span className="color" />
+                                    <span>{s.label}</span>
+                                </LegendItem>
+                            ))}
+                        </ChartLegend>
+                    </ChartModalBody>
+                </DefaultModal>
+                <DefaultModal
+                    open={modalAddQuadraOpen}
+                    title="Criar quadra"
+                    width="400px"
+                    onClose={handleCloseAddQuadraModal}
+                >
+                    <form onSubmit={handleCreateQuadra}>
+                        <DefaultModalGrid $columns={1}>
                             <Field>
                                 <Label>Nº da quadra:</Label>
                                 <Input
@@ -1242,126 +1375,116 @@ export default function VerMapa() {
                                     onChange={handleQuadraChange}
                                 />
                             </Field>
+                        </DefaultModalGrid>
 
-                            <ModalActions>
-                                <SystemButton
-                                    type="button"
-                                    tone="cancel"
-                                    onClick={handleCloseAddQuadraModal}
-                                >
-                                    Cancelar
-                                </SystemButton>
+                        <DefaultModalActions>
+                            <SystemButton
+                                type="button"
+                                tone="cancel"
+                                onClick={handleCloseAddQuadraModal}
+                            >
+                                Cancelar
+                            </SystemButton>
 
-                                <SystemButton type="submit" disabled={creatingBlock}>
-                                    {creatingBlock ? "Criando..." : "Criar quadra"}
-                                </SystemButton>
-                            </ModalActions>
-                        </ModalSurface>
-                    </ModalOverlay>
-                )}
+                            <SystemButton type="submit" disabled={creatingBlock}>
+                                {creatingBlock ? "Criando..." : "Criar quadra"}
+                            </SystemButton>
+                        </DefaultModalActions>
+                    </form>
+                </DefaultModal>
+                <DefaultModal
+                    open={modalAddCovaOpen}
+                    title="Criar sepultura"
+                    width="520px"
+                    onClose={handleCloseAddCovaModal}
+                >
+                    <form onSubmit={handleCreateCova}>
+                        <DefaultModalGrid>
+                            <Field>
+                                <Label>Quadra: </Label>
+                                <SelectMedium name="quadra_cova" value={formCova.quadra_cova} onChange={handleCovaChange}>
+                                    <option value="">Selecione a quadra</option>
+                                    {quadrasDesc.map((q, idx) => {
+                                        const used = Array.isArray(q.covas) ? q.covas.length : getCovasCount(q.num_quadra ?? q.id);
+                                        const max = Number(q.max_covas || 0);
+                                        const full = max > 0 && used >= max;
+                                        return (
+                                            <option key={`${String(q.id ?? q.num_sepultura ?? idx)}`} value={String(q.id)} disabled={full}>
+                                                {formatQuadraDisplay(q)} {full ? `(lotada)` : ''}
+                                            </option>
+                                        )
+                                    })}
+                                </SelectMedium>
+                            </Field>
 
-
-                {modalAddCovaOpen && (
-                    <ModalOverlay onMouseDown={(e) => { if (e.target === e.currentTarget) handleCloseAddCovaModal(); }}>
-                        <ModalSurface as="form" onSubmit={handleCreateCova} $width="520px">
-                            <ModalTitle>Criar sepultura</ModalTitle>
-
-                            <FormGrid >
-                                <ColumnLeft>
-                                    <Field>
-                                        <Label>Quadra: </Label>
-                                        <SelectMedium name="quadra_cova" value={formCova.quadra_cova} onChange={handleCovaChange}>
-                                            <option value="">Selecione a quadra</option>
-                                            {quadrasDesc.map((q, idx) => {
-                                                const used = Array.isArray(q.covas) ? q.covas.length : getCovasCount(q.num_quadra ?? q.id);
-                                                const max = Number(q.max_covas || 0);
-                                                const full = max > 0 && used >= max;
-                                                return (
-                                                    <option key={`${String(q.id ?? q.num_sepultura ?? idx)}`} value={String(q.id)} disabled={full}>
-                                                        {formatQuadraDisplay(q)} {full ? `(lotada)` : ''}
-                                                    </option>
-                                                )
-                                            })}
-                                        </SelectMedium>
-                                    </Field>
-
-                                    <Field>
-                                        <Label>Status: </Label>
-                                        <SelectMedium name="status" value={formCova.status} onChange={handleCovaChange}>
-                                            <option value="disponivel">Disponível</option>
-                                            <option value="indisponivel">Indisponível</option>
-                                        </SelectMedium>
-                                    </Field>
-
-
-                                    <TwoCols>
-                                        <Field>
-                                            <Label>Número: </Label>
-                                            <InputTiny name="num_cova" value={formCova.num_cova} onChange={handleCovaChange} />
-                                        </Field>
-
-                                        <Field>
-                                            <Label>Tipo: </Label>
-                                            <SelectSmall name="tipo_cova" value={formCova.tipo_cova} onChange={handleCovaChange}>
-                                                <option value="cova">Cova</option>
-                                                <option value="gaveta">Gaveta</option>
-                                                <option value="nicho">Nicho</option>
-                                            </SelectSmall>
-                                        </Field>
-                                    </TwoCols>
-
-                                    <Field>
-                                        <Label>Capacidade: </Label>
-                                        <InputMedium type="number" name="capacidade" value={formCova.capacidade} onChange={handleCovaChange} />
-                                    </Field>
+                            <Field>
+                                <Label>Status: </Label>
+                                <SelectMedium name="status" value={formCova.status} onChange={handleCovaChange}>
+                                    <option value="disponivel">Disponível</option>
+                                    <option value="indisponivel">Indisponível</option>
+                                </SelectMedium>
+                            </Field>
 
 
-                                </ColumnLeft>
+                            <Field>
+                                <Label>Número: </Label>
+                                <InputTiny name="num_cova" value={formCova.num_cova} onChange={handleCovaChange} />
+                            </Field>
 
-                                <ColumnRight>
+                            <Field>
+                                <Label>Tipo: </Label>
+                                <SelectSmall name="tipo_cova" value={formCova.tipo_cova} onChange={handleCovaChange}>
+                                    <option value="cova">Cova</option>
+                                    <option value="gaveta">Gaveta</option>
+                                    <option value="nicho">Nicho</option>
+                                </SelectSmall>
+                            </Field>
 
-                                    {/* <Field>
+                            <Field>
+                                <Label>Capacidade: </Label>
+                                <InputMedium type="number" name="capacidade" value={formCova.capacidade} onChange={handleCovaChange} />
+                            </Field>
+
+
+                            {/* <Field>
                                         <Label>
                                             Possui título de posse?<input type="checkbox" name="concessao.ativa" checked={!!formCova.concessao?.ativa} onChange={handleCovaChange} />
                                         </Label>
                                     </Field> */}
 
-                                    {formCova.concessao?.ativa ? (
-                                        <>
-                                            <Field>
-                                                <Label>Responsável: </Label>
-                                                <Input name="concessao.responsavel" value={formCova.concessao?.responsavel || ""} onChange={handleCovaChange} />
-                                            </Field>
-                                            <Field>
-                                                <Label>Prazo (anos): </Label>
-                                                <Input type="number" name="concessao.prazo_anos" value={formCova.concessao?.prazo_anos || 0} onChange={handleCovaChange} />
-                                            </Field>
-                                            <Field>
-                                                <Label>Data Início: </Label>
-                                                <Input type="date" name="concessao.data_inicio" value={formCova.concessao?.data_inicio || ""} onChange={handleCovaChange} />
-                                            </Field>
-
-                                            <Field>
-                                                <Label>Data Fim: </Label>
-                                                <Input type="date" name="concessao.data_fim" value={formCova.concessao?.data_fim || ""} onChange={handleCovaChange} />
-                                            </Field>
-                                        </>
-                                    ) : null}
+                            {formCova.concessao?.ativa ? (
+                                <>
+                                    <Field>
+                                        <Label>Responsável: </Label>
+                                        <Input name="concessao.responsavel" value={formCova.concessao?.responsavel || ""} onChange={handleCovaChange} />
+                                    </Field>
+                                    <Field>
+                                        <Label>Prazo (anos): </Label>
+                                        <Input type="number" name="concessao.prazo_anos" value={formCova.concessao?.prazo_anos || 0} onChange={handleCovaChange} />
+                                    </Field>
+                                    <Field>
+                                        <Label>Data Início: </Label>
+                                        <Input type="date" name="concessao.data_inicio" value={formCova.concessao?.data_inicio || ""} onChange={handleCovaChange} />
+                                    </Field>
 
                                     <Field>
-                                        <Label>Observações: </Label>
-                                        <Textarea name="obs" value={formCova.obs || ""} onChange={handleCovaChange}></Textarea>
+                                        <Label>Data Fim: </Label>
+                                        <Input type="date" name="concessao.data_fim" value={formCova.concessao?.data_fim || ""} onChange={handleCovaChange} />
                                     </Field>
-                                </ColumnRight>
+                                </>
+                            ) : null}
 
-                            </FormGrid>
-                            <ButtonsRow>
-                                <SystemButton type="button" tone="cancel" onClick={handleCloseAddCovaModal}>Cancelar</SystemButton>
-                                <SystemButton type="submit">Criar sepultura</SystemButton>
-                            </ButtonsRow>
-                        </ModalSurface>
-                    </ModalOverlay>
-                )}
+                            <Field>
+                                <Label>Observações: </Label>
+                                <Textarea name="obs" value={formCova.obs || ""} onChange={handleCovaChange}></Textarea>
+                            </Field>
+                        </DefaultModalGrid>
+                        <DefaultModalActions>
+                            <SystemButton type="button" tone="cancel" onClick={handleCloseAddCovaModal}>Cancelar</SystemButton>
+                            <SystemButton type="submit">Criar sepultura</SystemButton>
+                        </DefaultModalActions>
+                    </form>
+                </DefaultModal>
 
                 {modalOpen && selectedCova && (
                     <DrawerComponent
@@ -1378,210 +1501,223 @@ export default function VerMapa() {
                         onClose={closeCovaDrawer}
                         closeButton={<SystemButton type="button" tone="cancel" onClick={closeCovaDrawer}>Fechar</SystemButton>}
                     >
-                                <SectionCard>
-                                    <SectionHeader>
-                                        <div>
-                                            <SectionTitle>Dados da sepultura</SectionTitle>
-                                            <SectionHint>Resumo operacional da sepultura selecionada.</SectionHint>
-                                        </div>
-                                    </SectionHeader>
+                        <SectionCard>
+                            <SectionHeader>
+                                <div>
+                                    <SectionTitle>Dados da sepultura</SectionTitle>
+                                    <SectionHint>Resumo operacional da sepultura selecionada.</SectionHint>
+                                </div>
+                            </SectionHeader>
 
-                                    <InfoGrid>
-                                        <InfoTile>
-                                            <InfoLabel>Nº da sepultura</InfoLabel>
-                                            <InfoValue>{numeroForModal}</InfoValue>
-                                        </InfoTile>
-                                        <InfoTile>
-                                            <InfoLabel>Status</InfoLabel>
-                                            <InfoValue>{selectedCova.status ?? (isOccupiedForModal ? "ocupada" : "-")}</InfoValue>
-                                        </InfoTile>
-                                        <InfoTile>
-                                            <InfoLabel>Tipo</InfoLabel>
-                                            <InfoValue>{tipoForModal}</InfoValue>
-                                        </InfoTile>
-                                        <InfoTile>
-                                            <InfoLabel>Espaços disponíveis</InfoLabel>
-                                            <InfoValue>{capacidadeForModal}</InfoValue>
-                                        </InfoTile>
-                                        <InfoTile>
-                                            <InfoLabel>Bloqueio legal</InfoLabel>
-                                            <InfoValue>{bloqueadoForModal ? "Sim" : "Não"}</InfoValue>
-                                        </InfoTile>
-                                        <InfoTile>
-                                            <InfoLabel>Observações</InfoLabel>
-                                            <InfoValue>{observacoesForModal}</InfoValue>
-                                        </InfoTile>
-                                    </InfoGrid>
+                            <InfoGrid>
+                                <InfoTile>
+                                    <InfoLabel>Nº da sepultura</InfoLabel>
+                                    <InfoValue>{numeroForModal}</InfoValue>
+                                </InfoTile>
+                                <InfoTile>
+                                    <InfoLabel>Status</InfoLabel>
+                                    <InfoValue>{selectedCova.status ?? (isOccupiedForModal ? "ocupada" : "-")}</InfoValue>
+                                </InfoTile>
+                                <InfoTile>
+                                    <InfoLabel>Tipo</InfoLabel>
+                                    <InfoValue>{tipoForModal}</InfoValue>
+                                </InfoTile>
+                                <InfoTile>
+                                    <InfoLabel>Espaços disponíveis</InfoLabel>
+                                    <InfoValue>{capacidadeForModal}</InfoValue>
+                                </InfoTile>
+                                <InfoTile>
+                                    <InfoLabel>Bloqueio legal</InfoLabel>
+                                    <InfoValue>{bloqueadoForModal ? "Sim" : "Não"}</InfoValue>
+                                </InfoTile>
+                                <InfoTile>
+                                    <InfoLabel>Observações</InfoLabel>
+                                    <InfoValue>{observacoesForModal}</InfoValue>
+                                </InfoTile>
+                            </InfoGrid>
 
-                                    <ToggleStatusRow>
-                                        <ToggleStatusText>
-                                            {String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"
-                                                ? "Indisponível (manutenção)"
-                                                : "Disponível para uso"}
-                                        </ToggleStatusText>
+                            <ToggleStatusRow>
+                                <ToggleStatusText>
+                                    {String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"
+                                        ? "Indisponível (manutenção)"
+                                        : "Disponível para uso"}
+                                </ToggleStatusText>
 
-                                        <ToggleStatusLabel
-                                            type="button"
-                                            onClick={handleToggleStatus}
-                                            disabled={!selectedGraveForModal?.id}
-                                            $active={String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"}
-                                            aria-label="Alternar status da sepultura"
-                                            aria-pressed={String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"}
-                                            title={String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"
-                                                ? "Liberar para uso"
-                                                : "Marcar indisponível (manutenção)"}
-                                        />
-                                    </ToggleStatusRow>
-                                </SectionCard>
-                                <SectionCard>
-                                    <SectionHeader>
-                                        <div>
-                                            <SectionTitle>Sepultamentos e pets</SectionTitle>
-                                            <SectionHint>Registros vinculados a esta sepultura.</SectionHint>
-                                        </div>
-                                    </SectionHeader>
+                                <ToggleStatusLabel
+                                    type="button"
+                                    onClick={handleToggleStatus}
+                                    disabled={!selectedGraveForModal?.id || statusToggleBlocked}
+                                    $active={String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"}
+                                    aria-label="Alternar status da sepultura"
+                                    aria-pressed={String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"}
+                                    title={statusToggleTitle}
+                                />
+                            </ToggleStatusRow>
+                            {statusToggleBlocked ? (
+                                <SectionHint>Há {selectedCovaSepultadosCount} falecido(s) sepultado(s). A indisponibilidade só pode ser alterada quando a sepultura estiver vazia.</SectionHint>
+                            ) : null}
+                        </SectionCard>
+                        <SectionCard>
+                            <SectionHeader>
+                                <div>
+                                    <SectionTitle>Sepultamentos e pets</SectionTitle>
+                                    <SectionHint>Registros vinculados a esta sepultura.</SectionHint>
+                                </div>
+                            </SectionHeader>
 
-                                    <CovaPetsSection
-                                        selectedCova={selectedCova}
-                                        sepultamentos={modalSepList}
-                                        petsAll={petsAll}
-                                        onPetCreated={(createdPet) => {
-                                            setPetsAll((prev) => {
-                                                const id = createdPet?.id;
-                                                if (id == null) return [...prev, createdPet];
-                                                const idx = prev.findIndex((p) => String(p.id) === String(id));
-                                                if (idx >= 0) {
-                                                    const clone = [...prev];
-                                                    clone[idx] = createdPet;
-                                                    return clone;
-                                                }
-                                                return [...prev, createdPet];
-                                            });
-                                        }}
-                                        onPetDeleted={(petId) => {
-                                            setPetsAll((prev) => prev.filter((p) => String(p.id) !== String(petId)));
-                                        }}
-                                    >
+                            <CovaPetsSection
+                                selectedCova={selectedCova}
+                                sepultamentos={modalSepList}
+                                petsAll={petsAll}
+                                onPetCreated={(createdPet) => {
+                                    setPetsAll((prev) => {
+                                        const id = createdPet?.id;
+                                        if (id == null) return [...prev, createdPet];
+                                        const idx = prev.findIndex((p) => String(p.id) === String(id));
+                                        if (idx >= 0) {
+                                            const clone = [...prev];
+                                            clone[idx] = createdPet;
+                                            return clone;
+                                        }
+                                        return [...prev, createdPet];
+                                    });
+                                }}
+                                onPetDeleted={(petId) => {
+                                    setPetsAll((prev) => prev.filter((p) => String(p.id) !== String(petId)));
+                                }}
+                            >
 
-                                        {(modalSepList && modalSepList.length > 0) ? (
-                                            <>
-                                                <SepDivider />
-                                                <SepList>
-                                                    {modalSepList.map((s, idx) => {
-                                                        const expanded = modalExpandedIndex === idx;
-                                                        return (
-                                                            <div key={s.id ?? idx}>
-                                                                <SepItemRow>
-                                                                    <SepItemButton
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setModalExpandedIndex(expanded ? null : idx);
-                                                                            if (!expanded) {
-                                                                                (async () => {
-                                                                                    const falId = s?.falecido ?? s?.falecido_id ?? s?.falecidoId;
-                                                                                    let fall = null;
-                                                                                    if (falId) {
-                                                                                        try {
-                                                                                            const rf = await api.get(`/falecidos/${falId}`);
-                                                                                            fall = rf.data;
-                                                                                        } catch (e) {
-                                                                                            console.error("Erro ", e)
-                                                                                        }
-                                                                                    }
-                                                                                    setModalForm({ ...s, falecido: fall || null });
-                                                                                })();
+                                {(modalSepList && modalSepList.length > 0) ? (
+                                    <>
+                                        <SepDivider />
+                                        <SepList>
+                                            {modalSepList.map((s, idx) => {
+                                                const expanded = modalExpandedIndex === idx;
+                                                return (
+                                                    <div key={s.id ?? idx}>
+                                                        <SepItemRow>
+                                                            <SepItemButton
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setModalExpandedIndex(expanded ? null : idx);
+                                                                    if (!expanded) {
+                                                                        (async () => {
+                                                                            const falId = s?.falecido ?? s?.falecido_id ?? s?.falecidoId;
+                                                                            let fall = null;
+                                                                            if (falId) {
+                                                                                try {
+                                                                                    const rf = await api.get(`/falecidos/${falId}`);
+                                                                                    fall = rf.data;
+                                                                                } catch (e) {
+                                                                                    console.error("Erro ", e)
+                                                                                }
                                                                             }
-                                                                        }}
-                                                                    >
-                                                                        <SepItemContent>
-                                                                            <SepItemName>{s.nome_sep || s.falecido || "-"}</SepItemName>
+                                                                            setModalForm({ ...s, falecido: fall || null });
+                                                                        })();
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <SepItemContent>
+                                                                    <SepItemName>{s.nome_sep || s.falecido || "-"}</SepItemName>
 
-                                                                        </SepItemContent>
-                                                                    </SepItemButton>
+                                                                </SepItemContent>
+                                                            </SepItemButton>
 
-                                                                    <SepToggle
-                                                                        aria-expanded={expanded}
-                                                                        onClick={() => {
-                                                                            const willExpand = !expanded;
-                                                                            setModalExpandedIndex(willExpand ? idx : null);
-                                                                            if (willExpand) {
-                                                                                (async () => {
-                                                                                    const falId = s?.falecido ?? s?.falecido_id ?? s?.falecidoId;
-                                                                                    let fall = null;
-                                                                                    if (falId) {
-                                                                                        try {
-                                                                                            const rf = await api.get(`/falecidos/${falId}`);
-                                                                                            fall = rf.data;
-                                                                                        } catch (e) {
-                                                                                            console.error("Erro ", e)
-                                                                                        }
-                                                                                    }
-                                                                                    setModalForm({ ...s, falecido: fall || null });
-                                                                                })();
+                                                            <SepToggle
+                                                                aria-expanded={expanded}
+                                                                onClick={() => {
+                                                                    const willExpand = !expanded;
+                                                                    setModalExpandedIndex(willExpand ? idx : null);
+                                                                    if (willExpand) {
+                                                                        (async () => {
+                                                                            const falId = s?.falecido ?? s?.falecido_id ?? s?.falecidoId;
+                                                                            let fall = null;
+                                                                            if (falId) {
+                                                                                try {
+                                                                                    const rf = await api.get(`/falecidos/${falId}`);
+                                                                                    fall = rf.data;
+                                                                                } catch (e) {
+                                                                                    console.error("Erro ", e)
+                                                                                }
                                                                             }
-                                                                        }}
-                                                                    >
-                                                                        {expanded ? "▾" : "▸"}
-                                                                    </SepToggle>
-                                                                </SepItemRow>
+                                                                            setModalForm({ ...s, falecido: fall || null });
+                                                                        })();
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {expanded ? "▾" : "▸"}
+                                                            </SepToggle>
+                                                        </SepItemRow>
 
-                                                                {expanded && modalForm && modalForm.id === (s.id ?? modalForm.id) ? (
-                                                                    <SepDetailPanel>
-                                                                        <InfoGrid>
-                                                                            <InfoTile>
-                                                                                <InfoLabel>Nome do sepultado</InfoLabel>
-                                                                                <InfoValue>{modalForm.nome_sep || modalForm.falecido?.nome_fal || modalForm.falecido?.nome || "-"}</InfoValue>
-                                                                            </InfoTile>
-                                                                            <InfoTile>
-                                                                                <InfoLabel>Sepultamento</InfoLabel>
-                                                                                <InfoValue>{modalForm.dh_sep || modalForm.data_hora || modalForm.data_obito_sep || "-"}</InfoValue>
-                                                                            </InfoTile>
-                                                                            <InfoTile>
-                                                                                <InfoLabel>Data do óbito</InfoLabel>
-                                                                                <InfoValue>{modalForm.data_obito || modalForm.data_obito_sep || "-"}</InfoValue>
-                                                                            </InfoTile>
-                                                                            <InfoTile>
-                                                                                <InfoLabel>Responsável</InfoLabel>
-                                                                                <InfoValue>{modalForm.nome_resp || modalForm.falecido?.nome_resp || "-"}</InfoValue>
-                                                                            </InfoTile>
-                                                                            <InfoTile>
-                                                                                <InfoLabel>Contato</InfoLabel>
-                                                                                <InfoValue>{modalForm.tel_resp || modalForm.falecido?.tel_resp || "-"}</InfoValue>
-                                                                            </InfoTile>
-                                                                        </InfoGrid>
-                                                                        {exumacoesPending[String(s.id)] ? (
-                                                                            <SystemButton type="button" tone="delete" onClick={() => cancelExumacao(s)}>Cancelar exumação</SystemButton>
-                                                                        ) : (
-                                                                            <SystemButton style={{marginTop:"15px"}} type="button" onClick={() => openExumacaoForm(s)}>Iniciar exumação</SystemButton>
-                                                                        )}
-                                                                    </SepDetailPanel>
-                                                                ) : null}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </SepList>
-                                            </>
-                                        ) : (
-                                            sepDataForModal ? (
-                                                <InfoGrid>
-                                                    <InfoTile>
-                                                        <InfoLabel>Nome do sepultado</InfoLabel>
-                                                        <InfoValue>{sepDataForModal.nome_sep || sepDataForModal.falecido?.nome_fal || sepDataForModal.falecido?.nome || "-"}</InfoValue>
-                                                    </InfoTile>
-                                                    <InfoTile>
-                                                        <InfoLabel>Sepultamento</InfoLabel>
-                                                        <InfoValue>{sepDataForModal.dh_sep || sepDataForModal.data_hora || sepDataForModal.data_obito_sep || "-"}</InfoValue>
-                                                    </InfoTile>
-                                                    <InfoTile>
-                                                        <InfoLabel>Data do óbito</InfoLabel>
-                                                        <InfoValue>{sepDataForModal.data_obito || sepDataForModal.data_obito_sep || "-"}</InfoValue>
-                                                    </InfoTile>
-                                                </InfoGrid>
-                                            ) : null
+                                                        {expanded && modalForm && modalForm.id === (s.id ?? modalForm.id) ? (
+                                                            <SepDetailPanel>
+                                                                <InfoGrid>
+                                                                    <InfoTile>
+                                                                        <InfoLabel>Nome do sepultado</InfoLabel>
+                                                                        <InfoValue>{modalForm.nome_sep || modalForm.falecido?.nome_fal || modalForm.falecido?.nome || "-"}</InfoValue>
+                                                                    </InfoTile>
+                                                                    <InfoTile>
+                                                                        <InfoLabel>Sepultamento</InfoLabel>
+                                                                        <InfoValue>{modalForm.dh_sep || modalForm.data_hora || modalForm.data_obito_sep || "-"}</InfoValue>
+                                                                    </InfoTile>
+                                                                    <InfoTile>
+                                                                        <InfoLabel>Data do óbito</InfoLabel>
+                                                                        <InfoValue>{modalForm.data_obito || modalForm.data_obito_sep || "-"}</InfoValue>
+                                                                    </InfoTile>
+                                                                    <InfoTile>
+                                                                        <InfoLabel>Responsável</InfoLabel>
+                                                                        <InfoValue>{modalForm.nome_resp || modalForm.falecido?.nome_resp || "-"}</InfoValue>
+                                                                    </InfoTile>
+                                                                    <InfoTile>
+                                                                        <InfoLabel>Contato</InfoLabel>
+                                                                        <InfoValue>{modalForm.tel_resp || modalForm.falecido?.tel_resp || "-"}</InfoValue>
+                                                                    </InfoTile>
+                                                                </InfoGrid>
+                                                                {exumacoesPending[String(s.id)] ? (
+                                                                    <SystemButton type="button" tone="delete" onClick={() => cancelExumacao(s)}>Cancelar exumação</SystemButton>
+                                                                ) : (
+                                                                    <SystemButton style={{ marginTop: "15px" }} type="button" onClick={() => openExumacaoForm(s)}>Iniciar exumação</SystemButton>
+                                                                )}
+                                                            </SepDetailPanel>
+                                                        ) : null}
+                                                    </div>
+                                                );
+                                            })}
+                                        </SepList>
+                                    </>
+                                ) : (
+                                    sepDataForModal ? (
+                                        <InfoGrid>
+                                            <InfoTile>
+                                                <InfoLabel>Nome do sepultado</InfoLabel>
+                                                <InfoValue>{sepDataForModal.nome_sep || sepDataForModal.falecido?.nome_fal || sepDataForModal.falecido?.nome || "-"}</InfoValue>
+                                            </InfoTile>
+                                            <InfoTile>
+                                                <InfoLabel>Sepultamento</InfoLabel>
+                                                <InfoValue>{sepDataForModal.dh_sep || sepDataForModal.data_hora || sepDataForModal.data_obito_sep || "-"}</InfoValue>
+                                            </InfoTile>
+                                            <InfoTile>
+                                                <InfoLabel>Data do óbito</InfoLabel>
+                                                <InfoValue>{sepDataForModal.data_obito || sepDataForModal.data_obito_sep || "-"}</InfoValue>
+                                            </InfoTile>
+                                        </InfoGrid>
+                                    ) : null
 
-                                        )}
-                                    </CovaPetsSection>
-                                </SectionCard>
+                                )}
+                            </CovaPetsSection>
+                        </SectionCard>
+                        <SectionCard>
+                            <SectionHeader>
+                                <div>
+                                    <SectionTitle>Timeline da sepultura</SectionTitle>
+                                    <SectionHint>Histórico de eventos vinculados à sepultura selecionada.</SectionHint>
+                                </div>
+                            </SectionHeader>
+                            <EventTimeline
+                                items={covaTimelineItems}
+                                emptyText="Nenhum evento vinculado a esta sepultura."
+                            />
+                        </SectionCard>
                     </DrawerComponent>
                 )}
 
@@ -1607,85 +1743,85 @@ export default function VerMapa() {
                             </SystemButton>
                         }
                     >
-                                <SectionCard>
-                                    <SectionHeader>
-                                        <div>
-                                            <SectionTitle>Dados da exumação</SectionTitle>
-                                            <SectionHint>Preencha as informações para registrar a movimentação.</SectionHint>
-                                        </div>
-                                    </SectionHeader>
-                                    <ModalGrid>
-                                        <div>
-                                            <Label>Quadra</Label>
-                                            <Input readOnly value={exumacoesForm.quadra_sep || ""} />
-                                        </div>
+                        <SectionCard>
+                            <SectionHeader>
+                                <div>
+                                    <SectionTitle>Dados da exumação</SectionTitle>
+                                    <SectionHint>Preencha as informações para registrar a movimentação.</SectionHint>
+                                </div>
+                            </SectionHeader>
+                            <ModalGrid>
+                                <div>
+                                    <Label>Quadra</Label>
+                                    <Input readOnly value={exumacoesForm.quadra_sep || ""} />
+                                </div>
 
-                                        <div>
-                                            <Label>Sepultura</Label>
-                                            <Input readOnly value={exumacoesForm.num_sepultura_sep || ""} />
-                                        </div>
+                                <div>
+                                    <Label>Sepultura</Label>
+                                    <Input readOnly value={exumacoesForm.num_sepultura_sep || ""} />
+                                </div>
 
-                                        <ModalGridFull>
-                                            <Label>Nome do sepultado</Label>
-                                            <Input readOnly value={exumacoesForm.nome_sep || ""} />
-                                        </ModalGridFull>
+                                <ModalGridFull>
+                                    <Label>Nome do sepultado</Label>
+                                    <Input readOnly value={exumacoesForm.nome_sep || ""} />
+                                </ModalGridFull>
 
-                                        <div>
-                                            <Label>Data e hora</Label>
-                                            <Input type="datetime-local" value={exumacoesForm.dh_exu || ""} onChange={(ev) => handleExumacaoField("dh_exu", ev.target.value)} />
-                                        </div>
+                                <div>
+                                    <Label>Data e hora</Label>
+                                    <Input type="datetime-local" value={exumacoesForm.dh_exu || ""} onChange={(ev) => handleExumacaoField("dh_exu", ev.target.value)} />
+                                </div>
 
-                                        <div>
-                                            <Label>Motivo</Label>
-                                            <Input
-                                                value={exumacoesForm.motivo || ""}
-                                                onChange={(ev) => handleExumacaoField("motivo", ev.target.value)}
-                                                $invalid={!!exumacoesErrors.motivo}
-                                                aria-invalid={!!exumacoesErrors.motivo}
-                                            />
-                                            {exumacoesErrors.motivo && <FieldErrorText>{exumacoesErrors.motivo}</FieldErrorText>}
-                                        </div>
+                                <div>
+                                    <Label>Motivo</Label>
+                                    <Input
+                                        value={exumacoesForm.motivo || ""}
+                                        onChange={(ev) => handleExumacaoField("motivo", ev.target.value)}
+                                        $invalid={!!exumacoesErrors.motivo}
+                                        aria-invalid={!!exumacoesErrors.motivo}
+                                    />
+                                    {exumacoesErrors.motivo && <FieldErrorText>{exumacoesErrors.motivo}</FieldErrorText>}
+                                </div>
 
-                                        <div>
-                                            <Label>Destino</Label>
-                                            <SelectMedium
-                                                value={exumacoesForm.destino || ""}
-                                                onChange={(ev) => handleExumacaoField("destino", ev.target.value)}
-                                                $invalid={!!exumacoesErrors.destino}
-                                                aria-invalid={!!exumacoesErrors.destino}
-                                            >
-                                                <option value="">Selecione o ossário</option>
-                                                {ossariosAll.map((ossario) => (
-                                                    <option key={String(ossario.id)} value={String(ossario.numero ?? ossario.id ?? "")}>{`Ossário ${ossario.numero ?? ossario.id} - ${String(ossario.tipo || "-").replace(/_/g, " ")} - ${String(ossario.status || "-")}`}</option>
-                                                ))}
-                                            </SelectMedium>
-                                            {exumacoesErrors.destino && <FieldErrorText>{exumacoesErrors.destino}</FieldErrorText>}
-                                        </div>
+                                <div>
+                                    <Label>Destino</Label>
+                                    <SelectMedium
+                                        value={exumacoesForm.destino || ""}
+                                        onChange={(ev) => handleExumacaoField("destino", ev.target.value)}
+                                        $invalid={!!exumacoesErrors.destino}
+                                        aria-invalid={!!exumacoesErrors.destino}
+                                    >
+                                        <option value="">Selecione o ossário</option>
+                                        {ossariosAll.map((ossario) => (
+                                            <option key={String(ossario.id)} value={String(ossario.numero ?? ossario.id ?? "")}>{`Ossário ${ossario.numero ?? ossario.id} - ${String(ossario.tipo || "-").replace(/_/g, " ")} - ${String(ossario.status || "-")}`}</option>
+                                        ))}
+                                    </SelectMedium>
+                                    {exumacoesErrors.destino && <FieldErrorText>{exumacoesErrors.destino}</FieldErrorText>}
+                                </div>
 
-                                        <div>
-                                            <Label>Coveiro</Label>
-                                            <Input
-                                                value={exumacoesForm.coveiro || ""}
-                                                onChange={(ev) => handleExumacaoField("coveiro", ev.target.value)}
-                                                $invalid={!!exumacoesErrors.coveiro}
-                                                aria-invalid={!!exumacoesErrors.coveiro}
-                                            />
-                                            {exumacoesErrors.coveiro && <FieldErrorText>{exumacoesErrors.coveiro}</FieldErrorText>}
-                                        </div>
+                                <div>
+                                    <Label>Coveiro</Label>
+                                    <Input
+                                        value={exumacoesForm.coveiro || ""}
+                                        onChange={(ev) => handleExumacaoField("coveiro", ev.target.value)}
+                                        $invalid={!!exumacoesErrors.coveiro}
+                                        aria-invalid={!!exumacoesErrors.coveiro}
+                                    />
+                                    {exumacoesErrors.coveiro && <FieldErrorText>{exumacoesErrors.coveiro}</FieldErrorText>}
+                                </div>
 
-                                        <ModalGridFull>
-                                            <Label>Observações</Label>
-                                            <Textarea value={exumacoesForm.obs_exu || ""} onChange={(ev) => handleExumacaoField("obs_exu", ev.target.value)} />
-                                        </ModalGridFull>
-                                    </ModalGrid>
-                                </SectionCard>
+                                <ModalGridFull>
+                                    <Label>Observações</Label>
+                                    <Textarea value={exumacoesForm.obs_exu || ""} onChange={(ev) => handleExumacaoField("obs_exu", ev.target.value)} />
+                                </ModalGridFull>
+                            </ModalGrid>
+                        </SectionCard>
 
-                                <ModalActions>
-                                    <SystemButton type="button" tone="cancel" onClick={closeExumacaoForm} disabled={isSubmittingExumacao}>Voltar</SystemButton>
-                                    <SystemButton type="submit" disabled={isSubmittingExumacao}>
-                                        {isSubmittingExumacao ? "Enviando..." : "Registrar exumação"}
-                                    </SystemButton>
-                                </ModalActions>
+                        <ModalActions>
+                            <SystemButton type="button" tone="cancel" onClick={closeExumacaoForm} disabled={isSubmittingExumacao}>Voltar</SystemButton>
+                            <SystemButton type="submit" disabled={isSubmittingExumacao}>
+                                {isSubmittingExumacao ? "Enviando..." : "Registrar exumação"}
+                            </SystemButton>
+                        </ModalActions>
                     </DrawerComponent>
                 )}
 
@@ -1694,6 +1830,7 @@ export default function VerMapa() {
         </>
     )
 }
+
 
 
 

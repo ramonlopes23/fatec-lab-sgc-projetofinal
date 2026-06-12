@@ -1,10 +1,10 @@
 import React from "react";
-import Dashboard from "../../components/Dashboard";
+import Dashboard from "../../components/domain/Dashboard";
 import SepultadosMedia from "../../charts/SepultadosMedia";
-import Calendar from "../../components/Calendar";
-import SepultadosTotal from "../../components/SepultadosTotal";
-import SepultadosMes from "../../components/SepultadosMes";
-import { Row } from "../../components/DashboardRow/styles";
+import Calendar from "../../components/common/Calendar";
+import SepultadosTotal from "../../components/domain/SepultadosTotal";
+import SepultadosMes from "../../components/domain/SepultadosMes";
+import { Row } from "../../components/domain/DashboardRow/styles";
 
 
 export default function Home() {

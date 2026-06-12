@@ -1,7 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Container } from './styles'
-import SystemButton from '../../components/SystemButton'
+import SystemButton from '../../components/common/SystemButton'
 
 export default function NotFound() {
     const navigate = useNavigate();

@@ -1,4 +1,4 @@
-import TaxasComponent from "../../components/TaxasComponent";
+import TaxasComponent from "../../components/domain/TaxasComponent";
 
 export default function Taxas() {
     return <TaxasComponent />;

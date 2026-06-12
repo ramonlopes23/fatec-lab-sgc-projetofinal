@@ -1,4 +1,4 @@
-import ContratosComponent from "../../components/ContratosComponent";
+import ContratosComponent from "../../components/domain/ContratosComponent";
 import React from "react";
 
 export default function Contratos() {

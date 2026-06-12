@@ -2,11 +2,11 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
 import api from "../../services/index.js";
-import ConfirmationDialog from "../../components/ConfirmationDialog";
+import ConfirmationDialog from "../../components/common/ConfirmationDialog";
 import { useApiInitDataCad, useAvailableCovas, useCidadeBusca, useFalecidoSearch, useFileUpload, useFormClear, useFormValidation, useLocalStorage, useTaxas, useToastFeedback, useViacepLookup, useCadastrosSubmit } from "../../hooks";
 import { applyMaskByFieldName, capitalizeWords, findTaxaByCodigo } from "../../utils";
-import SepultamentoProcess from "../../components/SepultamentoProcess";
-import FalecidoProcess from "../../components/FalecidoProcess";
+import SepultamentoProcess from "../../components/domain/SepultamentoProcess";
+import FalecidoProcess from "../../components/domain/FalecidoProcess";
 import {
     ALLOWED_FAL_INDI,
     INITIAL_FALECIDO_FORM,

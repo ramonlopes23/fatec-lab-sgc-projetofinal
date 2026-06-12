@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import Calendar from "../../components/Calendar";
-import LoadingOverlay from "../../components/LoadingOverlay";
+import Calendar from "../../components/common/Calendar";
+import LoadingOverlay from "../../components/common/LoadingOverlay";
 
 export default function Calendario() {
   const [sepultamentos, setSepultamentos] = useState([]);
