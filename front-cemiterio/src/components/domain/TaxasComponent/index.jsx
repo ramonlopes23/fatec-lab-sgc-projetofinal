@@ -20,6 +20,7 @@ import {
     Card,
     CardBody,
     CardTitle,
+    CheckboxControl,
     Container,
     FilterGrid,
     FiltersPanel,
@@ -612,25 +613,31 @@ function TaxasComponent() {
                                     {errors.vigencia_fim ? <p style={errorStyle}>{errors.vigencia_fim}</p> : null}
                                 </div>
 
-                                <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={form.isencao}
-                                        onChange={(event) => updateField("isencao", event.target.checked)}
-                                        disabled={isSubmitting}
-                                    />
-                                    Isenção
-                                </label>
+                                <div>
+                                    <label>Taxa</label>
+                                    <CheckboxControl $disabled={isSubmitting}>
+                                        <input
+                                            type="checkbox"
+                                            checked={form.isencao}
+                                            onChange={(event) => updateField("isencao", event.target.checked)}
+                                            disabled={isSubmitting}
+                                        />
+                                           Isenção
+                                    </CheckboxControl>
+                                </div>
 
-                                <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={form.active}
-                                        onChange={(event) => updateField("active", event.target.checked)}
-                                        disabled={isSubmitting}
-                                    />
-                                    Ativa
-                                </label>
+                                <div>
+                                    <label>Status</label>
+                                    <CheckboxControl $disabled={isSubmitting}>
+                                        <input
+                                            type="checkbox"
+                                            checked={form.active}
+                                            onChange={(event) => updateField("active", event.target.checked)}
+                                            disabled={isSubmitting}
+                                        />
+                                            Ativa
+                                    </CheckboxControl>
+                                </div>
                             </DefaultModalGrid>
                         )}
 

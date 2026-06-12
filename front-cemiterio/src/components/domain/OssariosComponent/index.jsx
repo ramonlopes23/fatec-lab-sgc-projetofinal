@@ -81,6 +81,7 @@ const INITIAL_FORM = {
     numero: "",
     tipo: "coletivo",
     status: "disponivel",
+    capacidade: "",
     obs: "",
 };
 
@@ -168,7 +169,7 @@ export default function OssariosComponent() {
         const q = normalizeSearchText(query);
 
         return normalizedItems.filter((item) => {
-            const matchesSearch = !q || [item.numero, item.tipo, item.status, item.obs].some((field) => normalizeSearchText(field).includes(q));
+            const matchesSearch = !q || [item.numero, item.tipo, item.status, item.capacidade, item.obs].some((field) => normalizeSearchText(field).includes(q));
             const matchesStatus = statusFilter === "all"
                 || (statusFilter === "active" && item.active)
                 || (statusFilter === "inactive" && !item.active);
@@ -207,6 +208,11 @@ export default function OssariosComponent() {
         if (!form.numero.trim()) nextErrors.numero = "Informe o número do ossário";
         if (!form.tipo.trim()) nextErrors.tipo = "Informe o tipo do ossário";
         if (!form.status.trim()) nextErrors.status = "Informe o status do ossário";
+        if (!String(form.capacidade).trim()) {
+            nextErrors.capacidade = "Informe a capacidade do ossário";
+        } else if (!Number.isFinite(Number(form.capacidade)) || Number(form.capacidade) <= 0) {
+            nextErrors.capacidade = "Informe uma capacidade maior que zero";
+        }
 
         const numeroNormalizado = form.numero.trim().toLowerCase();
         const duplicated = items.some(
@@ -224,13 +230,14 @@ export default function OssariosComponent() {
         event.preventDefault();
         if (isSubmitting) return;
         if (!validateForm()) return;
-
+ 
         setIsSubmitting(true);
         try {
             const payload = {
                 numero: form.numero.trim(),
                 tipo: normalizeType(form.tipo) || form.tipo,
                 status: form.status,
+                capacidade: Number(form.capacidade),
                 obs: form.obs.trim(),
             };
 
@@ -265,6 +272,7 @@ export default function OssariosComponent() {
             numero: item.numero || "",
             tipo: normalizeType(item.tipo) || "coletivo",
             status: normalizeStatus(item.status) || "disponivel",
+            capacidade: item.capacidade ?? "",
             obs: item.obs || "",
         });
     };
@@ -311,6 +319,7 @@ export default function OssariosComponent() {
         ["Número do ossário", form.numero],
         ["Tipo", typeLabel(form.tipo)],
         ["Status", statusLabel(form.status)],
+        ["Capacidade", form.capacidade || "-"],
         ["Observações", form.obs],
     ];
 
@@ -424,6 +433,7 @@ export default function OssariosComponent() {
                                             <Th>Número</Th>
                                             <Th>Tipo</Th>
                                             <Th>Status</Th>
+                                            <Th>Capacidade</Th>
                                             <Th>Observações</Th>
                                             <Th>Ações</Th>
                                         </Tr>
@@ -439,6 +449,7 @@ export default function OssariosComponent() {
                                                             {statusLabel(item.status)}
                                                         </StatusBadge>
                                                     </TdStatus>
+                                                    <Td>{item.capacidade ?? "-"}</Td>
                                                     <Td>{item.obs || "-"}</Td>
                                                     <Td>
                                                         <Actions>
@@ -454,7 +465,7 @@ export default function OssariosComponent() {
                                             ))
                                         ) : (
                                             <Tr>
-                                                <Td colSpan={5}>Nenhum ossário encontrado.</Td>
+                                                <Td colSpan={6}>Nenhum ossário encontrado.</Td>
                                             </Tr>
                                         )}
                                     </TBody>
@@ -536,6 +547,20 @@ export default function OssariosComponent() {
                                         ))}
                                     </TextField>
                                     {errors.status ? <p style={errorStyle}>{errors.status}</p> : null}
+                                </div>
+
+                                <div>
+                                    <label>Capacidade</label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        value={form.capacidade}
+                                        onChange={(event) => updateField("capacidade", event.target.value)}
+                                        placeholder="Ex: 12"
+                                        disabled={isSubmitting}
+                                    />
+                                    {errors.capacidade ? <p style={errorStyle}>{errors.capacidade}</p> : null}
                                 </div>
 
                                 <FullWidthField>

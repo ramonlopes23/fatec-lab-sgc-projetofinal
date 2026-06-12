@@ -267,13 +267,6 @@ export const CardTitle = styled.h3`
 `;
 
 
-
-
-
-
-
-
-
 export const Actions = styled.div`
   display: flex;
   gap: 8px;
@@ -332,6 +325,32 @@ export const Input = styled.input`
   &:focus {
     border-color: #7b63ff;
     box-shadow: 0 2px 8px rgba(123, 99, 255, 0.08);
+  }
+`;
+
+export const CheckboxControl = styled.label`
+  width: 100%;
+  min-height: 41px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(31, 38, 82, 0.12);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #222;
+  font-size: 14px;
+  cursor: ${({ $disabled }) => ($disabled ? "not-allowed" : "pointer")};
+  opacity: ${({ $disabled }) => ($disabled ? 0.65 : 1)};
+
+  input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    margin-right:5px;
+    accent-color: #4a2fe3;
+    cursor: inherit;
   }
 `;
 
