@@ -72,7 +72,6 @@ const INITIAL_FORM = {
     valor: "0",
     tipo: "sepultamento",
     active: true,
-    isencao: false,
     vigencia_inicio: "",
     vigencia_fim: "",
 };
@@ -207,9 +206,6 @@ function TaxasComponent() {
             if (key === "descricao" && !editingId) {
                 next.codigo = normalizeCode(value);
             }
-            if (key === "isencao" && value) {
-                next.valor = "0";
-            }
             return next;
         });
         setErrors((prev) => ({ ...prev, [key]: "" }));
@@ -251,10 +247,9 @@ function TaxasComponent() {
             const payload = {
                 codigo: normalizeCode(form.codigo),
                 descricao: form.descricao.trim().toUpperCase(),
-                valor: form.isencao ? 0 : Number(form.valor),
+                valor: Number(form.valor),
                 tipo: form.tipo || "sepultamento",
                 active: Boolean(form.active),
-                isencao: Boolean(form.isencao),
                 vigencia_inicio: form.vigencia_inicio,
                 vigencia_fim: form.vigencia_fim,
                 updated_at: now,
@@ -292,7 +287,6 @@ function TaxasComponent() {
             valor: String(normalized.valor ?? 0),
             tipo: normalized.tipo || "sepultamento",
             active: normalized.active,
-            isencao: normalized.isencao,
             vigencia_inicio: normalized.vigencia_inicio || "",
             vigencia_fim: normalized.vigencia_fim || "",
         });
@@ -308,11 +302,10 @@ function TaxasComponent() {
     const taxaViewFields = [
         ["Descrição", form.descricao],
         ["Código", form.codigo],
-        ["Valor", form.isencao ? "Isenta" : formatCurrencyBRL(form.valor)],
+        ["Valor", formatCurrencyBRL(form.valor)],
         ["Tipo", formatTaxaLabel(form.tipo)],
         ["Vigência início", formatDateDMY(form.vigencia_inicio, "-")],
         ["Vigência fim", formatDateDMY(form.vigencia_fim, "-")],
-        ["Isenção", form.isencao ? "Sim" : "Não"],
         ["Status", form.active ? "Ativa" : "Inativa"],
     ];
 
@@ -573,7 +566,7 @@ function TaxasComponent() {
                                         step="0.01"
                                         value={form.valor}
                                         onChange={(event) => updateField("valor", event.target.value)}
-                                        disabled={isSubmitting || form.isencao}
+                                        disabled={isSubmitting}
                                     />
                                     {errors.valor ? <p style={errorStyle}>{errors.valor}</p> : null}
                                 </div>
@@ -611,19 +604,6 @@ function TaxasComponent() {
                                         disabled={isSubmitting}
                                     />
                                     {errors.vigencia_fim ? <p style={errorStyle}>{errors.vigencia_fim}</p> : null}
-                                </div>
-
-                                <div>
-                                    <label>Taxa</label>
-                                    <CheckboxControl $disabled={isSubmitting}>
-                                        <input
-                                            type="checkbox"
-                                            checked={form.isencao}
-                                            onChange={(event) => updateField("isencao", event.target.checked)}
-                                            disabled={isSubmitting}
-                                        />
-                                           Isenção
-                                    </CheckboxControl>
                                 </div>
 
                                 <div>
