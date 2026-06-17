@@ -1,9 +1,19 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { formatDateKey, formatDateNormalized } from "../../../utils/date";
+import { formatDateDMY, formatDateKey, formatDateNormalized, parseDateValue } from "../../../utils/date";
 import { resolveQuadraDisplay } from "../../../utils";
 import { Card, Subtitle, CardHeader, CardBody, CalendarGrid, DayCell, DayButton, Btn, Title } from "./styles";
 import SystemButton from "../SystemButton";
 
+const hasTimePart = (value) => /(?:T|\s)\d{2}:\d{2}/.test(String(value ?? "").trim());
+
+const formatTimeLabel = (value) => {
+    if (!hasTimePart(value)) return "";
+
+    const date = parseDateValue(value);
+    if (!date) return "";
+
+    return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+};
 
 export default function Calendar({ sepultamentos = [], quadras = [], exumacoes = [] }) {
     const hoje = new Date();
@@ -46,13 +56,9 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
         const mapped = allNormalized
             .map(item => {
                 const data = formatDateKey(item.rawDate);
-                const horario = (() => {
-                    const raw = item.rawDate || "";
-                    if (!raw) return "";
-                    if (String(raw).includes("T")) return String(raw).split("T")[1].slice(0, 5);
-                    const parts = String(raw).split(" ");
-                    return parts[1] || "";
-                })();
+                const horario = formatTimeLabel(item.rawDate);
+                const dataLabel = formatDateDMY(item.rawDate, "");
+                const dataHoraLabel = formatDateNormalized(item.rawDate, dataLabel);
 
                 const quadraStr = typeof item.quadraCandidate === "object"
                     ? (item.quadraCandidate.num_quadra ?? item.quadraCandidate.number ?? item.quadraCandidate.id ?? "")
@@ -61,6 +67,8 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                     id: `evt-${item._type}-${item.id ?? Math.random().toString(36).slice(2, 9)}`,
                     nomeFalecido: item.nome,
                     data,
+                    dataLabel,
+                    dataHoraLabel,
                     horario,
                     quadra: resolveQuadraDisplay(quadraStr, quadras),
                     cova: item.cova,
@@ -211,7 +219,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200 }}>
                         <div style={{ width: 560, maxHeight: '80vh', overflowY: 'auto', background: '#fff', borderRadius: 8, padding: 16 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Title style={{ margin: 0 }}>Sepultamentos e exumações em {formatDateNormalized(dataSelecionada)}</Title>
+                                <Title style={{ margin: 0 }}>Sepultamentos e exumações em {formatDateDMY(dataSelecionada, "-")}</Title>
                                 <SystemButton type="button" tone="cancel" onClick={() => setOpen(false)}>Fechar</SystemButton>
                             </div>
                             <div style={{ marginTop: 12 }}>
@@ -220,13 +228,13 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                                 ) : sepultamentosDia.map(s => (
                                     <div style={{ marginTop: 8, padding: 8, background: "#f8f9fb", borderRadius: 6 }}>
 
-                                        <div key={s.id ?? s._id ?? `${formatDateNormalized(dataSelecionada)}-${s.quadra}-${s.cova}`} style={{ marginBottom: 12 }}>
+                                        <div key={s.id ?? s._id ?? `${formatDateDMY(dataSelecionada, "-")}-${s.quadra}-${s.cova}`} style={{ marginBottom: 12 }}>
                                             <div style={{ fontWeight: 700 }}>{s.nomeFalecido}</div>
-                                            {(s.data || s.horario) ? (
+                                            {s.dataHoraLabel ? (
                                                 <div style={{ color: '#555' }}>
                                                     {s.tipo === "Exumação"
-                                                        ? `Data/Hora da exumação: ${formatDateNormalized(s.data, s.data ?? '')}${s.horario ? ' ' + s.horario : ''}`
-                                                        : (s.horario ? `Horario do sepultamento: ${s.horario}` : null)}
+                                                        ? `Data/Hora da exumação: ${s.dataHoraLabel}`
+                                                        : `Data/Hora do sepultamento: ${s.dataHoraLabel}`}
                                                 </div>
                                             ) : null}
                                         </div>
