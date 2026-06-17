@@ -304,11 +304,18 @@ export const ChevronIcon = styled.span`
 `;
 
 export const MenuLabel = styled.span`
-  white-space: nowrap;
+  min-width: 0;
+  flex: ${({ $isCollapsed }) => ($isCollapsed ? "0 0 0" : "1 1 auto")};
+  white-space: normal;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   transition: opacity 0.2s ease, width 0.2s ease, margin 0.2s ease;
-  width: ${({ $isCollapsed }) => ($isCollapsed ? "0" : "auto")};
+  width: ${({ $isCollapsed }) => ($isCollapsed ? "0" : "100%")};
   opacity: ${({ $isCollapsed }) => ($isCollapsed ? 0 : 1)};
   pointer-events: ${({ $isCollapsed }) => ($isCollapsed ? "none" : "auto")};
 `;
@@ -322,7 +329,7 @@ export const CollapsedNavLink = styled(StyledNavLink)`
   }
 
   ${MenuLabel} {
-    display: ${({ $isCollapsed }) => ($isCollapsed ? "none" : "inline")};
+    display: ${({ $isCollapsed }) => ($isCollapsed ? "none" : "-webkit-box")};
   }
 `;
 
@@ -337,7 +344,7 @@ export const CollapsedToggle = styled(DropdownToggle)`
   }
 
   ${MenuLabel} {
-    display: ${({ $isCollapsed }) => ($isCollapsed ? "none" : "inline")};
+    display: ${({ $isCollapsed }) => ($isCollapsed ? "none" : "-webkit-box")};
   }
 `;
 
@@ -369,6 +376,6 @@ export const CompactChildLink = styled(StyledNavLink)`
   }
 
   ${MenuLabel} {
-    display: ${({ $isCollapsed }) => ($isCollapsed ? "none" : "inline")};
+    display: ${({ $isCollapsed }) => ($isCollapsed ? "none" : "-webkit-box")};
   }
 `;
