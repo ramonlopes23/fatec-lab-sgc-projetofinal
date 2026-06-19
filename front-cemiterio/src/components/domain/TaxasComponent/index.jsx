@@ -526,7 +526,6 @@ function TaxasComponent() {
                     open={modalOpen}
                     title={editingId ? (isEditing ? "Editar taxa" : "Detalhes da taxa") : "Nova taxa"}
                     subtitle={"Visualização completa das taxas do cemitério."}
-                    closeOnOverlay={false}
                     onClose={handleCloseModal}
                 >
                     <form onSubmit={handleSave}>

@@ -685,7 +685,6 @@ export default function ContratosComponent() {
                     open={modalOpen}
                     title={editingId ? (isEditing ? "Editar título de posse" : "Detalhes do título de posse") : "Novo título de posse"}
                     subtitle={"Visualização completa dos contratos/títulos de posse."}
-                    closeOnOverlay={false}
                     onClose={handleCloseModal}
                 >
                     <form onSubmit={handleSaveTitulo}>

@@ -480,7 +480,6 @@ export default function OssariosComponent() {
                     title={editingId ? (isEditing ? "Editar ossário" : "Detalhes do ossário")
                         : "Novo ossário"}
                     subtitle={"Visualização completa dos cemitérios cadastrados."}
-                    closeOnOverlay={false}
                     onClose={handleCloseModal}
                 >
                     <form onSubmit={handleSave}>

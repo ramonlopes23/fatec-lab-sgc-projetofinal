@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { formatDateDMY, formatDateKey, formatDateNormalized, parseDateValue } from "../../../utils/date";
 import { resolveQuadraDisplay } from "../../../utils";
-import { Card, Subtitle, CardHeader, CardBody, CalendarGrid, DayCell, DayButton, Btn, Title } from "./styles";
+import { Card, Subtitle, CardHeader, CardBody, CalendarGrid, DayCell, DayButton, Btn } from "./styles";
+import DefaultModal, { DefaultModalActions } from "../DefaultModal";
 import SystemButton from "../SystemButton";
 
 const hasTimePart = (value) => /(?:T|\s)\d{2}:\d{2}/.test(String(value ?? "").trim());
@@ -215,47 +216,46 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                     ))}
                 </CalendarGrid>
 
-                {open && (
-                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200 }}>
-                        <div style={{ width: 560, maxHeight: '80vh', overflowY: 'auto', background: '#fff', borderRadius: 8, padding: 16 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Title style={{ margin: 0 }}>Sepultamentos e exumações em {formatDateDMY(dataSelecionada, "-")}</Title>
-                                <SystemButton type="button" tone="cancel" onClick={() => setOpen(false)}>Fechar</SystemButton>
-                            </div>
-                            <div style={{ marginTop: 12 }}>
-                                {sepultamentosDia.length === 0 ? (
-                                    <div style={{ color: '#666' }}>Nenhum sepultamento ou exumação registrado neste dia.</div>
-                                ) : sepultamentosDia.map(s => (
-                                    <div style={{ marginTop: 8, padding: 8, background: "#f8f9fb", borderRadius: 6 }}>
-
-                                        <div key={s.id ?? s._id ?? `${formatDateDMY(dataSelecionada, "-")}-${s.quadra}-${s.cova}`} style={{ marginBottom: 12 }}>
-                                            <div style={{ fontWeight: 700 }}>{s.nomeFalecido}</div>
-                                            {s.dataHoraLabel ? (
-                                                <div style={{ color: '#555' }}>
-                                                    {s.tipo === "Exumação"
-                                                        ? `Data/Hora da exumação: ${s.dataHoraLabel}`
-                                                        : `Data/Hora do sepultamento: ${s.dataHoraLabel}`}
-                                                </div>
-                                            ) : null}
+                <DefaultModal
+                    open={open}
+                    title={`Sepultamentos e exumações em ${formatDateDMY(dataSelecionada, "-")}`}
+                    width="560px"
+                    onClose={() => setOpen(false)}
+                >
+                    <div style={{ marginTop: 12 }}>
+                        {sepultamentosDia.length === 0 ? (
+                            <div style={{ color: '#666' }}>Nenhum sepultamento ou exumação registrado neste dia.</div>
+                        ) : sepultamentosDia.map(s => (
+                            <div key={s.id ?? s._id ?? `${formatDateDMY(dataSelecionada, "-")}-${s.quadra}-${s.cova}`} style={{ marginTop: 8, padding: 8, background: "#f8f9fb", borderRadius: 6 }}>
+                                <div style={{ marginBottom: 12 }}>
+                                    <div style={{ fontWeight: 700 }}>{s.nomeFalecido}</div>
+                                    {s.dataHoraLabel ? (
+                                        <div style={{ color: '#555' }}>
+                                            {s.tipo === "Exumação"
+                                                ? `Data/Hora da exumação: ${s.dataHoraLabel}`
+                                                : `Data/Hora do sepultamento: ${s.dataHoraLabel}`}
                                         </div>
+                                    ) : null}
+                                </div>
 
+                                <div style={{ color: '#555' }}>Quadra: {s.quadra} • Cova: {s.cova}</div>
+                                <div style={{ marginTop: 6, fontSize: 12, color: '#333' }}>{String(s.status)}{s.reservada ? ' • Particular' : ''}</div>
 
-                                        <div style={{ color: '#555' }}>Quadra: {s.quadra} • Cova: {s.cova}</div>
-                                        <div style={{ marginTop: 6, fontSize: 12, color: '#333' }}>{String(s.status)}{s.reservada ? ' • Particular' : ''}</div>
-
-                                        {s.tipo === "Exumação" && (
-                                            <div style={{ marginTop: 8, padding: 8, background: "#fff", borderRadius: 6 }}>
-                                                {s.motivo ? <div><strong>Motivo: </strong>{s.motivo}</div> : null}
-                                                {s.destino ? <div><strong>Destino: </strong>{s.destino}</div> : null}
-                                                {s.coveiro ? <div><strong>Coveiro: </strong>{s.coveiro}</div> : null}
-                                            </div>
-                                        )}
+                                {s.tipo === "Exumação" && (
+                                    <div style={{ marginTop: 8, padding: 8, background: "#fff", borderRadius: 6 }}>
+                                        {s.motivo ? <div><strong>Motivo: </strong>{s.motivo}</div> : null}
+                                        {s.destino ? <div><strong>Destino: </strong>{s.destino}</div> : null}
+                                        {s.coveiro ? <div><strong>Coveiro: </strong>{s.coveiro}</div> : null}
                                     </div>
-                                ))}
+                                )}
                             </div>
-                        </div>
+                        ))}
                     </div>
-                )}
+
+                    <DefaultModalActions>
+                        <SystemButton type="button" tone="cancel" onClick={() => setOpen(false)}>Fechar</SystemButton>
+                    </DefaultModalActions>
+                </DefaultModal>
             </CardBody>
         </Card >
     );

@@ -615,7 +615,6 @@ export default function CemiteriosComponent() {
                     open={modalOpen}
                     title={editingId ? (isEditing ? "Editar cemitério" : "Detalhes do cemitério") : "Novo cemitério"}
                     subtitle={"Visualização completa dos cemitérios cadastrados."}
-                    closeOnOverlay={false}
                     onClose={handleCloseModal}
                 >
                     <form onSubmit={handleSave}>

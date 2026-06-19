@@ -120,9 +120,16 @@ export const getVisibleBlocks = (blocks = [], selectedCemeteryId) => {
 export const buildQuadrasFromData = (visibleBlocks = [], covasData = [], sepultamentosAll = []) => {
   const visibleSepData = (sepultamentosAll || []).filter((s) => !s.foi_exumado);
   const quadraMap = new Map();
+  const blockIdByNumber = new Map();
 
   (visibleBlocks || []).forEach((block) => {
-    quadraMap.set(String(block.id), {
+    const blockId = String(block.id ?? "").trim();
+    if (!blockId) return;
+
+    const blockNumber = String(block.number ?? "").trim();
+    if (blockNumber) blockIdByNumber.set(blockNumber, blockId);
+
+    quadraMap.set(blockId, {
       id: block.id,
       num_quadra: String(block.number),
       nome: `Quadra ${block.number}`,
@@ -133,19 +140,16 @@ export const buildQuadrasFromData = (visibleBlocks = [], covasData = [], sepulta
     });
   });
 
-  (covasData || []).forEach((cova) => {
-    const qKey = String(resolveBlockId(cova?.grave?.blockId ?? cova?.grave?.block ?? cova?.blockId ?? cova?.quadra ?? cova?.quadra_cova) || "0");
+  const resolveVisibleQuadraKey = (value) => {
+    const raw = String(resolveBlockId(value) ?? "").trim();
+    if (!raw) return "";
+    if (quadraMap.has(raw)) return raw;
+    return blockIdByNumber.get(raw) || "";
+  };
 
-    if (!quadraMap.has(qKey)) {
-      quadraMap.set(qKey, {
-        id: qKey,
-        num_quadra: String(qKey),
-        nome: `Quadra ${qKey}`,
-        max_covas: 0,
-        descricao: "",
-        covas: [],
-      });
-    }
+  (covasData || []).forEach((cova) => {
+    const qKey = resolveVisibleQuadraKey(cova?.grave?.blockId ?? cova?.grave?.block ?? cova?.blockId ?? cova?.quadra ?? cova?.quadra_cova);
+    if (!qKey) return;
 
     const quadraObj = quadraMap.get(qKey);
     const numero = cova.num_cova ?? cova.num_sepultura ?? cova.numero ?? "";
@@ -166,17 +170,8 @@ export const buildQuadrasFromData = (visibleBlocks = [], covasData = [], sepulta
     const sepIsConcluded = confirmed || String(sep.status ?? "").toLowerCase().includes("concl");
     if (!sepIsConcluded) return;
 
-    const qKey = String(sep.quadra_sep ?? sep.quadra ?? "0");
-    if (!quadraMap.has(qKey)) {
-      quadraMap.set(qKey, {
-        id: qKey,
-        num_quadra: String(qKey),
-        nome: `Quadra ${qKey}`,
-        max_covas: 0,
-        descricao: "",
-        covas: [],
-      });
-    }
+    const qKey = resolveVisibleQuadraKey(sep.quadra_sep ?? sep.quadra);
+    if (!qKey) return;
 
     const quadraObj = quadraMap.get(qKey);
     const numero = sep.num_sepultura_sep || sep.num_sepultura || sep.numero || "";
