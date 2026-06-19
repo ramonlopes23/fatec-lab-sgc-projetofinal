@@ -60,8 +60,6 @@ import SystemButton from "../../common/SystemButton";
 import DefaultModal, {
     DefaultModalActions,
     DefaultModalGrid,
-    DefaultModalInfoField,
-    DefaultModalViewGrid,
 } from "../../common/DefaultModal";
 import { useFormModal, useTaxas, useToastFeedback } from "../../../hooks";
 import { formatCurrencyBRL, formatDateDMY, formatTaxaLabel, isDateWithinNextDays, normalizeSearchText, normalizeTaxa } from "../../../utils";
@@ -101,6 +99,15 @@ const filterSelectSx = {
         boxShadow: "0 0 0 4px rgba(74, 47, 227, 0.08)",
     },
 };
+const modalSelectProps = {
+    MenuProps: {
+        disablePortal: true,
+        sx: { zIndex: 2101 },
+        PaperProps: {
+            sx: { zIndex: 2101 },
+        },
+    },
+};
 
 const filterTextFieldSx = {
     "& .MuiInputBase-root": { borderRadius: "12px", backgroundColor: "#fff" },
@@ -116,6 +123,12 @@ const normalizeCode = (value) => String(value || "")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
+
+const formatTaxaTypeLabel = (value) => {
+    const label = String(value || "").trim().replace(/[_-]+/g, " ");
+    if (!label) return "-";
+    return label.charAt(0).toUpperCase() + label.slice(1);
+};
 
 const isVencendoEm30Dias = (taxa) => isDateWithinNextDays(taxa?.vigencia_fim, 30);
 
@@ -164,6 +177,11 @@ function TaxasComponent() {
         const values = new Set(normalizedTaxas.map((taxa) => String(taxa.tipo || "").trim()).filter(Boolean));
         return Array.from(values).sort((a, b) => a.localeCompare(b));
     }, [normalizedTaxas]);
+
+    const modalTypeOptions = useMemo(() => {
+        const values = new Set(["sepultamento", ...typeOptions, String(form.tipo || "").trim()].filter(Boolean));
+        return Array.from(values).sort((a, b) => a.localeCompare(b));
+    }, [form.tipo, typeOptions]);
 
     const filteredTaxas = useMemo(() => {
         const term = normalizeSearchText(search);
@@ -303,7 +321,7 @@ function TaxasComponent() {
         ["Descrição", form.descricao],
         ["Código", form.codigo],
         ["Valor", formatCurrencyBRL(form.valor)],
-        ["Tipo", formatTaxaLabel(form.tipo)],
+        ["Tipo", formatTaxaTypeLabel(form.tipo)],
         ["Vigência início", formatDateDMY(form.vigencia_inicio, "-")],
         ["Vigência fim", formatDateDMY(form.vigencia_fim, "-")],
         ["Status", form.active ? "Ativa" : "Inativa"],
@@ -479,7 +497,7 @@ function TaxasComponent() {
                                                 <Tr key={String(normalized.id || normalized.codigo)} index={index}>
                                                     <Td>{normalized.codigo}</Td>
                                                     <Td>{normalized.descricao}</Td>
-                                                    <Td>{normalized.tipo}</Td>
+                                                    <Td>{formatTaxaTypeLabel(normalized.tipo)}</Td>
                                                     <Td>{formatCurrencyBRL(normalized.valor)}</Td>
                                                     <Td>{formatVigencia(normalized)}</Td>
                                                     <TdStatus>
@@ -526,16 +544,11 @@ function TaxasComponent() {
                     open={modalOpen}
                     title={editingId ? (isEditing ? "Editar taxa" : "Detalhes da taxa") : "Nova taxa"}
                     subtitle={"Visualização completa das taxas do cemitério."}
+                    fields={isViewingExisting ? taxaViewFields : []}
                     onClose={handleCloseModal}
                 >
                     <form onSubmit={handleSave}>
-                        {isViewingExisting ? (
-                            <DefaultModalViewGrid>
-                                {taxaViewFields.map(([label, value]) => (
-                                    <DefaultModalInfoField key={label} label={label} value={value} />
-                                ))}
-                            </DefaultModalViewGrid>
-                        ) : (
+                        {!isViewingExisting ? (
                             <DefaultModalGrid>
                                 <div>
                                     <label>Descrição</label>
@@ -579,8 +592,13 @@ function TaxasComponent() {
                                         value={form.tipo}
                                         onChange={(event) => updateField("tipo", event.target.value)}
                                         disabled={isSubmitting}
+                                        SelectProps={modalSelectProps}
                                     >
-                                        <MenuItem value="sepultamento">Sepultamento</MenuItem>
+                                        {modalTypeOptions.map((type) => (
+                                            <MenuItem key={type} value={type}>
+                                                {formatTaxaTypeLabel(type)}
+                                            </MenuItem>
+                                        ))}
                                     </TextField>
                                 </div>
 
@@ -618,7 +636,7 @@ function TaxasComponent() {
                                     </CheckboxControl>
                                 </div>
                             </DefaultModalGrid>
-                        )}
+                        ) : null}
 
                         <DefaultModalActions>
                             {isViewingExisting ? (

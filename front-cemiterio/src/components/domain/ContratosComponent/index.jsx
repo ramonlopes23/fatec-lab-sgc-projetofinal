@@ -67,8 +67,6 @@ import SystemButton from "../../common/SystemButton";
 import DefaultModal, {
     DefaultModalActions,
     DefaultModalGrid,
-    DefaultModalInfoField,
-    DefaultModalViewGrid,
 } from "../../common/DefaultModal";
 
 const STATUS_OPTIONS = [
@@ -131,8 +129,26 @@ const filterTextFieldSx = {
 };
 
 const formatDateBR = (value) => formatDateDMY(value, value || "-");
+const modalSelectProps = {
+    MenuProps: {
+        disablePortal: true,
+        sx: { zIndex: 2101 },
+        PaperProps: {
+            sx: { zIndex: 2101 },
+        },
+    },
+};
 
-const normalizeStatus = (status) => String(status || "").trim().toLowerCase();
+const STATUS_ALIASES = {
+    active: "ativo",
+    inactive: "inativo",
+    expired: "vencido",
+};
+
+const normalizeStatus = (status) => {
+    const normalized = String(status || "").trim().toLowerCase();
+    return STATUS_ALIASES[normalized] || normalized;
+};
 
 const statusLabel = (status) => {
     const normalized = normalizeStatus(status);
@@ -274,6 +290,22 @@ export default function ContratosComponent() {
         quadraOptions.find((quadra) => String(quadra.numero) === String(form.quadra) || String(quadra.id) === String(form.quadra))
         || null
     ), [form.quadra, quadraOptions]);
+
+    const quadraSelectValue = selectedQuadra?.numero || form.quadra || "";
+    const modalQuadraOptions = useMemo(() => {
+        if (!quadraSelectValue || quadraOptions.some((quadra) => String(quadra.numero) === String(quadraSelectValue))) {
+            return quadraOptions;
+        }
+
+        return [
+            ...quadraOptions,
+            {
+                id: `current-${quadraSelectValue}`,
+                numero: quadraSelectValue,
+                nome: `Quadra ${quadraSelectValue}`,
+            },
+        ];
+    }, [quadraOptions, quadraSelectValue]);
 
     const getSepulturaQuadraKey = (sepultura) => String(
         sepultura?.blockId ?? sepultura?.block ?? sepultura?.quadra_cova ?? sepultura?.quadra ?? sepultura?.quadra_sep ?? ""
@@ -446,7 +478,7 @@ export default function ContratosComponent() {
             status: normalized.status || "ativo",
             validade_titulo: normalized.validade_titulo,
             sepultura: normalized.sepultura,
-            quadra: normalized.quadra,
+            quadra: quadraOptions.find((quadra) => String(quadra.numero) === String(normalized.quadra) || String(quadra.id) === String(normalized.quadra))?.numero || normalized.quadra,
             valor: String(normalized.valor ?? 0),
             cemiterio: normalized.cemiterio || selectedCemeteryName,
         });
@@ -685,16 +717,11 @@ export default function ContratosComponent() {
                     open={modalOpen}
                     title={editingId ? (isEditing ? "Editar título de posse" : "Detalhes do título de posse") : "Novo título de posse"}
                     subtitle={"Visualização completa dos contratos/títulos de posse."}
+                    fields={isViewingExisting ? contratoViewFields : []}
                     onClose={handleCloseModal}
                 >
                     <form onSubmit={handleSaveTitulo}>
-                        {isViewingExisting ? (
-                            <DefaultModalViewGrid>
-                                {contratoViewFields.map(([label, value]) => (
-                                    <DefaultModalInfoField key={label} label={label} value={value} />
-                                ))}
-                            </DefaultModalViewGrid>
-                        ) : (
+                        {!isViewingExisting ? (
                             <DefaultModalGrid>
                                 <div style={{ gridColumn: "1 / -1" }}>
                                     <label>Nome do titular</label>
@@ -762,6 +789,7 @@ export default function ContratosComponent() {
                                         value={form.status}
                                         onChange={(event) => updateField("status", event.target.value)}
                                         disabled={isSubmitting}
+                                        SelectProps={modalSelectProps}
                                         sx={{
                                             "& .MuiOutlinedInput-root": {
                                                 borderRadius: "12px",
@@ -797,9 +825,10 @@ export default function ContratosComponent() {
                                         select
                                         fullWidth
                                         size="small"
-                                        value={form.quadra}
+                                        value={quadraSelectValue}
                                         onChange={(event) => updateField("quadra", event.target.value)}
                                         disabled={isSubmitting}
+                                        SelectProps={modalSelectProps}
                                         sx={{
                                             "& .MuiOutlinedInput-root": {
                                                 borderRadius: "12px",
@@ -810,7 +839,7 @@ export default function ContratosComponent() {
                                         }}
                                     >
                                         <MenuItem value="">Selecione a quadra</MenuItem>
-                                        {quadraOptions.map((quadra) => (
+                                        {modalQuadraOptions.map((quadra) => (
                                             <MenuItem key={quadra.id} value={quadra.numero}>
                                                 {quadra.nome || `Quadra ${quadra.numero}`}
                                             </MenuItem>
@@ -830,7 +859,7 @@ export default function ContratosComponent() {
                                     {errors.validade_titulo ? <p style={errorStyle}>{errors.validade_titulo}</p> : null}
                                 </div>
                             </DefaultModalGrid>
-                        )}
+                        ) : null}
 
                         <DefaultModalActions>
                             {isViewingExisting ? (

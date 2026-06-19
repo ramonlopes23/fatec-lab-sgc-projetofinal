@@ -67,8 +67,6 @@ import SystemButton from "../../common/SystemButton";
 import DefaultModal, {
     DefaultModalActions,
     DefaultModalGrid,
-    DefaultModalInfoField,
-    DefaultModalViewGrid,
 } from "../../common/DefaultModal";
 
 const INITIAL_FORM = {
@@ -615,16 +613,11 @@ export default function CemiteriosComponent() {
                     open={modalOpen}
                     title={editingId ? (isEditing ? "Editar cemitério" : "Detalhes do cemitério") : "Novo cemitério"}
                     subtitle={"Visualização completa dos cemitérios cadastrados."}
+                    fields={isViewingExisting ? cemeteryViewFields : []}
                     onClose={handleCloseModal}
                 >
                     <form onSubmit={handleSave}>
-                        {isViewingExisting ? (
-                            <DefaultModalViewGrid>
-                                {cemeteryViewFields.map(([label, value]) => (
-                                    <DefaultModalInfoField key={label} label={label} value={value} />
-                                ))}
-                            </DefaultModalViewGrid>
-                        ) : (
+                        {!isViewingExisting ? (
                             <DefaultModalGrid>
                                 <div style={{ gridColumn: "1 / -1" }}>
                                     <label>Nome</label>
@@ -660,7 +653,7 @@ export default function CemiteriosComponent() {
                                     </FilterSelect>
                                 </div>
                             </DefaultModalGrid>
-                        )}
+                        ) : null}
 
                         <DefaultModalActions>
                             {isViewingExisting ? (

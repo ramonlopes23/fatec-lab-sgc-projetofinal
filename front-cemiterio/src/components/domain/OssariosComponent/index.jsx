@@ -10,8 +10,6 @@ import SystemButton from "../../common/SystemButton";
 import DefaultModal, {
     DefaultModalActions,
     DefaultModalGrid,
-    DefaultModalInfoField,
-    DefaultModalViewGrid,
 } from "../../common/DefaultModal";
 import {
     Card,
@@ -77,6 +75,18 @@ const STATUS_OPTIONS = [
 const ACTIVE_STATUS = new Set(["disponivel", "ocupado"]);
 const INACTIVE_STATUS = new Set(["interditado", "manutencao"]);
 
+const STATUS_ALIASES = {
+    active: "disponivel",
+    ativo: "disponivel",
+    available: "disponivel",
+    inactive: "interditado",
+    inativo: "interditado",
+    maintenance: "manutencao",
+    manutencao: "manutencao",
+    "manutenção": "manutencao",
+    occupied: "ocupado",
+};
+
 const INITIAL_FORM = {
     numero: "",
     tipo: "coletivo",
@@ -86,6 +96,15 @@ const INITIAL_FORM = {
 };
 
 const errorStyle = { margin: "6px 0 0", color: "#b42318", fontSize: 12 };
+const modalSelectProps = {
+    MenuProps: {
+        disablePortal: true,
+        sx: { zIndex: 2101 },
+        PaperProps: {
+            sx: { zIndex: 2101 },
+        },
+    },
+};
 
 const normalizeType = (value) => {
     const raw = String(value || "").trim().toLowerCase();
@@ -107,7 +126,10 @@ const statusLabel = (status) => {
     return found ? found.label : (status || "-");
 };
 
-const normalizeStatus = (status) => String(status || "").trim().toLowerCase();
+const normalizeStatus = (status) => {
+    const normalized = String(status || "").trim().toLowerCase();
+    return STATUS_ALIASES[normalized] || normalized;
+};
 
 const isOssarioActive = (item) => {
     if (item?.active !== undefined) return Boolean(item.active);
@@ -480,16 +502,11 @@ export default function OssariosComponent() {
                     title={editingId ? (isEditing ? "Editar ossário" : "Detalhes do ossário")
                         : "Novo ossário"}
                     subtitle={"Visualização completa dos cemitérios cadastrados."}
+                    fields={isViewingExisting ? ossarioViewFields : []}
                     onClose={handleCloseModal}
                 >
                     <form onSubmit={handleSave}>
-                        {isViewingExisting ? (
-                            <DefaultModalViewGrid>
-                                {ossarioViewFields.map(([label, value]) => (
-                                    <DefaultModalInfoField key={label} label={label} value={value} />
-                                ))}
-                            </DefaultModalViewGrid>
-                        ) : (
+                        {!isViewingExisting ? (
                             <DefaultModalGrid>
                                 <div>
                                     <label>Número do ossário</label>
@@ -511,6 +528,7 @@ export default function OssariosComponent() {
                                         value={form.tipo}
                                         onChange={(event) => updateField("tipo", event.target.value)}
                                         disabled={isSubmitting}
+                                        SelectProps={modalSelectProps}
                                         sx={{
                                             "& .MuiOutlinedInput-root": { borderRadius: "12px" },
                                             "& .MuiOutlinedInput-input": { fontSize: "14px" },
@@ -534,6 +552,7 @@ export default function OssariosComponent() {
                                         value={form.status}
                                         onChange={(event) => updateField("status", event.target.value)}
                                         disabled={isSubmitting}
+                                        SelectProps={modalSelectProps}
                                         sx={{
                                             "& .MuiOutlinedInput-root": { borderRadius: "12px" },
                                             "& .MuiOutlinedInput-input": { fontSize: "14px" },
@@ -573,7 +592,7 @@ export default function OssariosComponent() {
                                     />
                                 </FullWidthField>
                             </DefaultModalGrid>
-                        )}
+                        ) : null}
 
                         <DefaultModalActions>
                             {isViewingExisting ? (

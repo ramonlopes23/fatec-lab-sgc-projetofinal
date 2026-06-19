@@ -37,7 +37,8 @@ export default function DefaultModal({
 }) {
   if (!open) return null;
 
-  const handleOverlayClick = () => {
+  const handleOverlayClick = (event) => {
+    if (event.target !== event.currentTarget) return;
     if (closeOnOverlay && onClose) onClose();
   };
 
@@ -64,6 +65,4 @@ export default function DefaultModal({
 export {
   ModalActions as DefaultModalActions,
   ModalGrid as DefaultModalGrid,
-  ModalViewGrid as DefaultModalViewGrid,
-  DefaultModalInfoField,
 };

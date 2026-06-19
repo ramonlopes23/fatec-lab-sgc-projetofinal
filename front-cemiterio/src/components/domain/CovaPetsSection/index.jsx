@@ -6,8 +6,6 @@ import SystemButton from "../../common/SystemButton";
 import DefaultModal, {
     DefaultModalActions,
     DefaultModalGrid,
-    DefaultModalInfoField,
-    DefaultModalViewGrid,
 } from "../../common/DefaultModal";
 import {
     BtnDelete,
@@ -336,16 +334,11 @@ export default function CovaPetsSection({
                 open={modalAddPetOpen}
                 title={editingPetId ? (isEditingPet ? "Atualizar pet" : "Detalhes do pet") : "Cadastrar Pet"}
                 width="520px"
+                fields={isViewingExistingPet ? petViewFields : []}
                 onClose={handleClosePetModal}
             >
                     <form onSubmit={submitPet}>
-                        {isViewingExistingPet ? (
-                            <DefaultModalViewGrid>
-                                {petViewFields.map(([label, value]) => (
-                                    <DefaultModalInfoField key={label} label={label} value={value} />
-                                ))}
-                            </DefaultModalViewGrid>
-                        ) : (
+                        {!isViewingExistingPet ? (
                         <DefaultModalGrid>
                             <Field>
                                 <Label>Nome do pet</Label>
@@ -413,7 +406,7 @@ export default function CovaPetsSection({
                                 />
                             </Field>
                         </DefaultModalGrid>
-                        )}
+                        ) : null}
 
                         <DefaultModalActions>
                             {isViewingExistingPet ? (

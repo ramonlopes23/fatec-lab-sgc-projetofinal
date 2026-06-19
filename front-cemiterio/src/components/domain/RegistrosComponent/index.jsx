@@ -62,8 +62,6 @@ import SystemButton from "../../common/SystemButton";
 import DefaultModal, {
   DefaultModalActions,
   DefaultModalGrid,
-  DefaultModalInfoField,
-  DefaultModalViewGrid,
 } from "../../common/DefaultModal";
 
 const PAGE_SIZE = 8;
@@ -587,6 +585,11 @@ export default function RegistrosComponent() {
     return type === "date" ? formatDateDMY(value) : value;
   };
 
+  const modalViewFields = modalFields.map(([label, key, type]) => [
+    label,
+    getModalFieldValue(key, type),
+  ]);
+
   return (
     <>
       {ToastElement}
@@ -792,6 +795,7 @@ export default function RegistrosComponent() {
           open={modalOpen}
           title={modalForm?.nome_fal || "Informacoes do falecido"}
           subtitle={isEditing ? "Edite os dados principais do registro." : "Visualização completa do registro cadastral."}
+          fields={!isEditing ? modalViewFields : []}
           onClose={closeModal}
         >
           <form onSubmit={handleSave}>
@@ -809,17 +813,7 @@ export default function RegistrosComponent() {
                   </Field>
                 ))}
               </DefaultModalGrid>
-            ) : (
-              <DefaultModalViewGrid>
-                {modalFields.map(([label, key, type]) => (
-                  <DefaultModalInfoField
-                    key={key}
-                    label={label}
-                    value={getModalFieldValue(key, type)}
-                  />
-                ))}
-              </DefaultModalViewGrid>
-            )}
+            ) : null}
 
             <DefaultModalActions>
               {!isEditing && (

@@ -27,6 +27,7 @@ import { useSystemLogs } from "../../../hooks";
 import { LOG_ACTION_META, LOG_STATUS_META } from "../../../services/logsData.js";
 import SystemButton from "../../common/SystemButton";
 import DrawerComponent, { DrawerActionRow } from "../../common/DrawerComponent";
+import EventTimeline from "../../common/EventTimeline";
 import {
     ActionButton,
     Badge,
@@ -73,14 +74,6 @@ import {
     TdMeta,
     TdStack,
     TdTitle,
-    Timeline,
-    TimelineBody,
-    TimelineDot,
-    TimelineItem,
-    TimelineLabel,
-    TimelineMeta,
-    TimelineRail,
-    TimelineText,
     Title,
     Subtitle,
 } from "./styles.js";
@@ -213,6 +206,18 @@ export default function LogsComponent() {
         if (!selectedLog) return;
         downloadJson(`evento-${selectedLog.id}.json`, selectedLog);
     };
+
+    const selectedTimelineItems = useMemo(() => {
+        const tone = getStatusMeta(selectedLog?.status).tone;
+
+        return (selectedLog?.timeline || []).map((step, index) => ({
+            id: `${step.label}-${step.timestamp || index}`,
+            label: step.label,
+            text: step.value,
+            meta: formatRelative(step.timestamp),
+            tone,
+        }));
+    }, [selectedLog]);
 
     const viewEntity = () => {
         if (!selectedLog?.entity?.route) return;
@@ -671,19 +676,7 @@ export default function LogsComponent() {
                                     </div>
                                 </SectionHeader>
 
-                                <Timeline>
-                                    {(selectedLog.timeline || []).map((step, index) => (
-                                        <TimelineItem key={`${step.label}-${index}`}>
-                                            {index < (selectedLog.timeline || []).length - 1 ? <TimelineRail /> : null}
-                                            <TimelineDot $tone={getStatusMeta(selectedLog.status).tone} />
-                                            <TimelineBody>
-                                                <TimelineLabel>{step.label}</TimelineLabel>
-                                                <TimelineText>{step.value}</TimelineText>
-                                                <TimelineMeta>{formatRelative(step.timestamp)}</TimelineMeta>
-                                            </TimelineBody>
-                                        </TimelineItem>
-                                    ))}
-                                </Timeline>
+                                <EventTimeline items={selectedTimelineItems} emptyText="Nenhum evento registrado para este log." />
                             </SectionCard>
 
                             <SectionCard>
