@@ -5,11 +5,57 @@ export const resolveBlockId = (value) => {
   return value ?? "";
 };
 
+export const normalizeMapKey = (value) => {
+  if (value === null || value === undefined) return "";
+  return String(value).trim();
+};
+
+export const resolveCovaNumber = (cova = {}, sepultamento = {}, grave = {}) => normalizeMapKey(
+  sepultamento?.num_sepultura_sep ??
+  sepultamento?.num_sepultura ??
+  sepultamento?.numero ??
+  sepultamento?.num_cova ??
+  cova?.numero ??
+  cova?.num_cova ??
+  cova?.num_sepultura_sep ??
+  cova?.cova?.num_cova ??
+  cova?.cova?.grave?.number ??
+  grave?.number ??
+  ""
+);
+
+export const resolveCovaQuadraKey = (cova = {}, sepultamento = {}, grave = {}, fallbackQuadra = "") => normalizeMapKey(
+  cova?.cova?.quadra_cova ??
+  cova?.quadra_cova ??
+  cova?.quadra_sep ??
+  cova?.sep?.quadra_sep ??
+  sepultamento?.quadra_sep ??
+  sepultamento?.quadra ??
+  sepultamento?.quadra_cova ??
+  resolveBlockId(grave?.blockId ?? grave?.block) ??
+  fallbackQuadra ??
+  ""
+);
+
+export const COVA_SORT_MODES = {
+  cadastro: "cadastro",
+  numero: "numero",
+};
+
+export const compareCovaNumber = (a, b) =>
+  normalizeMapKey(a?.numero).localeCompare(normalizeMapKey(b?.numero), "pt-BR", {
+    numeric: true,
+    sensitivity: "base",
+  });
+
+export const sortCovasByNumber = (covas = []) => [...covas].sort(compareCovaNumber);
+
 export const normalizeCovaStatus = (s) => {
   if (!s && s !== 0) return "livre";
   const raw = String(s).toLowerCase();
   if (raw.includes("reserv")) return "reservada";
   if (raw.includes("indispon")) return "indisponivel";
+  if (raw.includes("maintenance") || raw.includes("manuten")) return "indisponivel";
   if (raw.includes("ocup")) return "ocupada";
   if (raw === "livre" || raw === "disponivel") return "livre";
   return raw;
@@ -97,7 +143,7 @@ export const getCovaDisplayMeta = (cova, quadraSelecionada = {}, sepultamentosAl
   const occupiedCount = sepCount > 0 ? sepCount : (backendStatus === "OCCUPIED" && capacidadeTotal > 0 ? capacidadeTotal : 0);
 
   let displayStatus = "disponivel";
-  if (isBlocked) displayStatus = "indisponivel";
+  if (isBlocked || backendStatus === "MAINTENANCE") displayStatus = "indisponivel";
   else if (backendStatus === "OCCUPIED") displayStatus = isPerpetual ? "particular_ocupada" : "ocupada";
   else if (isPerpetual) displayStatus = "reservada";
 

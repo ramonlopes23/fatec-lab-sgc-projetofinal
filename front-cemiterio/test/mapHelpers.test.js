@@ -38,6 +38,7 @@ test("resolveBlockId returns the best identifier from objects and primitives", (
 test("normalizeCovaStatus maps backend status variants to UI status", () => {
   assert.equal(normalizeCovaStatus("reservada"), "reservada");
   assert.equal(normalizeCovaStatus("indisponível"), "indisponivel");
+  assert.equal(normalizeCovaStatus("MAINTENANCE"), "indisponivel");
   assert.equal(normalizeCovaStatus("OCUPADA"), "ocupada");
   assert.equal(normalizeCovaStatus("disponivel"), "livre");
   assert.equal(normalizeCovaStatus("Livre"), "livre");
@@ -98,6 +99,14 @@ test("getCovaDisplayMeta prefers blocked and perpetual states", () => {
     petsAll
   );
   assert.equal(blocked.displayStatus, "indisponivel");
+
+  const maintenance = getCovaDisplayMeta(
+    { numero: 1, grave: { status: "MAINTENANCE", bodyCapacity: 2, blocked: false } },
+    { id: 10, num_quadra: 10 },
+    sepultamentosAll,
+    petsAll
+  );
+  assert.equal(maintenance.displayStatus, "indisponivel");
 
   const perpetualReserved = getCovaDisplayMeta(
     { numero: 2, grave: { status: "AVAILABLE", bodyCapacity: 1, areaType: "PERPETUAL", blocked: false } },
