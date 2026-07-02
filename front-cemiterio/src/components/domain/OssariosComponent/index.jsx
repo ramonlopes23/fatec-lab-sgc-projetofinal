@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import MenuItem from "@mui/material/MenuItem";
-import TextField from "@mui/material/TextField";
 import { FaChartPie, FaCheckCircle, FaFilter, FaPlus, FaRegEdit, FaSearch, FaTimesCircle, FaTrash } from "react-icons/fa";
 import api from "../../../services/index.js";
 import { normalizeSearchText } from "../../../utils";
 import { useFormModal, useToastFeedback } from "../../../hooks";
 import ConfirmationDialog from "../../common/ConfirmationDialog";
 import SystemButton from "../../common/SystemButton";
+import SystemSelect from "../../common/SystemSelect";
 import DefaultModal, {
     DefaultModalActions,
     DefaultModalGrid,
@@ -96,15 +95,6 @@ const INITIAL_FORM = {
 };
 
 const errorStyle = { margin: "6px 0 0", color: "#b42318", fontSize: 12 };
-const modalSelectProps = {
-    MenuProps: {
-        disablePortal: true,
-        sx: { zIndex: 2101 },
-        PaperProps: {
-            sx: { zIndex: 2101 },
-        },
-    },
-};
 
 const normalizeType = (value) => {
     const raw = String(value || "").trim().toLowerCase();
@@ -521,49 +511,33 @@ export default function OssariosComponent() {
 
                                 <div>
                                     <label>Tipo</label>
-                                    <TextField
-                                        select
-                                        fullWidth
-                                        size="small"
+                                    <SystemSelect
                                         value={form.tipo}
                                         onChange={(event) => updateField("tipo", event.target.value)}
                                         disabled={isSubmitting}
-                                        SelectProps={modalSelectProps}
-                                        sx={{
-                                            "& .MuiOutlinedInput-root": { borderRadius: "12px" },
-                                            "& .MuiOutlinedInput-input": { fontSize: "14px" },
-                                        }}
                                     >
                                         {TYPE_OPTIONS.map((option) => (
-                                            <MenuItem key={option.value} value={option.value}>
+                                            <option key={option.value} value={option.value}>
                                                 {option.label}
-                                            </MenuItem>
+                                            </option>
                                         ))}
-                                    </TextField>
+                                    </SystemSelect>
                                     {errors.tipo ? <p style={errorStyle}>{errors.tipo}</p> : null}
                                 </div>
 
                                 <div>
                                     <label>Status</label>
-                                    <TextField
-                                        select
-                                        fullWidth
-                                        size="small"
+                                    <SystemSelect
                                         value={form.status}
                                         onChange={(event) => updateField("status", event.target.value)}
                                         disabled={isSubmitting}
-                                        SelectProps={modalSelectProps}
-                                        sx={{
-                                            "& .MuiOutlinedInput-root": { borderRadius: "12px" },
-                                            "& .MuiOutlinedInput-input": { fontSize: "14px" },
-                                        }}
                                     >
                                         {STATUS_OPTIONS.map((option) => (
-                                            <MenuItem key={option.value} value={option.value}>
+                                            <option key={option.value} value={option.value}>
                                                 {option.label}
-                                            </MenuItem>
+                                            </option>
                                         ))}
-                                    </TextField>
+                                    </SystemSelect>
                                     {errors.status ? <p style={errorStyle}>{errors.status}</p> : null}
                                 </div>
 

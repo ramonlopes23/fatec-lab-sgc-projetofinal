@@ -118,16 +118,6 @@ export const Input = styled.input`
   outline: none;
 `;
 
-export const Select = styled.select`
-  width: 100%;
-  box-sizing: border-box;
-  padding: 9px 10px;
-  border-radius: 10px;
-  border: 1px solid #d6d9e6;
-  outline: none;
-  background: #fff;
-`;
-
 export const Textarea = styled.textarea`
   width: 100%;
   box-sizing: border-box;

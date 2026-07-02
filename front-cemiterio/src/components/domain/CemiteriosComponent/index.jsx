@@ -24,7 +24,6 @@ import {
     Container,
     FilterGrid,
     FiltersPanel,
-    FilterSelect,
     FormStyled,
     HeaderActions,
     HeaderCopy,
@@ -64,6 +63,7 @@ import { formatDateDMY, formatDateTimeDMY, normalizeSearchText, parseDateValue }
 import { useFormModal, useToastFeedback } from "../../../hooks";
 import ConfirmationDialog from "../../common/ConfirmationDialog";
 import SystemButton from "../../common/SystemButton";
+import SystemSelect from "../../common/SystemSelect";
 import DefaultModal, {
     DefaultModalActions,
     DefaultModalGrid,
@@ -96,7 +96,7 @@ const filterSelectSx = {
         borderColor: "rgba(31, 38, 82, 0.2)",
     },
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-        borderColor: "#4a2fe3",
+        borderColor: "#191970",
         boxShadow: "0 0 0 4px rgba(74, 47, 227, 0.08)",
     },
 };
@@ -643,14 +643,14 @@ export default function CemiteriosComponent() {
 
                                 <div>
                                     <label>Status</label>
-                                    <FilterSelect
+                                    <SystemSelect
                                         value={form.active ? "active" : "inactive"}
                                         onChange={(event) => updateField("active", event.target.value === "active")}
                                         disabled={isSubmitting}
                                     >
                                         <option value="active">Ativo</option>
                                         <option value="inactive">Inativo</option>
-                                    </FilterSelect>
+                                    </SystemSelect>
                                 </div>
                             </DefaultModalGrid>
                         ) : null}

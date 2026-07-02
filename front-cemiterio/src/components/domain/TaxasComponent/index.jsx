@@ -57,6 +57,7 @@ import {
 import { createTaxa, patchTaxaStatus, updateTaxa } from "../../../services/taxaService";
 import ConfirmationDialog from "../../common/ConfirmationDialog";
 import SystemButton from "../../common/SystemButton";
+import SystemSelect from "../../common/SystemSelect";
 import DefaultModal, {
     DefaultModalActions,
     DefaultModalGrid,
@@ -95,20 +96,10 @@ const filterSelectSx = {
         borderColor: "rgba(31, 38, 82, 0.2)",
     },
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-        borderColor: "#4a2fe3",
+        borderColor: "#191970",
         boxShadow: "0 0 0 4px rgba(74, 47, 227, 0.08)",
     },
 };
-const modalSelectProps = {
-    MenuProps: {
-        disablePortal: true,
-        sx: { zIndex: 2101 },
-        PaperProps: {
-            sx: { zIndex: 2101 },
-        },
-    },
-};
-
 const filterTextFieldSx = {
     "& .MuiInputBase-root": { borderRadius: "12px", backgroundColor: "#fff" },
     "& .MuiOutlinedInput-root": { borderRadius: "12px" },
@@ -585,21 +576,17 @@ function TaxasComponent() {
 
                                 <div>
                                     <label>Tipo</label>
-                                    <TextField
-                                        select
-                                        fullWidth
-                                        size="small"
+                                    <SystemSelect
                                         value={form.tipo}
                                         onChange={(event) => updateField("tipo", event.target.value)}
                                         disabled={isSubmitting}
-                                        SelectProps={modalSelectProps}
                                     >
                                         {modalTypeOptions.map((type) => (
-                                            <MenuItem key={type} value={type}>
+                                            <option key={type} value={type}>
                                                 {formatTaxaTypeLabel(type)}
-                                            </MenuItem>
+                                            </option>
                                         ))}
-                                    </TextField>
+                                    </SystemSelect>
                                 </div>
 
                                 <div>

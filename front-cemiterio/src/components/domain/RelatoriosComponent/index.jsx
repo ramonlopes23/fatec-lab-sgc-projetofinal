@@ -117,7 +117,7 @@ const filterSelectSx = {
         borderColor: "rgba(31, 38, 82, 0.2)",
     },
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-        borderColor: "#4a2fe3",
+        borderColor: "#191970",
         boxShadow: "0 0 0 4px rgba(74, 47, 227, 0.08)",
     },
 };

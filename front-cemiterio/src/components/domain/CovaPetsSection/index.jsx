@@ -3,6 +3,7 @@ import api from "../../../services/index.js";
 import { useToastFeedback } from "../../../hooks";
 import ConfirmationDialog from "../../common/ConfirmationDialog";
 import SystemButton from "../../common/SystemButton";
+import SystemSelect from "../../common/SystemSelect";
 import DefaultModal, {
     DefaultModalActions,
     DefaultModalGrid,
@@ -19,7 +20,6 @@ import {
     PetList,
     PetMeta,
     PetName,
-    Select,
     TabButton,
     TabsBar,
     Textarea,
@@ -384,7 +384,7 @@ export default function CovaPetsSection({
 
                             <Field>
                                 <Label>Vincular ao sepultamento</Label>
-                                <Select
+                                <SystemSelect
                                     value={formPet.sepultamento_id}
                                     disabled={saving}
                                     onChange={(ev) => handleFormPetChange("sepultamento_id", ev.target.value)}
@@ -395,7 +395,7 @@ export default function CovaPetsSection({
                                             {s.nome_sep || s.falecido?.nome_fal || `Sepultamento ${s.id}`}
                                         </option>
                                     ))}
-                                </Select>
+                                </SystemSelect>
                             </Field>
 
                             <Field style={{ gridColumn: "1 / -1" }}>

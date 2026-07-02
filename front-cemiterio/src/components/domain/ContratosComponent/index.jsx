@@ -65,6 +65,7 @@ import { formatCurrencyBRL, formatDateDMY, formatDateTimeKey, getValidityBucket,
 import { useFormModal, useToastFeedback } from "../../../hooks";
 import ConfirmationDialog from "../../common/ConfirmationDialog";
 import SystemButton from "../../common/SystemButton";
+import SystemSelect from "../../common/SystemSelect";
 import DefaultModal, {
     DefaultModalActions,
     DefaultModalGrid,
@@ -117,7 +118,7 @@ const filterSelectSx = {
         borderColor: "rgba(31, 38, 82, 0.2)",
     },
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-        borderColor: "#4a2fe3",
+        borderColor: "#191970",
         boxShadow: "0 0 0 4px rgba(74, 47, 227, 0.08)",
     },
 };
@@ -130,15 +131,6 @@ const filterTextFieldSx = {
 };
 
 const formatDateBR = (value) => formatDateDMY(value, value || "-");
-const modalSelectProps = {
-    MenuProps: {
-        disablePortal: true,
-        sx: { zIndex: 2101 },
-        PaperProps: {
-            sx: { zIndex: 2101 },
-        },
-    },
-};
 
 const STATUS_ALIASES = {
     active: "ativo",
@@ -898,59 +890,35 @@ export default function ContratosComponent() {
 
                                 <div>
                                     <label>Status</label>
-                                    <TextField
-                                        select
-                                        fullWidth
-                                        size="small"
+                                    <SystemSelect
                                         value={form.status}
                                         onChange={(event) => updateField("status", event.target.value)}
                                         disabled={isSubmitting}
-                                        SelectProps={modalSelectProps}
-                                        sx={{
-                                            "& .MuiOutlinedInput-root": {
-                                                borderRadius: "12px",
-                                            },
-                                            "& .MuiOutlinedInput-input": {
-                                                fontSize: "14px",
-                                            },
-                                        }}
                                     >
                                         {STATUS_OPTIONS.map((option) => (
-                                            <MenuItem key={option.value} value={option.value}>
+                                            <option key={option.value} value={option.value}>
                                                 {option.label}
-                                            </MenuItem>
+                                            </option>
                                         ))}
-                                    </TextField>
+                                    </SystemSelect>
                                     {errors.status ? <p style={errorStyle}>{errors.status}</p> : null}
                                 </div>
                                 
 
                                 <div>
                                     <label>Quadra</label>
-                                    <TextField
-                                        select
-                                        fullWidth
-                                        size="small"
+                                    <SystemSelect
                                         value={quadraSelectValue}
                                         onChange={(event) => updateField("quadra", event.target.value)}
                                         disabled={isSubmitting}
-                                        SelectProps={modalSelectProps}
-                                        sx={{
-                                            "& .MuiOutlinedInput-root": {
-                                                borderRadius: "12px",
-                                            },
-                                            "& .MuiOutlinedInput-input": {
-                                                fontSize: "14px",
-                                            },
-                                        }}
                                     >
-                                        <MenuItem value="">Selecione a quadra</MenuItem>
+                                        <option value="">Selecione a quadra</option>
                                         {modalQuadraOptions.map((quadra) => (
-                                            <MenuItem key={quadra.id} value={quadra.numero}>
+                                            <option key={quadra.id} value={quadra.numero}>
                                                 {quadra.nome || `Quadra ${quadra.numero}`}
-                                            </MenuItem>
+                                            </option>
                                         ))}
-                                    </TextField>
+                                    </SystemSelect>
                                     {errors.quadra ? <p style={errorStyle}>{errors.quadra}</p> : null}
                                 </div>
 

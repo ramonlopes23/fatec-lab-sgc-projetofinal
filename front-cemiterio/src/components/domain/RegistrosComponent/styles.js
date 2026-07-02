@@ -121,7 +121,7 @@ export const SearchField = styled.input`
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
   &:focus {
-    border-color: #4a2fe3;
+    border-color: #191970;
     box-shadow: 0 0 0 4px rgba(74, 47, 227, 0.08);
   }
 
@@ -454,7 +454,7 @@ export const Input = styled.input`
   padding: 11px 12px;
 
   &:focus {
-    border-color: #4a2fe3;
+    border-color: #191970;
     box-shadow: 0 0 0 4px rgba(74, 47, 227, 0.08);
   }
 `;

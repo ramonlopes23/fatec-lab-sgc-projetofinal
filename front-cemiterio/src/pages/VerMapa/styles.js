@@ -236,17 +236,6 @@ export const LegendItem = styled.div`
 `;
 
 
-export const SmallSelect = styled.select`
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #d6d9e6;
-  background: #fff;
-  font-size: 14px;
-  outline: none;
-  margin-right:10px;
-  margin-bottom:10px;
-`;
-
 export const ThreeCols = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -880,15 +869,6 @@ export const StructureChevron = styled.span`
   color: #191970;
   transition: transform 0.2s ease;
   transform: rotate(${({ $open }) => ($open ? "180deg" : "0deg")});
-`;
-
-export const SelectMedium = styled(SmallSelect)`
-  width: 200px;
-  border-color: ${({ $invalid }) => ($invalid ? "#b42318" : "#d6d9e6")};
-`;
-
-export const SelectSmall = styled(SmallSelect)`
-  width: 80px;
 `;
 
 export const InputTiny = styled(Input)`

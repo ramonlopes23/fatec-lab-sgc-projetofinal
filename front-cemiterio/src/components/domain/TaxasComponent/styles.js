@@ -196,7 +196,7 @@ export const SearchField = styled.input`
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
   &:focus {
-    border-color: #4a2fe3;
+    border-color: #191970;
     box-shadow: 0 0 0 4px rgba(74, 47, 227, 0.08);
   }
 
@@ -217,7 +217,7 @@ export const FilterSelect = styled.select`
   padding: 13px 14px;
 
   &:focus {
-    border-color: #4a2fe3;
+    border-color: #191970;
     box-shadow: 0 0 0 4px rgba(74, 47, 227, 0.08);
   }
 `;
@@ -349,14 +349,14 @@ export const CheckboxControl = styled.label`
     height: 16px;
     margin: 0;
     margin-right:5px;
-    accent-color: #4a2fe3;
+    accent-color: #191970;
     cursor: inherit;
   }
 `;
 
 export const BtnPrimaryClose = styled.button`
   background: #fff;
-  color: #4a2fe3;
+  color: #191970;
   border: 1px solid rgba(74, 47, 227, 0.16);
   margin-top: 10px;
   padding: 12px 20px;

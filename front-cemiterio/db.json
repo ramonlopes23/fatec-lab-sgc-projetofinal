@@ -86,8 +86,8 @@
       "endereco_resp": "",
       "nome": "John Doe",
       "taxa_label": "ADULTO (TERRA) - R$ 112,27",
-      "status": "Pendente",
-      "confirmado": false
+      "status": "Concluído",
+      "confirmado": true
     }
   ],
   "cemeteries": [
@@ -126,10 +126,10 @@
       "id": "89cc",
       "number": 1,
       "graveType": "EARTH",
-      "bodyCapacity": 1,
+      "bodyCapacity": 0,
       "areaType": "COMMON",
       "blockId": "4718",
-      "status": "AVAILABLE",
+      "status": "OCCUPIED",
       "blocked": false
     }
   ],

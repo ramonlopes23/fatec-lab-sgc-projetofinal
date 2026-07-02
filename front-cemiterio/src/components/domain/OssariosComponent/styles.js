@@ -199,7 +199,7 @@ export const SearchField = styled.input`
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
   &:focus {
-    border-color: #4a2fe3;
+    border-color: #191970;
     box-shadow: 0 0 0 4px rgba(74, 47, 227, 0.08);
   }
 
@@ -220,7 +220,7 @@ export const FilterSelect = styled.select`
   padding: 13px 14px;
 
   &:focus {
-    border-color: #4a2fe3;
+    border-color: #191970;
     box-shadow: 0 0 0 4px rgba(74, 47, 227, 0.08);
   }
 `;
@@ -371,7 +371,7 @@ export const BtnPrimaryClose = styled.button`
 `;
 
 export const BtnPrimarySave = styled.button`
-  background: linear-gradient(135deg, #6b42f5 0%, #4a2fe3 100%);
+  background: linear-gradient(135deg, #6b42f5 0%, #191970 100%);
   color: #fff;
   border: 0;
   margin-right: 10px;
@@ -461,5 +461,5 @@ export const LegendDot = styled.span`
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: ${({ $color }) => $color || "#4a2fe3"};
+  background: ${({ $color }) => $color || "#191970"};
 `;

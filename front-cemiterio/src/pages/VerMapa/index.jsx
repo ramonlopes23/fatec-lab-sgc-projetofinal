@@ -9,6 +9,7 @@ import PieChartSepulturas from "../../components/domain/PieChartSepulturas";
 import CovaPetsSection from "../../components/domain/CovaPetsSection";
 import ConfirmationDialog from "../../components/common/ConfirmationDialog";
 import SystemButton from "../../components/common/SystemButton";
+import SystemSelect from "../../components/common/SystemSelect";
 import DrawerComponent from "../../components/common/DrawerComponent";
 import EventTimeline from "../../components/common/EventTimeline";
 import DefaultModal from "../../components/common/DefaultModal";
@@ -41,7 +42,6 @@ import {
     LegendWrapper,
     ActiveFilterPill,
     EmptyMapState,
-    SmallSelect,
     Input,
     Label,
     Textarea,
@@ -67,7 +67,6 @@ import {
     ModalGrid,
     ModalGridFull,
     FieldErrorText,
-    SelectMedium,
     ToggleStatusLabel,
     ChartModalBody,
     ChartArea,
@@ -1581,10 +1580,10 @@ export default function VerMapa() {
 
                                     <Field>
                                         <Label>Status</Label>
-                                        <SelectMedium name="status" value={formCova.status} onChange={handleCovaChange}>
+                                        <SystemSelect name="status" value={formCova.status} onChange={handleCovaChange}>
                                             <option value="disponivel">Disponível</option>
                                             <option value="indisponivel">Indisponível</option>
-                                        </SelectMedium>
+                                        </SystemSelect>
                                     </Field>
 
                                     <Field>
@@ -1594,11 +1593,11 @@ export default function VerMapa() {
 
                                     <Field>
                                         <Label>Tipo</Label>
-                                        <SelectMedium name="tipo_cova" value={formCova.tipo_cova} onChange={handleCovaChange}>
+                                        <SystemSelect name="tipo_cova" value={formCova.tipo_cova} onChange={handleCovaChange}>
                                             <option value="cova">Cova</option>
                                             <option value="gaveta">Gaveta</option>
                                             <option value="nicho">Nicho</option>
-                                        </SelectMedium>
+                                        </SystemSelect>
                                     </Field>
 
                                     <Field>
@@ -1942,17 +1941,17 @@ export default function VerMapa() {
 
                                 <div>
                                     <Label>Destino</Label>
-                                    <SelectMedium
+                                    <SystemSelect
                                         value={exumacoesForm.destino || ""}
                                         onChange={(ev) => handleExumacaoField("destino", ev.target.value)}
-                                        $invalid={!!exumacoesErrors.destino}
+                                        invalid={!!exumacoesErrors.destino}
                                         aria-invalid={!!exumacoesErrors.destino}
                                     >
                                         <option value="">Selecione o ossário</option>
                                         {ossariosAll.map((ossario) => (
                                             <option key={String(ossario.id)} value={String(ossario.numero ?? ossario.id ?? "")}>{`Ossário ${ossario.numero ?? ossario.id} - ${String(ossario.tipo || "-").replace(/_/g, " ")} - ${String(ossario.status || "-")}`}</option>
                                         ))}
-                                    </SelectMedium>
+                                    </SystemSelect>
                                     {exumacoesErrors.destino && <FieldErrorText>{exumacoesErrors.destino}</FieldErrorText>}
                                 </div>
 
