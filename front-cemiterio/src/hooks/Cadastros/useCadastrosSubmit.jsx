@@ -1,5 +1,6 @@
 import { useState } from "react";
 import api from "../../services/index.js";
+import { PROCESS_TYPES } from "../../pages/Cadastros/constants.js";
 import { findTaxaByCodigo, formatDateKey, formatDateTimeKey } from "../../utils";
 
 export default function useCadastrosSubmit({
@@ -25,7 +26,7 @@ export default function useCadastrosSubmit({
         setIsSubmitting(true);
 
         try {
-            if (processType === "falecido") {
+            if (processType === PROCESS_TYPES.falecido) {
                 const payload = {
                     ...form,
                     data_nasc: form.data_nasc ? formatDateKey(form.data_nasc) : "",

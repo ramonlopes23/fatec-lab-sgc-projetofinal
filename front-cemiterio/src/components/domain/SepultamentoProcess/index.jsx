@@ -95,7 +95,11 @@ function SepultamentoProcess({
                                     label="Data e hora de início"
                                     format="dd/MM/yyyy HH:mm"
                                     value={parseDateValue(form.dh_inicio_velorio)}
-                                    onChange={(newVal) => updateFieldByName("dh_inicio_velorio", newVal ? formatDateTimeKey(newVal) : "")}
+                                    onChange={(newVal) => {
+                                        const value = newVal ? formatDateTimeKey(newVal) : "";
+                                        updateFieldByName("dh_inicio_velorio", value);
+                                        validateFieldOnChange("dh_inicio_velorio", value);
+                                    }}
                                     disabled={isSubmitting}
                                     slotProps={{
                                         textField: {
@@ -114,7 +118,11 @@ function SepultamentoProcess({
                                     label="Data e hora de fim"
                                     format="dd/MM/yyyy HH:mm"
                                     value={parseDateValue(form.dh_fim_velorio)}
-                                    onChange={(newVal) => updateFieldByName("dh_fim_velorio", newVal ? formatDateTimeKey(newVal) : "")}
+                                    onChange={(newVal) => {
+                                        const value = newVal ? formatDateTimeKey(newVal) : "";
+                                        updateFieldByName("dh_fim_velorio", value);
+                                        validateFieldOnChange("dh_fim_velorio", value);
+                                    }}
                                     disabled={isSubmitting}
                                     slotProps={{
                                         textField: {
@@ -362,7 +370,7 @@ function SepultamentoProcess({
                                     <MenuItem value="">Selecione a quadra</MenuItem>
                                     {quadras.map((quadra) => (
                                         <MenuItem key={String(quadra.id)} value={String(quadra.id)}>
-                                            {`Quadra número ${resolveQuadraDisplay(quadra)}`}
+                                            {`Quadra ${resolveQuadraDisplay(quadra)}`}
                                         </MenuItem>
                                     ))}
                                 </Select>

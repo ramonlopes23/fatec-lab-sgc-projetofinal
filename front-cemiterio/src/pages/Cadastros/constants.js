@@ -1,6 +1,22 @@
 export const PROCESS_TYPES = {
-    falecido: "Cadastro de falecido",
-    sepultamento: "Cadastro de sepultamento",
+    falecido: "falecido",
+    sepultamento: "sepultamento",
+};
+
+export const PROCESS_TYPE_LABELS = {
+    [PROCESS_TYPES.falecido]: "Cadastro de Falecido",
+    [PROCESS_TYPES.sepultamento]: "Cadastro de Sepultamento",
+};
+
+export const PROCESS_TYPE_SUBTITLES = {
+    [PROCESS_TYPES.falecido]: "Faça o cadastro dos falecidos antes de realizar processos de sepultamento.",
+    [PROCESS_TYPES.sepultamento]: "Faça o cadastro do sepultamento para finalizar o processo.",
+};
+
+export const normalizeProcessType = (value) => {
+    const raw = String(value || "").trim().toLowerCase();
+    if (raw === PROCESS_TYPES.sepultamento || raw === "cadastro de sepultamento") return PROCESS_TYPES.sepultamento;
+    return PROCESS_TYPES.falecido;
 };
 
 export const INITIAL_FALECIDO_FORM = {

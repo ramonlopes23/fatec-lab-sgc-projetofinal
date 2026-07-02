@@ -10,4 +10,4 @@ export const updateGrave = async (id, payload) => service.update(id, payload);
 
 export const inactivateGrave = async (id) => service.inactivate(id);
 
-export const patchGraveStatus = async (id, status) => service.update(id, { status });
+export const patchGraveStatus = async (id, status) => service.patch(id, { status });

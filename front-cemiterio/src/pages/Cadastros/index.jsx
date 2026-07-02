@@ -13,11 +13,14 @@ import {
     INITIAL_SEPULTAMENTO_FORM,
     NAME_CASE_FIELDS,
     PROCESS_TYPES,
+    PROCESS_TYPE_LABELS,
+    PROCESS_TYPE_SUBTITLES,
     STEPS_DECEASED,
     STORAGE_KEY,
     TAXA_LABEL,
     TAXA_MAP,
     VELORIO_FIELDS,
+    normalizeProcessType,
 } from "./constants";
 import {
     CheckboxInput,
@@ -51,10 +54,11 @@ export default function Cadastros() {
     const location = useLocation();
     const routeProcessType = processFromPath(location.pathname);
     const [saved, setSaved, clearSaved] = useLocalStorage(STORAGE_KEY);
+    const savedProcessType = normalizeProcessType(saved?.processType);
     const { showSuccess, showWarning, showError, ToastElement } = useToastFeedback();
 
     const [form, setForm] = useState(() => (
-        saved?.processType === routeProcessType
+        savedProcessType === routeProcessType
             ? saved?.form
             : routeProcessType === PROCESS_TYPES.sepultamento
                 ? INITIAL_SEPULTAMENTO_FORM
@@ -333,6 +337,8 @@ export default function Cadastros() {
     }, [falecidos, form.cpf, form.falecido, form.falecido_id]);
 
     const isFalecidoProcess = processType === PROCESS_TYPES.falecido;
+    const processTitle = PROCESS_TYPE_LABELS[processType];
+    const processSubtitle = PROCESS_TYPE_SUBTITLES[processType];
 
     return (
         <>
@@ -346,8 +352,8 @@ export default function Cadastros() {
                         </CheckboxWrapper>
                     )}
 
-                    <Title>{isFalecidoProcess ? "Cadastro de Falecido" : "Cadastro de Sepultamento"}</Title>
-                    <Subtitle>{isFalecidoProcess ? "Faça o cadastro dos falecidos antes de realizar processos de sepultamento." : "Faça o cadastro do sepultamento para finalizar o processo."} </Subtitle>
+                    <Title>{processTitle}</Title>
+                    <Subtitle>{processSubtitle}</Subtitle>
                     <Box sx={{ mt: 3 }}>
                         {isFalecidoProcess ? (
                             <FalecidoProcess

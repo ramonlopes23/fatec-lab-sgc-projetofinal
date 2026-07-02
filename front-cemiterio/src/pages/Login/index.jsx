@@ -100,7 +100,7 @@ export default function Login() {
 
                     {error ? <ErrorText>{error}</ErrorText> : null}
 
-                    <SystemButton type="submit" disabled={isLoading} sx={{ width: "100%", minHeight: 46 }}>
+                    <SystemButton type="submit" disabled={isLoading} sx={{ width: "100%", minHeight: 46, marginBottom:1 }}>
                         {isLoading ? "ENTRANDO..." : "ENTRAR"}
                     </SystemButton>
 

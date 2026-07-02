@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+﻿import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useBlocks, useCreateBlocks, useCreateGraves, useToastFeedback } from "../../hooks";
-import { useCemeteryStore } from "../../stores";
+import { useCemeteryStore } from "../../stores/index.js";
 import api from "../../services/index.js";
 import { patchGraveStatus } from "../../services/graveService";
 import LoadingOverlay from "../../components/common/LoadingOverlay";
@@ -11,12 +11,15 @@ import ConfirmationDialog from "../../components/common/ConfirmationDialog";
 import SystemButton from "../../components/common/SystemButton";
 import DrawerComponent from "../../components/common/DrawerComponent";
 import EventTimeline from "../../components/common/EventTimeline";
-import DefaultModal, { DefaultModalActions, DefaultModalGrid } from "../../components/common/DefaultModal";
+import DefaultModal from "../../components/common/DefaultModal";
+import CustomSelect from "../../components/common/CustomSelect";
 import { GiCoffin } from "react-icons/gi";
 import { FaChartPie } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
 import { MdPets } from "react-icons/md";
+import { LuChevronDown } from "react-icons/lu";
 import { PiFlowerTulipLight, PiFlowerTulipBold } from "react-icons/pi";
+import { SquarePlus } from 'lucide-react';
 import { formatDateTimeDMY, formatDateTimeKey, formatQuadraDisplay, parseDateValue } from "../../utils";
 import {
     QuadraDropdownWrapper,
@@ -26,12 +29,16 @@ import {
     CovaNumber,
     QuadraTitle,
     QuadraWrapper,
+    QuadraHeader,
+    QuadraActions,
     QuadraInfo,
+    CovaGridToolbar,
     InfoPill,
     Title,
     LegendItem,
     LegendButton,
     LegendRow,
+    LegendWrapper,
     ActiveFilterPill,
     EmptyMapState,
     SmallSelect,
@@ -53,15 +60,14 @@ import {
     MapToolbar,
     ToolbarLabel,
     DropdownIcon,
-    LegendActions,
+    SortDropdown,
+    SortDropdownWrapper,
+    SortOptionButton,
     ModalActions,
     ModalGrid,
     ModalGridFull,
     FieldErrorText,
     SelectMedium,
-    SelectSmall,
-    InputTiny,
-    InputMedium,
     ToggleStatusLabel,
     ChartModalBody,
     ChartArea,
@@ -79,6 +85,11 @@ import {
     InfoTile,
     InfoLabel,
     InfoValue,
+    StructureTripleGrid,
+    StructureGridSpanTwo,
+    StructureGridFull,
+    StructureSectionToggle,
+    StructureChevron,
 } from "./styles";
 
 import * as mapHelpers from "../../utils/mapHelpers";
@@ -142,7 +153,7 @@ export default function VerMapa() {
         onSuccess: async (created) => {
             await loadBlocks();
             setSelectedQuadraId(created.id);
-            setModalAddQuadraOpen(false);
+            setStructureDrawerOpen(false);
             showSuccess("Quadra criada")
         }
     });
@@ -175,6 +186,9 @@ export default function VerMapa() {
 
     const [isQuadraDropdownOpen, setIsQuadraDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
+    const sortDropdownRef = useRef(null);
+    const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+    const [covaSortMode, setCovaSortMode] = useState(mapHelpers.COVA_SORT_MODES.cadastro);
     const [isPieChartOpen, setIsPieChartOpen] = useState(false);
     const [sepCountsByQuadra, setSepCountsByQuadra] = useState({});
     const [modalSepList, setModalSepList] = useState([]);
@@ -204,10 +218,13 @@ export default function VerMapa() {
     const [selectedCova, setSelectedCova] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [modalForm, setModalForm] = useState(null);
-    const [modalAddQuadraOpen, setModalAddQuadraOpen] = useState(false);
+    const [structureDrawerOpen, setStructureDrawerOpen] = useState(false);
+    const [structureSectionsOpen, setStructureSectionsOpen] = useState({
+        quadra: true,
+        sepultura: false,
+    });
     const [statusFilter, setStatusFilter] = useState(null);
 
-    const [modalAddCovaOpen, setModalAddCovaOpen] = useState(false);
     const [formCova, setFormCova] = useState({
         quadra_cova: "",
         num_cova: "",
@@ -254,7 +271,8 @@ export default function VerMapa() {
             num_quadra: "",
             descricao: "",
         });
-        setModalAddQuadraOpen(true)
+        setStructureSectionsOpen({ quadra: true, sepultura: false });
+        setStructureDrawerOpen(true)
     };
 
     const openExumacaoForm = (sep) => {
@@ -265,7 +283,8 @@ export default function VerMapa() {
             return;
         }
 
-        const sepQuadraKey = sep.quadra_sep ?? sep.quadra ?? (selectedCova?.cova?.quadra_cova ?? selectedCova?.quadra_cova) ?? selectedQuadraId ?? "";
+        const sepQuadraKey = mapHelpers.resolveCovaQuadraKey(selectedCova, sep, selectedGraveForModal, selectedQuadraId);
+        const sepNumeroKey = mapHelpers.resolveCovaNumber(selectedCova, sep, selectedGraveForModal);
 
         const quadraObj = (quadras || []).find(q =>
             String(q.id) === String(sepQuadraKey) ||
@@ -279,7 +298,7 @@ export default function VerMapa() {
             sepultamentoId: sep.id,
             nome_sep: sep.nome_sep,
             quadra_sep: String(quadraNum ?? ""),
-            num_sepultura_sep: sep.num_sepultura_sep,
+            num_sepultura_sep: sepNumeroKey,
             dh_exu: formatDateTimeKey(new Date()),
             motivo: "",
             destino: "",
@@ -399,6 +418,20 @@ export default function VerMapa() {
         return q && Array.isArray(q.covas) ? q.covas.length : 0;
     }
 
+    const getQuadraOption = (q, idx = 0) => {
+        const used = Array.isArray(q.covas) ? q.covas.length : getCovasCount(q.num_quadra ?? q.id);
+        const max = Number(q.max_covas || 0);
+        const full = max > 0 && used >= max;
+
+        return {
+            value: String(q.id),
+            label: `${formatQuadraDisplay(q)} ${full ? "(lotada)" : ""}`.trim(),
+            disabled: full,
+            raw: q,
+            key: String(q.id ?? q.num_sepultura ?? idx),
+        };
+    };
+
     /* const getSepultamentosCount = (quadraNum) =>{
         if(!quadraNum) return 0;
         const s = sepultamentosAll.find(sq =>String(sq.id) === String(quadraNum));
@@ -438,7 +471,8 @@ export default function VerMapa() {
             },
             obs: "",
         });
-        setModalAddCovaOpen(true)
+        setStructureSectionsOpen({ quadra: false, sepultura: true });
+        setStructureDrawerOpen(true)
     };
 
     const updateQuadraFieldByName = (name, value) => {
@@ -621,24 +655,27 @@ export default function VerMapa() {
 
         try {
             const currentStatus = String(grave?.status || "").toUpperCase();
-            const nextStatus = currentStatus === "AVAILABLE" ? "MAINTENANCE" : "AVAILABLE";
+            const nextStatus = currentStatus === "MAINTENANCE" ? "AVAILABLE" : "MAINTENANCE";
+            const nextDisplayStatus = nextStatus === "MAINTENANCE" ? "indisponivel" : "livre";
 
-            await patchGraveStatus(grave.id, nextStatus);
+            const updatedGrave = await patchGraveStatus(grave.id, nextStatus);
 
-            // Atualizar covasData
             setCovasData((prev) =>
                 prev.map((item) =>
                     String(item?.grave?.id) !== String(grave.id)
                         ? item
                         : {
                             ...item,
-                            grave: { ...item.grave, status: nextStatus },
-                            status: item.blocked ? "indisponivel" : nextStatus === "OCCUPIED" ? "ocupada" : "livre",
+                            grave: {
+                                ...item.grave,
+                                ...updatedGrave,
+                                status: nextStatus,
+                            },
+                            status: item.blocked ? "indisponivel" : nextDisplayStatus,
                         }
                 )
             );
 
-            // Atualizar selectedCova
             setSelectedCova((prev) => {
                 if (!prev) return prev;
                 const prevGrave = prev?.cova?.grave ?? prev?.grave ?? null;
@@ -649,16 +686,24 @@ export default function VerMapa() {
                         ...prev,
                         cova: {
                             ...prev.cova,
-                            grave: { ...prev.cova.grave, status: nextStatus },
+                            grave: {
+                                ...prev.cova.grave,
+                                ...updatedGrave,
+                                status: nextStatus,
+                            },
                         },
-                        status: prev.blocked ? "indisponivel" : nextStatus === "OCCUPIED" ? "ocupada" : "livre",
+                        status: prev.blocked ? "indisponivel" : nextDisplayStatus,
                     };
                 }
 
                 return {
                     ...prev,
-                    grave: { ...prev.grave, status: nextStatus },
-                    status: prev.blocked ? "indisponivel" : nextStatus === "OCCUPIED" ? "ocupada" : "livre",
+                    grave: {
+                        ...prev.grave,
+                        ...updatedGrave,
+                        status: nextStatus,
+                    },
+                    status: prev.blocked ? "indisponivel" : nextDisplayStatus,
                 };
             });
 
@@ -727,7 +772,7 @@ export default function VerMapa() {
                 blocked,
             });
 
-            setModalAddCovaOpen(false);
+            setStructureDrawerOpen(false);
             await loadMapData();
             showSuccess("Sepultura criada");
         } catch (err) {
@@ -736,13 +781,16 @@ export default function VerMapa() {
         }
     }
 
-    const handleCloseAddCovaModal = () => {
-        setModalAddCovaOpen(false);
+    const closeStructureDrawer = () => {
+        setStructureDrawerOpen(false);
     };
 
-    const handleCloseAddQuadraModal = () => {
-        setModalAddQuadraOpen(false);
-    }
+    const toggleStructureSection = (section) => {
+        setStructureSectionsOpen((current) => ({
+            ...current,
+            [section]: !current[section],
+        }));
+    };
 
     const loadMapData = useCallback(async () => {
         setIsMapLoading(true)
@@ -769,7 +817,11 @@ export default function VerMapa() {
                 num_cova: grave?.number ?? "",
                 tipo_cova: String(grave?.graveType || "").toUpperCase() === "MAUSOLEUM" ? "gaveta" : "cova",
                 capacidade: grave?.bodyCapacity === null || grave?.bodyCapacity === undefined ? "" : Number(grave.bodyCapacity),
-                status: grave?.blocked ? "indisponivel" : String(grave?.status || "").toUpperCase() === "OCCUPIED" ? "ocupada" : "livre",
+                status: grave?.blocked || String(grave?.status || "").toUpperCase() === "MAINTENANCE"
+                    ? "indisponivel"
+                    : String(grave?.status || "").toUpperCase() === "OCCUPIED"
+                        ? "ocupada"
+                        : "livre",
                 active: grave?.active,
                 blocked: grave?.blocked,
                 reason: grave?.reason ?? "",
@@ -852,12 +904,12 @@ export default function VerMapa() {
                         }
                     }
 
-                    const qid = sep.quadra_sep ?? sep.quadra;
+                    const qid = mapHelpers.resolveCovaQuadraKey(null, sep);
                     if (qid != null && qid !== "") setSelectedQuadraId(qid);
 
                     setSelectedCova({
                         id: sep.id,
-                        numero: sep.num_sepultura_sep || sep.num_sepultura || sep.numero || "",
+                        numero: mapHelpers.resolveCovaNumber(null, sep),
                         sep,
                     });
 
@@ -937,6 +989,9 @@ export default function VerMapa() {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
                 setIsQuadraDropdownOpen(false)
             }
+            if (sortDropdownRef.current && !sortDropdownRef.current.contains(e.target)) {
+                setIsSortDropdownOpen(false);
+            }
         }
 
         document.addEventListener("mousedown", handleClickOutside);
@@ -959,12 +1014,13 @@ export default function VerMapa() {
 
     const handleClickCova = (cova) => {
         setSelectedCova(cova);
-        const quadraKey = String(selectedQuadraId ?? cova.cova?.quadra_cova ?? cova.quadra_cova ?? cova.quadra_sep ?? cova.sep?.quadra_sep ?? "");
-        const numero = String(cova.numero ?? cova.num_cova ?? cova.num_sepultura_sep ?? "");
+        const grave = cova?.cova?.grave ?? cova?.grave ?? null;
+        const quadraKey = mapHelpers.resolveCovaQuadraKey(cova, cova?.sep, grave, selectedQuadraId);
+        const numero = mapHelpers.resolveCovaNumber(cova, cova?.sep, grave);
         const list = (sepultamentosAll || []).filter(s => {
             if (s.foi_exumado) return false;
-            const sQuadra = String(s.quadra_sep ?? s.quadra ?? "");
-            const sNum = String(s.num_sepultura_sep ?? s.num_sepultura ?? s.numero ?? "");
+            const sQuadra = mapHelpers.resolveCovaQuadraKey(null, s);
+            const sNum = mapHelpers.resolveCovaNumber(null, s);
             return sQuadra === quadraKey && sNum === numero;
         });
 
@@ -1010,33 +1066,29 @@ export default function VerMapa() {
     const bloqueadoForModal = Boolean(selectedGraveForModal?.blocked);
     const capacidadeForModal = selectedCova?.capacidade ?? selectedCova?.cova?.capacidade ?? selectedCova?.sep?.capacidade ?? sepDataForModal?.capacidade ?? "-";
     const observacoesForModal = selectedCova?.obs ?? selectedCova?.cova?.obs ?? "-";
-    const numeroForModal =
-        sepDataForModal?.num_sepultura_sep ??
-        sepDataForModal?.num_sepultura ??
-        sepDataForModal?.numero ??
-        selectedCova?.numero ??
-        selectedCova?.cova?.num_cova ??
-        selectedCova?.cova?.grave?.number ??
-        "-";    /* const nomeSepForModal = sepDataForModal?.nome_sep ?? sepDataForModal?.falecido?.nome_fal ?? sepDataForModal?.falecido?.nome ?? null; */
 
-    const selectedCovaQuadraKey = String(
-        selectedQuadraId ??
-        selectedCova?.cova?.quadra_cova ??
-        selectedCova?.quadra_cova ??
-        selectedCova?.quadra_sep ??
-        selectedCova?.sep?.quadra_sep ??
-        selectedGraveForModal?.blockId ??
-        selectedGraveForModal?.block ??
-        ""
-    );
-    const selectedCovaNumeroKey = String(
-        selectedCova?.numero ??
-        selectedCova?.num_cova ??
-        selectedCova?.num_sepultura_sep ??
-        selectedCova?.cova?.num_cova ??
-        selectedGraveForModal?.number ??
-        ""
-    );
+    const selectedCovaMeta = useMemo(() => {
+        const quadraKey = mapHelpers.resolveCovaQuadraKey(selectedCova, sepDataForModal, selectedGraveForModal, selectedQuadraId);
+        const numeroKey = mapHelpers.resolveCovaNumber(selectedCova, sepDataForModal, selectedGraveForModal);
+        const quadra = (quadrasDesc || quadras || []).find((item) =>
+            String(item?.id) === String(quadraKey) ||
+            String(item?.num_quadra) === String(quadraKey) ||
+            String(item?.number) === String(quadraKey)
+        );
+
+        return {
+            grave: selectedGraveForModal,
+            sepultamento: sepDataForModal,
+            quadraKey,
+            numeroKey,
+            quadraLabel: quadra ? formatQuadraDisplay(quadra) : quadraKey || "-",
+            numeroLabel: numeroKey || "-",
+        };
+    }, [quadras, quadrasDesc, selectedCova, selectedQuadraId, selectedGraveForModal, sepDataForModal]);
+
+    const selectedCovaQuadraKey = selectedCovaMeta.quadraKey;
+    const selectedCovaNumeroKey = selectedCovaMeta.numeroKey;
+    const numeroForModal = selectedCovaMeta.numeroLabel;    /* const nomeSepForModal = sepDataForModal?.nome_sep ?? sepDataForModal?.falecido?.nome_fal ?? sepDataForModal?.falecido?.nome ?? null; */
     const selectedCovaSepultadosCount = selectedCova
         ? getSepultadosCountBySepLocal(selectedCova, selectedCovaQuadraKey || selectedQuadraId)
         : 0;
@@ -1051,8 +1103,8 @@ export default function VerMapa() {
         if (!selectedCovaQuadraKey || !selectedCovaNumeroKey) return [];
 
         const sameSepultura = (item) => {
-            const quadra = String(item?.quadra_sep ?? item?.quadra ?? item?.quadra_cova ?? "");
-            const numero = String(item?.num_sepultura_sep ?? item?.num_sepultura ?? item?.numero ?? item?.num_cova ?? "");
+            const quadra = mapHelpers.resolveCovaQuadraKey(null, item);
+            const numero = mapHelpers.resolveCovaNumber(null, item);
             return quadra === selectedCovaQuadraKey && numero === selectedCovaNumeroKey;
         };
 
@@ -1073,7 +1125,7 @@ export default function VerMapa() {
             events.push({
                 id: `grave-${selectedGraveForModal.id}`,
                 label: "Sepultura cadastrada",
-                text: `Quadra ${selectedCovaQuadraKey} · Sepultura ${selectedCovaNumeroKey}`,
+                text: `${selectedCovaMeta.quadraLabel} - Sepultura ${selectedCovaMeta.numeroLabel}`,
                 timestamp: date,
                 meta: formatMeta(date),
                 tone: "neutral",
@@ -1100,7 +1152,7 @@ export default function VerMapa() {
                 events.push({
                     id: `fal-${falecido.id ?? falecido._id}`,
                     label: "Falecido vinculado",
-                    text: falecido.nome_fal || falecido.nome || "Cadastro de falecido",
+                    text: falecido.nome_fal || falecido.nome || "Falecido vinculado",
                     timestamp: date,
                     meta: formatMeta(date),
                     tone: "neutral",
@@ -1149,6 +1201,8 @@ export default function VerMapa() {
         exumacoesAll,
         falecidosAll,
         petsAll,
+        selectedCovaMeta.quadraLabel,
+        selectedCovaMeta.numeroLabel,
         selectedCovaNumeroKey,
         selectedCovaQuadraKey,
         selectedGraveForModal,
@@ -1158,14 +1212,26 @@ export default function VerMapa() {
     const getPetsCountBySepLocal = (cova, quadraId) => mapHelpers.getPetsCountBySep(cova, quadraId, petsAll);
 
     /* getCovaDisplayMeta moved to src/utils/mapHelpers.js */
-    const covaMeta = (cova) => mapHelpers.getCovaDisplayMeta(cova, quadraSelecionada, sepultamentosAll, petsAll);
+    const covaMeta = useCallback(
+        (cova) => mapHelpers.getCovaDisplayMeta(cova, quadraSelecionada, sepultamentosAll, petsAll),
+        [petsAll, quadraSelecionada, sepultamentosAll]
+    );
 
-    const filteredCovas = (quadraSelecionada.covas || []).filter((cova) => {
+    const filteredCovas = useMemo(() => (quadraSelecionada.covas || []).filter((cova) => {
         if (!statusFilter) return true;
         return covaMeta(cova).displayStatus === statusFilter;
-    });
+    }), [covaMeta, quadraSelecionada.covas, statusFilter]);
+
+    const displayedCovas = useMemo(() => {
+        if (covaSortMode === mapHelpers.COVA_SORT_MODES.numero) {
+            return mapHelpers.sortCovasByNumber(filteredCovas);
+        }
+
+        return filteredCovas;
+    }, [covaSortMode, filteredCovas]);
 
     const activeStatusLabel = statusList.find((s) => s.key === statusFilter)?.label ?? "";
+    const covaSortLabel = covaSortMode === mapHelpers.COVA_SORT_MODES.numero ? "Número" : "Cadastro";
 
     const closeCovaDrawer = () => {
         setModalOpen(false);
@@ -1223,22 +1289,76 @@ export default function VerMapa() {
                         </QuadraDropdown>
 
                     </QuadraDropdownWrapper>
-                </MapToolbar>
-                <QuadraWrapper key={quadraSelecionada.id || "preview"}>
-                    <QuadraInfo key={String(quadraSelecionada.id)}>
-                        <InfoPill>Capacidade máxima de sepulturas: {quadraSelecionada.max_covas > 0 ? quadraSelecionada.max_covas : "-"}</InfoPill>
-                        <InfoPill>Número atual de sepulturas: {Array.isArray(quadraSelecionada.covas) ? quadraSelecionada.covas.length : getCovasCount?.(quadraSelecionada.num_quadra ?? quadraSelecionada.id) ?? 0}</InfoPill>
-                        <InfoPill>Número atual de sepultados: {getSepultadosCountLocal(quadraSelecionada.id ?? quadraSelecionada.num_quadra ?? selectedQuadraId)}</InfoPill>
 
-                    </QuadraInfo>
-                    <QuadraTitle>{quadraSelecionada.nome || "Nenhuma quadra selecionada"}</QuadraTitle>
+                    <ToolbarLabel>Ordenar:</ToolbarLabel>
+
+                    <SortDropdownWrapper ref={sortDropdownRef}>
+                        <QuadraSelectButton
+                            type="button"
+                            disabled={isMapLoading}
+                            onClick={() => {
+                                if (isMapLoading) return;
+                                setIsSortDropdownOpen((current) => !current);
+                            }}
+                        >
+                            {covaSortLabel}
+                            <DropdownIcon>
+                                {isSortDropdownOpen ? "▲" : "▼"}
+                            </DropdownIcon>
+                        </QuadraSelectButton>
+
+                        <SortDropdown
+                            $isOpen={isSortDropdownOpen}
+                            aria-hidden={!isSortDropdownOpen}
+                        >
+                            <SortOptionButton
+                                type="button"
+                                $active={covaSortMode === mapHelpers.COVA_SORT_MODES.cadastro}
+                                onClick={() => {
+                                    setCovaSortMode(mapHelpers.COVA_SORT_MODES.cadastro);
+                                    setIsSortDropdownOpen(false);
+                                }}
+                            >
+                                Cadastro
+                            </SortOptionButton>
+                            <SortOptionButton
+                                type="button"
+                                $active={covaSortMode === mapHelpers.COVA_SORT_MODES.numero}
+                                onClick={() => {
+                                    setCovaSortMode(mapHelpers.COVA_SORT_MODES.numero);
+                                    setIsSortDropdownOpen(false);
+                                }}
+                            >
+                                Número
+                            </SortOptionButton>
+                        </SortDropdown>
+                    </SortDropdownWrapper>
+
+                    <QuadraActions>
+                        <SystemButton style={{ width: "100px", paddingLeft: "1px", paddingRight: "1px", background:"#fff", color:"#191970" }} type="button" disabled={isMapLoading} onClick={handleAddQuadra}><SquarePlus /> Quadra </SystemButton>
+                        <SystemButton style={{ width: "115px", paddingLeft: "1px", paddingRight: "1px", background:"#fff", color:"#191970" }} type="button" disabled={isMapLoading} onClick={handleAddCova}><SquarePlus /> Sepultura </SystemButton>
+                    </QuadraActions>
+                </MapToolbar>
+
+                <QuadraWrapper key={quadraSelecionada.id || "preview"}>
+                    <QuadraHeader>
+                        <QuadraTitle>{quadraSelecionada.nome || "Nenhuma quadra selecionada"}</QuadraTitle>
+                        <QuadraInfo key={String(quadraSelecionada.id)}>
+                            <InfoPill>Capacidade máxima de sepulturas: {quadraSelecionada.max_covas > 0 ? quadraSelecionada.max_covas : "-"}</InfoPill>
+                            <InfoPill>Número atual de sepulturas: {Array.isArray(quadraSelecionada.covas) ? quadraSelecionada.covas.length : getCovasCount?.(quadraSelecionada.num_quadra ?? quadraSelecionada.id) ?? 0}</InfoPill>
+                            <InfoPill>Número atual de sepultados: {getSepultadosCountLocal(quadraSelecionada.id ?? quadraSelecionada.num_quadra ?? selectedQuadraId)}</InfoPill>
+                        </QuadraInfo>
+                    </QuadraHeader>
+
+
+
                     {filteredCovas.length === 0 ? (
                         <EmptyMapState>
                             {statusFilter ? `Nenhuma sepultura encontrada para ${activeStatusLabel}.` : "Nenhuma sepultura cadastrada nesta quadra."}
                         </EmptyMapState>
                     ) : (
                         <CovaGrid>
-                            {filteredCovas.map((cova) => {
+                            {displayedCovas.map((cova) => {
 
                                 const grave = cova?.cova?.grave ?? cova?.grave ?? {};
                                 const backendStatus = String(grave?.status ?? "").toUpperCase();
@@ -1259,7 +1379,7 @@ export default function VerMapa() {
 
                                 let displayStatus = "disponivel";
 
-                                if (isBlocked) {
+                                if (isBlocked || backendStatus === "MAINTENANCE") {
                                     displayStatus = "indisponivel";
                                 } else if (backendStatus === "OCCUPIED") {
                                     displayStatus = isPerpetual ? "particular_ocupada" : "ocupada";
@@ -1293,42 +1413,40 @@ export default function VerMapa() {
                             })}
                         </CovaGrid>
                     )}
-
-
                 </QuadraWrapper>
-                <LegendRow>
-                    {statusList.map(s => (
-                        <LegendButton
-                            key={s.key}
-                            type="button"
-                            color={s.color}
-                            borderColor={s.borderColor}
-                            borderWidth={s.borderWidth}
-                            $active={statusFilter === s.key}
-                            onClick={() => setStatusFilter((current) => current === s.key ? null : s.key)}
-                            aria-pressed={statusFilter === s.key}
-                        >
-                            <span className="color" />
-                            <span>{s.label}</span>
-                        </LegendButton>
-                    ))}
 
-                    {statusFilter && (
-                        <ActiveFilterPill type="button" onClick={() => setStatusFilter(null)}>
-                            Limpar filtro: {activeStatusLabel}
-                        </ActiveFilterPill>
-                    )}
+                <LegendWrapper>
+                    <LegendRow>
+                        {statusList.map(s => (
+                            <LegendButton
+                                key={s.key}
+                                type="button"
+                                color={s.color}
+                                borderColor={s.borderColor}
+                                borderWidth={s.borderWidth}
+                                $active={statusFilter === s.key}
+                                onClick={() => setStatusFilter((current) => current === s.key ? null : s.key)}
+                                aria-pressed={statusFilter === s.key}
+                            >
+                                <span className="color" />
+                                <span>{s.label}</span>
+                            </LegendButton>
+                        ))}
 
-                    <LegendActions>
-                        <SystemButton type="button" disabled={isMapLoading} onClick={handleAddQuadra}>Adicionar Quadra</SystemButton>
-                        <SystemButton type="button" disabled={isMapLoading} onClick={handleAddCova}>Adicionar Sepultura</SystemButton>
-                    </LegendActions>
+                        {statusFilter && (
+                            <ActiveFilterPill type="button" onClick={() => setStatusFilter(null)}>
+                                Limpar filtro: {activeStatusLabel}
+                            </ActiveFilterPill>
+                        )}
+                    </LegendRow>
 
-                </LegendRow>
+                    <CovaGridToolbar>
+                        <SystemButton type="button" tone="cancel" disabled={isMapLoading} onClick={() => setIsPieChartOpen(true)}>
+                            <FaChartPie /> Distribuição de Sepulturas
+                        </SystemButton>
+                    </CovaGridToolbar>
+                </LegendWrapper>
 
-                <SystemButton style={{ position: "relative", width: "370px", left: "730px", backgroundColor: "#fff", color: "#191970" }} type="button" disabled={isMapLoading} onClick={() => setIsPieChartOpen(true)}>
-                    <FaChartPie /> Distribuição de Sepulturas
-                </SystemButton>
                 <DefaultModal
                     open={isPieChartOpen}
                     title="Distribuição de Sepulturas"
@@ -1350,141 +1468,181 @@ export default function VerMapa() {
                         </ChartLegend>
                     </ChartModalBody>
                 </DefaultModal>
-                <DefaultModal
-                    open={modalAddQuadraOpen}
-                    title="Criar quadra"
-                    width="400px"
-                    onClose={handleCloseAddQuadraModal}
+                <DrawerComponent
+                    open={structureDrawerOpen}
+                    title="Adicionar estrutura"
+                    subtitle="Cadastre quadras e sepulturas diretamente no mapa."
+                    width="560px"
+                    bodyDisplay="block"
+                    onClose={closeStructureDrawer}
                 >
-                    <form onSubmit={handleCreateQuadra}>
-                        <DefaultModalGrid $columns={1}>
-                            <Field>
-                                <Label>Nº da quadra:</Label>
-                                <Input
-                                    name="num_quadra"
-                                    value={formQuadra.num_quadra}
-                                    onChange={handleQuadraChange}
-                                />
-                            </Field>
-
-                            <Field>
-                                <Label>Descrição:</Label>
-                                <Input
-                                    name="descricao"
-                                    value={formQuadra.descricao || ""}
-                                    onChange={handleQuadraChange}
-                                />
-                            </Field>
-                        </DefaultModalGrid>
-
-                        <DefaultModalActions>
-                            <SystemButton
+                    <SectionCard>
+                        <SectionHeader>
+                            <StructureSectionToggle
                                 type="button"
-                                tone="cancel"
-                                onClick={handleCloseAddQuadraModal}
+                                onClick={() => toggleStructureSection("quadra")}
+                                aria-expanded={structureSectionsOpen.quadra}
                             >
-                                Cancelar
-                            </SystemButton>
-
-                            <SystemButton type="submit" disabled={creatingBlock}>
-                                {creatingBlock ? "Criando..." : "Criar quadra"}
-                            </SystemButton>
-                        </DefaultModalActions>
-                    </form>
-                </DefaultModal>
-                <DefaultModal
-                    open={modalAddCovaOpen}
-                    title="Criar sepultura"
-                    width="520px"
-                    onClose={handleCloseAddCovaModal}
-                >
-                    <form onSubmit={handleCreateCova}>
-                        <DefaultModalGrid>
-                            <Field>
-                                <Label>Quadra: </Label>
-                                <SelectMedium name="quadra_cova" value={formCova.quadra_cova} onChange={handleCovaChange}>
-                                    <option value="">Selecione a quadra</option>
-                                    {quadrasDesc.map((q, idx) => {
-                                        const used = Array.isArray(q.covas) ? q.covas.length : getCovasCount(q.num_quadra ?? q.id);
-                                        const max = Number(q.max_covas || 0);
-                                        const full = max > 0 && used >= max;
-                                        return (
-                                            <option key={`${String(q.id ?? q.num_sepultura ?? idx)}`} value={String(q.id)} disabled={full}>
-                                                {formatQuadraDisplay(q)} {full ? `(lotada)` : ''}
-                                            </option>
-                                        )
-                                    })}
-                                </SelectMedium>
-                            </Field>
-
-                            <Field>
-                                <Label>Status: </Label>
-                                <SelectMedium name="status" value={formCova.status} onChange={handleCovaChange}>
-                                    <option value="disponivel">Disponível</option>
-                                    <option value="indisponivel">Indisponível</option>
-                                </SelectMedium>
-                            </Field>
-
-
-                            <Field>
-                                <Label>Número: </Label>
-                                <InputTiny name="num_cova" value={formCova.num_cova} onChange={handleCovaChange} />
-                            </Field>
-
-                            <Field>
-                                <Label>Tipo: </Label>
-                                <SelectSmall name="tipo_cova" value={formCova.tipo_cova} onChange={handleCovaChange}>
-                                    <option value="cova">Cova</option>
-                                    <option value="gaveta">Gaveta</option>
-                                    <option value="nicho">Nicho</option>
-                                </SelectSmall>
-                            </Field>
-
-                            <Field>
-                                <Label>Capacidade: </Label>
-                                <InputMedium type="number" name="capacidade" value={formCova.capacidade} onChange={handleCovaChange} />
-                            </Field>
-
-
-                            {/* <Field>
-                                        <Label>
-                                            Possui título de posse?<input type="checkbox" name="concessao.ativa" checked={!!formCova.concessao?.ativa} onChange={handleCovaChange} />
-                                        </Label>
-                                    </Field> */}
-
-                            {formCova.concessao?.ativa ? (
-                                <>
+                                <div>
+                                    <SectionTitle>Cadastro de quadra</SectionTitle>
+                                    <SectionHint>Informe a identificação da nova quadra.</SectionHint>
+                                </div>
+                                <StructureChevron $open={structureSectionsOpen.quadra}>
+                                    <LuChevronDown size={20} />
+                                </StructureChevron>
+                            </StructureSectionToggle>
+                        </SectionHeader>
+                        {structureSectionsOpen.quadra ? (
+                            <form onSubmit={handleCreateQuadra}>
+                                <InfoGrid>
                                     <Field>
-                                        <Label>Responsável: </Label>
-                                        <Input name="concessao.responsavel" value={formCova.concessao?.responsavel || ""} onChange={handleCovaChange} />
-                                    </Field>
-                                    <Field>
-                                        <Label>Prazo (anos): </Label>
-                                        <Input type="number" name="concessao.prazo_anos" value={formCova.concessao?.prazo_anos || 0} onChange={handleCovaChange} />
-                                    </Field>
-                                    <Field>
-                                        <Label>Data Início: </Label>
-                                        <Input type="date" name="concessao.data_inicio" value={formCova.concessao?.data_inicio || ""} onChange={handleCovaChange} />
+                                        <Label>Nº da quadra</Label>
+                                        <Input
+                                            name="num_quadra"
+                                            value={formQuadra.num_quadra}
+                                            onChange={handleQuadraChange}
+                                        />
                                     </Field>
 
                                     <Field>
-                                        <Label>Data Fim: </Label>
-                                        <Input type="date" name="concessao.data_fim" value={formCova.concessao?.data_fim || ""} onChange={handleCovaChange} />
+                                        <Label>Descrição</Label>
+                                        <Input
+                                            name="descricao"
+                                            value={formQuadra.descricao || ""}
+                                            onChange={handleQuadraChange}
+                                        />
                                     </Field>
-                                </>
-                            ) : null}
+                                </InfoGrid>
 
-                            <Field>
-                                <Label>Observações: </Label>
-                                <Textarea name="obs" value={formCova.obs || ""} onChange={handleCovaChange}></Textarea>
-                            </Field>
-                        </DefaultModalGrid>
-                        <DefaultModalActions>
-                            <SystemButton type="button" tone="cancel" onClick={handleCloseAddCovaModal}>Cancelar</SystemButton>
-                            <SystemButton type="submit">Criar sepultura</SystemButton>
-                        </DefaultModalActions>
-                    </form>
-                </DefaultModal>
+                                <ModalActions>
+                                    <SystemButton
+                                        type="button"
+                                        tone="cancel"
+                                        onClick={closeStructureDrawer}
+                                    >
+                                        Cancelar
+                                    </SystemButton>
+
+                                    <SystemButton type="submit" disabled={creatingBlock}>
+                                        {creatingBlock ? "Criando..." : "Criar quadra"}
+                                    </SystemButton>
+                                </ModalActions>
+                            </form>
+                        ) : null}
+                    </SectionCard>
+
+                    <SectionCard>
+                        <SectionHeader>
+                            <StructureSectionToggle
+                                type="button"
+                                onClick={() => toggleStructureSection("sepultura")}
+                                aria-expanded={structureSectionsOpen.sepultura}
+                            >
+                                <div>
+                                    <SectionTitle>Cadastro de sepultura</SectionTitle>
+                                    <SectionHint>Vincule a sepultura a uma quadra e defina seus dados operacionais.</SectionHint>
+                                </div>
+                                <StructureChevron $open={structureSectionsOpen.sepultura}>
+                                    <LuChevronDown size={20} />
+                                </StructureChevron>
+                            </StructureSectionToggle>
+                        </SectionHeader>
+                        {structureSectionsOpen.sepultura ? (
+                            <form onSubmit={handleCreateCova}>
+                                <StructureTripleGrid>
+                                    <StructureGridSpanTwo>
+                                        <Field>
+                                            <Label>Quadra</Label>
+                                            <CustomSelect
+                                                name="quadra_cova"
+                                                value={formCova.quadra_cova}
+                                                onChange={handleCovaChange}
+                                                placeholder="Selecione a quadra"
+                                                options={quadrasDesc.map(getQuadraOption)}
+                                                renderValue={(_, option) => (
+                                                    <InfoPill>{formatQuadraDisplay(option.raw)}</InfoPill>
+                                                )}
+                                                renderDropdown={({ selectOption }) => (
+                                                    <GridQuadras
+                                                        quadrasDesc={quadrasDesc}
+                                                        value={formCova.quadra_cova}
+                                                        onChange={(quadra) => {
+                                                            const option = quadra
+                                                                ? getQuadraOption(quadra)
+                                                                : null;
+                                                            selectOption(option);
+                                                        }}
+                                                        columnsMinWidth={40}
+                                                    />
+                                                )}
+                                            />
+                                        </Field>
+                                    </StructureGridSpanTwo>
+
+                                    <Field>
+                                        <Label>Status</Label>
+                                        <SelectMedium name="status" value={formCova.status} onChange={handleCovaChange}>
+                                            <option value="disponivel">Disponível</option>
+                                            <option value="indisponivel">Indisponível</option>
+                                        </SelectMedium>
+                                    </Field>
+
+                                    <Field>
+                                        <Label>Número</Label>
+                                        <Input name="num_cova" value={formCova.num_cova} onChange={handleCovaChange} />
+                                    </Field>
+
+                                    <Field>
+                                        <Label>Tipo</Label>
+                                        <SelectMedium name="tipo_cova" value={formCova.tipo_cova} onChange={handleCovaChange}>
+                                            <option value="cova">Cova</option>
+                                            <option value="gaveta">Gaveta</option>
+                                            <option value="nicho">Nicho</option>
+                                        </SelectMedium>
+                                    </Field>
+
+                                    <Field>
+                                        <Label>Capacidade</Label>
+                                        <Input type="number" name="capacidade" value={formCova.capacidade} onChange={handleCovaChange} />
+                                    </Field>
+
+                                    {formCova.concessao?.ativa ? (
+                                        <>
+                                            <Field>
+                                                <Label>Responsável</Label>
+                                                <Input name="concessao.responsavel" value={formCova.concessao?.responsavel || ""} onChange={handleCovaChange} />
+                                            </Field>
+                                            <Field>
+                                                <Label>Prazo (anos)</Label>
+                                                <Input type="number" name="concessao.prazo_anos" value={formCova.concessao?.prazo_anos || 0} onChange={handleCovaChange} />
+                                            </Field>
+                                            <Field>
+                                                <Label>Data Início</Label>
+                                                <Input type="date" name="concessao.data_inicio" value={formCova.concessao?.data_inicio || ""} onChange={handleCovaChange} />
+                                            </Field>
+
+                                            <Field>
+                                                <Label>Data Fim</Label>
+                                                <Input type="date" name="concessao.data_fim" value={formCova.concessao?.data_fim || ""} onChange={handleCovaChange} />
+                                            </Field>
+                                        </>
+                                    ) : null}
+
+                                    <StructureGridFull>
+                                        <Field>
+                                            <Label>Observações</Label>
+                                            <Textarea name="obs" value={formCova.obs || ""} onChange={handleCovaChange}></Textarea>
+                                        </Field>
+                                    </StructureGridFull>
+                                </StructureTripleGrid>
+                                <ModalActions>
+                                    <SystemButton type="button" tone="cancel" onClick={closeStructureDrawer}>Cancelar</SystemButton>
+                                    <SystemButton type="submit">Criar sepultura</SystemButton>
+                                </ModalActions>
+                            </form>
+                        ) : null}
+                    </SectionCard>
+                </DrawerComponent>
 
                 {modalOpen && selectedCova && (
                     <DrawerComponent
@@ -1567,7 +1725,7 @@ export default function VerMapa() {
 
                             <CovaPetsSection
                                 selectedCova={selectedCova}
-                                sepultamentos={modalSepList}
+                                sepultamentos={modalSepList} 
                                 petsAll={petsAll}
                                 onPetCreated={(createdPet) => {
                                     setPetsAll((prev) => {

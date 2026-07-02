@@ -58,7 +58,8 @@ import {
 } from "../../common/DefaultTable";
 import { getContratos, createContrato, updateContrato, deleteContrato } from "../../../services/contratoService.js";
 import { getBlocks } from "../../../services/blockService.js";
-import { getGrave, createGrave } from "../../../services/graveService.js";
+import { getGrave, createGrave, updateGrave } from "../../../services/graveService.js";
+import { getSepultamentos } from "../../../services/sepultamentoService.js";
 import { useCemeteryStore } from "../../../stores";
 import { formatCurrencyBRL, formatDateDMY, formatDateTimeKey, getValidityBucket, normalizeSearchText, parseDateValue } from "../../../utils";
 import { useFormModal, useToastFeedback } from "../../../hooks";
@@ -186,6 +187,7 @@ export default function ContratosComponent() {
     const [titulos, setTitulos] = useState([]);
     const [quadras, setQuadras] = useState([]);
     const [sepulturas, setSepulturas] = useState([]);
+    const [sepultamentos, setSepultamentos] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [pendingDeleteTitulo, setPendingDeleteTitulo] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
@@ -221,19 +223,22 @@ export default function ContratosComponent() {
     const loadContratos = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [data, blocksData, gravesData] = await Promise.all([
+            const [data, blocksData, gravesData, sepultamentosData] = await Promise.all([
                 getContratos(),
                 getBlocks().catch(() => []),
                 getGrave().catch(() => []),
+                getSepultamentos().catch(() => []),
             ]);
             setTitulos(Array.isArray(data) ? data : []);
             setQuadras(Array.isArray(blocksData) ? blocksData : []);
             setSepulturas(Array.isArray(gravesData) ? gravesData : []);
+            setSepultamentos(Array.isArray(sepultamentosData) ? sepultamentosData : []);
         } catch (error) {
             console.error("Erro ao carregar contratos", error);
             setTitulos([]);
             setQuadras([]);
             setSepulturas([]);
+            setSepultamentos([]);
             showError("Erro ao carregar contratos");
         } finally {
             setIsLoading(false);
@@ -314,6 +319,64 @@ export default function ContratosComponent() {
     const getSepulturaNumber = (sepultura) => String(
         sepultura?.number ?? sepultura?.num_cova ?? sepultura?.numero ?? sepultura?.num_sepultura_sep ?? sepultura?.sepultura ?? ""
     ).trim();
+
+    const getQuadraKeysForContract = (contract) => {
+        const quadra = quadraOptions.find((item) => String(item.numero) === String(contract?.quadra) || String(item.id) === String(contract?.quadra));
+        return [contract?.quadra, quadra?.id, quadra?.numero]
+            .filter((item) => item !== undefined && item !== null && String(item).trim() !== "")
+            .map(String);
+    };
+
+    const getLinkedSepultura = (contract) => {
+        const quadraKeys = getQuadraKeysForContract(contract);
+        const sepulturaNumber = String(contract?.sepultura || "").trim();
+        if (!quadraKeys.length || !sepulturaNumber) return null;
+
+        return sepulturas.find((sepultura) => (
+            quadraKeys.includes(getSepulturaQuadraKey(sepultura)) &&
+            getSepulturaNumber(sepultura) === sepulturaNumber
+        )) || null;
+    };
+
+    const getSepultamentoQuadraKey = (sepultamento) => String(
+        sepultamento?.quadra_sep ?? sepultamento?.quadra ?? sepultamento?.blockId ?? sepultamento?.block ?? ""
+    );
+
+    const getSepultamentoNumber = (sepultamento) => String(
+        sepultamento?.num_sepultura_sep ?? sepultamento?.sepultura ?? sepultamento?.number ?? sepultamento?.num_cova ?? ""
+    ).trim();
+
+    const getLinkedSepultadosCount = (contract) => {
+        const quadraKeys = getQuadraKeysForContract(contract);
+        const sepulturaNumber = String(contract?.sepultura || "").trim();
+        if (!quadraKeys.length || !sepulturaNumber) return 0;
+
+        const ids = new Set();
+        (sepultamentos || []).forEach((sepultamento) => {
+            if (sepultamento?.foi_exumado) return;
+            if (!quadraKeys.includes(getSepultamentoQuadraKey(sepultamento))) return;
+            if (getSepultamentoNumber(sepultamento) !== sepulturaNumber) return;
+
+            const id = sepultamento?.id ?? sepultamento?._id ?? `${getSepultamentoQuadraKey(sepultamento)}-${sepulturaNumber}-${sepultamento?.dh_sep ?? ""}`;
+            ids.add(String(id));
+        });
+
+        return ids.size;
+    };
+
+    const getPostContractGraveStatus = (contract, sepultura) => {
+        const sepultadosCount = getLinkedSepultadosCount(contract);
+        const capacity = Number(sepultura?.bodyCapacity ?? sepultura?.capacidade ?? 0);
+        const currentStatus = String(sepultura?.status || "").toUpperCase();
+
+        if (sepultadosCount > 0 || currentStatus === "OCCUPIED" || capacity <= 0) {
+            return "OCCUPIED";
+        }
+
+        return "AVAILABLE";
+    };
+
+    const getPostContractStatusLabel = (status) => status === "OCCUPIED" ? "ocupada" : "disponível";
 
     const isSepulturaNumberTaken = (quadraValue, sepulturaValue, ignoreContractId = editingId) => {
         const quadra = quadraOptions.find((item) => String(item.numero) === String(quadraValue) || String(item.id) === String(quadraValue));
@@ -431,6 +494,20 @@ export default function ContratosComponent() {
                     ...payload,
                     id: editingId,
                 });
+
+                const linkedSepultura = getLinkedSepultura(payload);
+                if (linkedSepultura?.id) {
+                    await updateGrave(linkedSepultura.id, {
+                        ...linkedSepultura,
+                        areaType: "PERPETUAL",
+                        area_type: "PERPETUAL",
+                        contractTitle: payload.numero_titulo,
+                        holderName: payload.nome_titular,
+                        holderCpf: payload.cpf_titular,
+                        holderContact: payload.contato_responsavel,
+                    });
+                }
+
                 showSuccess("Título atualizado com sucesso.");
             } else {
                 await createContrato({
@@ -504,9 +581,21 @@ export default function ContratosComponent() {
         ["Vigência", formatDateBR(form.validade_titulo)],
     ];
 
-    const handleDeleteTitulo = async (id) => {
+    const prepareDeleteTitulo = async (id) => {
         const target = titulos.find((item) => String(item.id) === String(id)) || null;
-        setPendingDeleteTitulo(target ? { id: target.id, numero_titulo: target.numero_titulo } : { id });
+        const normalized = target ? normalizeContract(target) : { id };
+        const linkedSepultura = getLinkedSepultura(normalized);
+        const nextGraveStatus = getPostContractGraveStatus(normalized, linkedSepultura);
+        const sepultadosCount = getLinkedSepultadosCount(normalized);
+
+        setPendingDeleteTitulo({
+            ...normalized,
+            linkedSepulturaId: linkedSepultura?.id ?? "",
+            linkedSepultura,
+            nextGraveStatus,
+            nextStatusLabel: getPostContractStatusLabel(nextGraveStatus),
+            sepultadosCount,
+        });
     };
 
     const closeDeleteDialog = () => {
@@ -518,8 +607,29 @@ export default function ContratosComponent() {
 
         setIsSubmitting(true);
         try {
+            const linkedSepultura = pendingDeleteTitulo.linkedSepulturaId
+                ? sepulturas.find((sepultura) => String(sepultura?.id) === String(pendingDeleteTitulo.linkedSepulturaId)) || pendingDeleteTitulo.linkedSepultura
+                : getLinkedSepultura(pendingDeleteTitulo);
+
+            if (linkedSepultura?.id) {
+                const nextGraveStatus = getPostContractGraveStatus(pendingDeleteTitulo, linkedSepultura);
+                await updateGrave(linkedSepultura.id, {
+                    ...linkedSepultura,
+                    areaType: "COMMON",
+                    area_type: "COMMON",
+                    status: nextGraveStatus,
+                    contractTitle: "",
+                    holderName: "",
+                    holderCpf: "",
+                    holderContact: "",
+                });
+            }
+
             await deleteContrato(pendingDeleteTitulo.id);
-            showSuccess("Título excluído com sucesso");
+            showSuccess(linkedSepultura?.id
+                ? `Título excluído. Sepultura vinculada atualizada para ${getPostContractStatusLabel(getPostContractGraveStatus(pendingDeleteTitulo, linkedSepultura))}.`
+                : "Título excluído com sucesso"
+            );
             await loadContratos();
             closeDeleteDialog();
         } catch (error) {
@@ -530,6 +640,12 @@ export default function ContratosComponent() {
         }
     };
 
+    const deleteDialogDescription = pendingDeleteTitulo
+        ? pendingDeleteTitulo.linkedSepulturaId
+            ? `Deseja realmente excluir o título ${pendingDeleteTitulo.numero_titulo || pendingDeleteTitulo.id}? A sepultura ${pendingDeleteTitulo.sepultura || "-"} da quadra ${pendingDeleteTitulo.quadra || "-"} deixará de ser particular e passará para o rótulo ${pendingDeleteTitulo.nextStatusLabel}, considerando ${pendingDeleteTitulo.sepultadosCount} falecido(s) sepultado(s) e sua capacidade atual.`
+            : `Deseja realmente excluir o título ${pendingDeleteTitulo.numero_titulo || pendingDeleteTitulo.id}? Não foi possível localizar uma sepultura vinculada para atualização automática.`
+        : "Confirme a exclusão do título.";
+
     return (
         <>
             {ToastElement}
@@ -539,8 +655,8 @@ export default function ContratosComponent() {
                 onConfirm={confirmDeleteTitulo}
                 title="Excluir título"
                 alertSeverity="error"
-                alertMessage="Esta ação removerá o contrato do sistema."
-                description={pendingDeleteTitulo ? `Deseja realmente excluir o título ${pendingDeleteTitulo.numero_titulo || pendingDeleteTitulo.id}?` : "Confirme a exclusão do título."}
+                alertMessage="Esta ação removerá o contrato e atualizará a sepultura vinculada."
+                description={deleteDialogDescription}
                 confirmLabel="Excluir"
                 confirmTone="delete"
                 confirmDisabled={!pendingDeleteTitulo}
@@ -693,7 +809,7 @@ export default function ContratosComponent() {
                                                                 <IconBtn type="button" onClick={() => handleEditTitulo(normalized)} disabled={isSubmitting}>
                                                                     <FaRegEdit />
                                                                 </IconBtn>
-                                                                <IconBtn type="button" onClick={() => handleDeleteTitulo(normalized.id)} disabled={isSubmitting}>
+                                                                <IconBtn type="button" onClick={() => prepareDeleteTitulo(normalized.id)} disabled={isSubmitting}>
                                                                     <FaTrash />
                                                                 </IconBtn>
                                                             </Actions>
@@ -807,17 +923,7 @@ export default function ContratosComponent() {
                                     </TextField>
                                     {errors.status ? <p style={errorStyle}>{errors.status}</p> : null}
                                 </div>
-
-                                <div>
-                                    <label>Sepultura</label>
-                                    <Input
-                                        value={form.sepultura}
-                                        onChange={(event) => updateField("sepultura", event.target.value)}
-                                        placeholder="Exemplo: 05"
-                                        disabled={isSubmitting || Boolean(editingId)}
-                                    />
-                                    {errors.sepultura ? <p style={errorStyle}>{errors.sepultura}</p> : null}
-                                </div>
+                                
 
                                 <div>
                                     <label>Quadra</label>
@@ -846,6 +952,17 @@ export default function ContratosComponent() {
                                         ))}
                                     </TextField>
                                     {errors.quadra ? <p style={errorStyle}>{errors.quadra}</p> : null}
+                                </div>
+
+                                <div>
+                                    <label>Sepultura</label>
+                                    <Input
+                                        value={form.sepultura}
+                                        onChange={(event) => updateField("sepultura", event.target.value)}
+                                        placeholder="Exemplo: 05"
+                                        disabled={isSubmitting || Boolean(editingId)}
+                                    />
+                                    {errors.sepultura ? <p style={errorStyle}>{errors.sepultura}</p> : null}
                                 </div>
 
                                 <div>

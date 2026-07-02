@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { isEmpty } from "../../utils/validation";
-import { PROCESS_TYPES } from "../../pages/Cadastros/constants";
+import { PROCESS_TYPES, normalizeProcessType } from "../../pages/Cadastros/constants";
 
 export default function useFalecidoSearch(falecidos, processType, saved, setForm) {
   const [searchFal, setSearchFal] = useState(() => 
-    saved?.processType === processType ? saved?.searchFal || "" : ""
+    normalizeProcessType(saved?.processType) === processType ? saved?.searchFal || "" : ""
   );
   const [filteredFalecidos, setFilteredFalecidos] = useState([]);
 

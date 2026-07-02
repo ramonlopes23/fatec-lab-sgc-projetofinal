@@ -332,7 +332,7 @@ export const Input = styled.input`
   ${baseInput}
 
   &:focus {
-    border-color: #7b63ff;
+    border-color: #191970;
     box-shadow: 0 2px 8px rgba(123, 99, 255, 0.08);
   }
 `;
@@ -345,7 +345,7 @@ export const Textarea = styled.textarea`
   resize: vertical;
 
   &:focus {
-    border-color: #7b63ff;
+    border-color: #191970;
     box-shadow: 0 2px 8px rgba(123, 99, 255, 0.08);
   }
 `;

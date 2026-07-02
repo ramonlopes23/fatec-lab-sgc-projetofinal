@@ -39,18 +39,53 @@ export const QuadraWrapper = styled.div`
 export const QuadraTitle = styled.div`
   font-weight: 700;
   font-size: 14px;
-  margin-bottom: 12px;
+  margin: 0;
   color:#191970;
 `;
 
+export const QuadraHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+`;
+
+export const QuadraActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-left: auto;
+  flex-wrap: wrap;
+`;
+
 export const QuadraInfo = styled.div`
-  position: absolute;
-  top: 12px;
-  right: 12px;
   display: flex;
   gap: 8px;
   align-items: center;
-  z-index: 2;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+`;
+
+export const CovaGridToolbar = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-left: auto;
+`;
+
+export const LegendWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  @media (max-width: 900px) {
+    align-items: flex-start;
+  }
 `;
 
 export const InfoPill = styled.span`
@@ -178,8 +213,8 @@ export const LegendRow = styled.div`
   display:flex;
   gap:15px;
   align-items:center;
-  margin-top:-12px;
   flex-wrap:wrap;
+  flex: 1;
 `;
 
 export const LegendItem = styled.div`
@@ -306,7 +341,7 @@ export const EmptyMapState = styled.div`
   display: grid;
   place-items: center;
   color: #5f637a;
-  border: 1px dashed #d6d9e6;
+  border: 2px solid #d6d9e6;
   border-radius: 8px;
   background: #fafbff;
   font-size: 14px;
@@ -361,7 +396,7 @@ export const Input = styled.input`
   ${baseInput}
   border-color: ${({ $invalid }) => ($invalid ? "#b42318" : "#d6d9e6")};
   &:focus {
-    border-color: ${({ $invalid }) => ($invalid ? "#b42318" : "#7b63ff")};
+    border-color: ${({ $invalid }) => ($invalid ? "#b42318" : "#191970")};
     box-shadow: 0 2px 8px rgba(123,99,255,0.08);
   }
 `;
@@ -369,6 +404,7 @@ export const Input = styled.input`
 export const Label = styled.label`
   font-weight: normal;
   margin-left: 5px;
+  color:#6b6f85;
 `;
 
 export const Textarea = styled.textarea`
@@ -534,6 +570,10 @@ export const QuadraDropdownWrapper = styled.div`
   position: relative;
 `;
 
+export const SortDropdownWrapper = styled(QuadraDropdownWrapper)`
+  min-width: 178px;
+`;
+
 export const MapToolbar = styled.div`
   margin: 12px 0;
   display: flex;
@@ -554,6 +594,7 @@ export const DropdownIcon = styled.span`
 export const QuadraSelectButton = styled.button`
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   padding: 8px 16px;
   border-radius: 6px;
@@ -562,6 +603,7 @@ export const QuadraSelectButton = styled.button`
   cursor: pointer;
   font-weight: 600;
   color: #191970;
+  min-width: 180px;
 `;
 
 export const QuadraDropdown = styled.div`
@@ -584,6 +626,31 @@ export const QuadraDropdown = styled.div`
   transition: opacity 0.24s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.24s cubic-bezier(0.4, 0, 0.2, 1),
               visibility 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+`;
+
+export const SortDropdown = styled(QuadraDropdown)`
+  min-width: 178px;
+  padding: 8px;
+`;
+
+export const SortOptionButton = styled.button`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: ${({ $active }) => ($active ? "#f1f3ff" : "#fff")};
+  color: #191970;
+  cursor: pointer;
+  font-weight: ${({ $active }) => ($active ? 700 : 600)};
+  text-align: left;
+
+  &:hover {
+    background: #f6f7ff;
+  }
 `;
 
 export const BtnAction = styled.button`
@@ -762,6 +829,57 @@ export const ModalGridFull = styled.div`
   @media (max-width: 680px) {
     grid-column: auto;
   }
+`;
+
+export const StructureTripleGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  input,
+  select {
+    width: 100%;
+    height: 40px;
+    margin: 0;
+  }
+
+  @media (max-width: 680px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const StructureGridSpanTwo = styled.div`
+  grid-column: span 2;
+
+  @media (max-width: 680px) {
+    grid-column: auto;
+  }
+`;
+
+export const StructureGridFull = styled.div`
+  grid-column: 1 / -1;
+`;
+
+export const StructureSectionToggle = styled.button`
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+`;
+
+export const StructureChevron = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #191970;
+  transition: transform 0.2s ease;
+  transform: rotate(${({ $open }) => ($open ? "180deg" : "0deg")});
 `;
 
 export const SelectMedium = styled(SmallSelect)`
