@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FormControl from "@mui/material/FormControl";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputLabel from "@mui/material/InputLabel";
@@ -9,6 +9,7 @@ import {
     FaCheckCircle,
     FaClock,
     FaDollarSign,
+    FaEye,
     FaFileContract,
     FaFilter,
     FaPlus,
@@ -40,6 +41,14 @@ import {
     StatsGrid,
     Title,
     Subtitle,
+    SepulturaFieldRoot,
+    SepulturaInputRow,
+    SepulturaPreviewButton,
+    SepulturaPreviewGrid,
+    SepulturaPreviewHeader,
+    SepulturaPreviewHint,
+    SepulturaPreviewOption,
+    SepulturaPreviewPanel,
 } from "./styles";
 import {
     Actions,
@@ -90,7 +99,8 @@ const INITIAL_FORM = {
     contato_responsavel: "",
     numero_titulo: "",
     status: "ativo",
-    validade_titulo: "",
+    vigencia_inicio: "",
+    vigencia_fim: "",
     sepultura: "",
     quadra: "",
     valor: "0",
@@ -132,6 +142,24 @@ const filterTextFieldSx = {
 
 const formatDateBR = (value) => formatDateDMY(value, value || "-");
 
+const resolveContractVigenciaInicio = (contract) => (
+    contract?.vigencia_inicio || contract?.validade_titulo_inicio || contract?.data_inicio || ""
+);
+
+const resolveContractVigenciaFim = (contract) => (
+    contract?.vigencia_fim || contract?.validade_titulo_fim || contract?.validade_titulo || contract?.data_fim || ""
+);
+
+const formatVigenciaLabel = (inicio, fim) => {
+    const formattedInicio = formatDateBR(inicio);
+    const formattedFim = formatDateBR(fim);
+
+    if (inicio && fim) return `${formattedInicio} ate ${formattedFim}`;
+    if (fim) return formattedFim;
+    if (inicio) return `Inicio ${formattedInicio}`;
+    return "-";
+};
+
 const STATUS_ALIASES = {
     active: "ativo",
     inactive: "inativo",
@@ -159,19 +187,25 @@ const formatLocal = (contract, cemeteryNameFallback) => {
         .join(" • ") || "-";
 };
 
-const normalizeContract = (contract) => ({
-    id: contract?.id ?? contract?.numero_titulo ?? "",
-    nome_titular: String(contract?.nome_titular || "").trim(),
-    cpf_titular: String(contract?.cpf_titular || contract?.cpf || "").trim(),
-    contato_responsavel: String(contract?.contato_responsavel || contract?.telefone || contract?.tel_resp || "").trim(),
-    numero_titulo: String(contract?.numero_titulo || "").trim(),
-    status: normalizeStatus(contract?.status) || "ativo",
-    validade_titulo: contract?.validade_titulo || "",
-    sepultura: String(contract?.sepultura || "").trim(),
-    quadra: String(contract?.quadra || "").trim(),
-    valor: Number(contract?.valor ?? contract?.valor_anual ?? 0),
-    cemiterio: String(contract?.cemiterio || contract?.cemiterio_nome || "").trim(),
-});
+const normalizeContract = (contract) => {
+    const vigenciaInicio = resolveContractVigenciaInicio(contract);
+    const vigenciaFim = resolveContractVigenciaFim(contract);
+
+    return {
+        id: contract?.id ?? contract?.numero_titulo ?? "",
+        nome_titular: String(contract?.nome_titular || "").trim(),
+        cpf_titular: String(contract?.cpf_titular || contract?.cpf || "").trim(),
+        contato_responsavel: String(contract?.contato_responsavel || contract?.telefone || contract?.tel_resp || "").trim(),
+        numero_titulo: String(contract?.numero_titulo || "").trim(),
+        status: normalizeStatus(contract?.status) || "ativo",
+        vigencia_inicio: vigenciaInicio,
+        vigencia_fim: vigenciaFim,
+        sepultura: String(contract?.sepultura || "").trim(),
+        quadra: String(contract?.quadra || "").trim(),
+        valor: Number(contract?.valor ?? contract?.valor_anual ?? 0),
+        cemiterio: String(contract?.cemiterio || contract?.cemiterio_nome || "").trim(),
+    };
+};
 
 export default function ContratosComponent() {
     const [query, setQuery] = useState("");
@@ -183,6 +217,9 @@ export default function ContratosComponent() {
     const [isLoading, setIsLoading] = useState(false);
     const [pendingDeleteTitulo, setPendingDeleteTitulo] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [isSepulturaPreviewOpen, setIsSepulturaPreviewOpen] = useState(false);
+    const [isSepulturaPreviewPinned, setIsSepulturaPreviewPinned] = useState(false);
+    const sepulturaPreviewRef = useRef(null);
     const { showSuccess, showError, ToastElement } = useToastFeedback();
 
     const cemeteries = useCemeteryStore((state) => state.cemeteries);
@@ -254,14 +291,15 @@ export default function ContratosComponent() {
                 item.cpf_titular,
                 item.contato_responsavel,
                 item.status,
-                item.validade_titulo,
+                item.vigencia_inicio,
+                item.vigencia_fim,
                 item.sepultura,
                 item.quadra,
                 local,
                 formatCurrencyBRL(item.valor),
             ].some((field) => normalizeSearchText(field).includes(q));
 
-            const bucket = getValidityBucket(item.validade_titulo);
+            const bucket = getValidityBucket(item.vigencia_fim);
             const matchesStatus = statusFilter === "all"
                 || (statusFilter === "active" && bucket === "active")
                 || (statusFilter === "expiring" && bucket === "expiring")
@@ -388,13 +426,97 @@ export default function ContratosComponent() {
         return existsInGraves || existsInContracts;
     };
 
+    const selectedQuadraKeys = useMemo(() => {
+        if (!selectedQuadra && !form.quadra) return [];
+        return [form.quadra, selectedQuadra?.id, selectedQuadra?.numero]
+            .filter((item) => item !== undefined && item !== null && String(item).trim() !== "")
+            .map(String);
+    }, [form.quadra, selectedQuadra]);
+
+    const occupiedSepulturaNumbers = useMemo(() => {
+        if (!selectedQuadraKeys.length) return new Set();
+
+        const occupied = new Set();
+        sepulturas.forEach((sepultura) => {
+            if (!selectedQuadraKeys.includes(getSepulturaQuadraKey(sepultura))) return;
+            const number = getSepulturaNumber(sepultura);
+            if (number) occupied.add(String(number));
+        });
+
+        normalizedTitulos.forEach((contract) => {
+            if (String(contract.id) === String(editingId || "")) return;
+            const contractQuadra = quadraOptions.find((quadra) => (
+                String(quadra.numero) === String(contract.quadra) ||
+                String(quadra.id) === String(contract.quadra)
+            ));
+            const contractQuadraKeys = [contract.quadra, contractQuadra?.id, contractQuadra?.numero]
+                .filter((item) => item !== undefined && item !== null && String(item).trim() !== "")
+                .map(String);
+
+            if (!contractQuadraKeys.some((key) => selectedQuadraKeys.includes(key))) return;
+            if (contract.sepultura) occupied.add(String(contract.sepultura));
+        });
+
+        return occupied;
+    }, [editingId, normalizedTitulos, quadraOptions, selectedQuadraKeys, sepulturas]);
+
+    const availableSepulturaNumbers = useMemo(() => {
+        if (!selectedQuadra) return [];
+
+        const capacity = Number(selectedQuadra.max || 0);
+        if (!Number.isFinite(capacity) || capacity <= 0) return [];
+
+        return Array.from({ length: capacity }, (_, index) => String(index + 1))
+            .filter((number) => !occupiedSepulturaNumbers.has(number));
+    }, [occupiedSepulturaNumbers, selectedQuadra]);
+
+    const sepulturaPreviewMessage = !selectedQuadra
+        ? "Selecione uma quadra para visualizar os números disponíveis."
+        : availableSepulturaNumbers.length
+            ? `${availableSepulturaNumbers.length} número(s) disponível(is) na quadra ${selectedQuadra.numero}.`
+            : "Nenhum número disponível para a quadra selecionada.";
+
+    const openSepulturaPreview = () => {
+        setIsSepulturaPreviewOpen(true);
+    };
+
+    const closeSepulturaPreview = () => {
+        if (isSepulturaPreviewPinned) return;
+        setIsSepulturaPreviewOpen(false);
+    };
+
+    const toggleSepulturaPreviewPinned = () => {
+        setIsSepulturaPreviewOpen((current) => !current || !isSepulturaPreviewPinned);
+        setIsSepulturaPreviewPinned((current) => !current);
+    };
+
+    const selectSepulturaFromPreview = (numero) => {
+        if (editingId || isSubmitting) return;
+        updateField("sepultura", numero);
+        setIsSepulturaPreviewPinned(false);
+        setIsSepulturaPreviewOpen(false);
+    };
+
+    useEffect(() => {
+        if (!isSepulturaPreviewOpen) return undefined;
+
+        const handleClickOutside = (event) => {
+            if (sepulturaPreviewRef.current?.contains(event.target)) return;
+            setIsSepulturaPreviewOpen(false);
+            setIsSepulturaPreviewPinned(false);
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isSepulturaPreviewOpen]);
+
     const stats = useMemo(() => {
         const total = normalizedTitulos.length;
-        const active = normalizedTitulos.filter((item) => getValidityBucket(item.validade_titulo) === "active").length;
-        const expiring = normalizedTitulos.filter((item) => getValidityBucket(item.validade_titulo) === "expiring").length;
-        const expired = normalizedTitulos.filter((item) => getValidityBucket(item.validade_titulo) === "expired").length;
+        const active = normalizedTitulos.filter((item) => getValidityBucket(item.vigencia_fim) === "active").length;
+        const expiring = normalizedTitulos.filter((item) => getValidityBucket(item.vigencia_fim) === "expiring").length;
+        const expired = normalizedTitulos.filter((item) => getValidityBucket(item.vigencia_fim) === "expired").length;
         const revenueAnnual = normalizedTitulos.reduce((sum, item) => {
-            const bucket = getValidityBucket(item.validade_titulo);
+            const bucket = getValidityBucket(item.vigencia_fim);
             if (bucket === "expired") return sum;
             return sum + (Number(item.valor) || 0);
         }, 0);
@@ -429,7 +551,8 @@ export default function ContratosComponent() {
         if (!form.contato_responsavel.trim()) nextErrors.contato_responsavel = "Informe o contato do responsavel";
         if (!numero) nextErrors.numero_titulo = "Informe o número do título";
         if (!form.status.trim()) nextErrors.status = "Informe o status do título";
-        if (!form.validade_titulo.trim()) nextErrors.validade_titulo = "Informe a vigência do título";
+        if (!form.vigencia_inicio.trim()) nextErrors.vigencia_inicio = "Informe o início da vigência";
+        if (!form.vigencia_fim.trim()) nextErrors.vigencia_fim = "Informe o fim da vigência";
         if (!form.sepultura.trim()) nextErrors.sepultura = "Informe o número da sepultura";
         if (!form.quadra.trim()) nextErrors.quadra = "Informe o número da quadra";
         if (!Number.isFinite(valor) || valor < 0) nextErrors.valor = "Informe um valor válido";
@@ -441,8 +564,19 @@ export default function ContratosComponent() {
             nextErrors.quadra = "Selecione uma quadra existente";
         }
 
-        if (form.validade_titulo && !parseDateValue(form.validade_titulo)) {
-            nextErrors.validade_titulo = "Data de vigência em formato inválido";
+        const parsedVigenciaInicio = form.vigencia_inicio ? parseDateValue(form.vigencia_inicio) : null;
+        const parsedVigenciaFim = form.vigencia_fim ? parseDateValue(form.vigencia_fim) : null;
+
+        if (form.vigencia_inicio && !parsedVigenciaInicio) {
+            nextErrors.vigencia_inicio = "Data de início em formato inválido";
+        }
+
+        if (form.vigencia_fim && !parsedVigenciaFim) {
+            nextErrors.vigencia_fim = "Data final em formato inválido";
+        }
+
+        if (parsedVigenciaInicio && parsedVigenciaFim && parsedVigenciaFim < parsedVigenciaInicio) {
+            nextErrors.vigencia_fim = "Fim da vigência deve ser posterior ao início";
         }
 
         const duplicated = titulos.some(
@@ -472,7 +606,8 @@ export default function ContratosComponent() {
                 contato_responsavel: form.contato_responsavel.trim(),
                 numero_titulo: form.numero_titulo.trim(),
                 status: form.status,
-                validade_titulo: form.validade_titulo,
+                vigencia_inicio: form.vigencia_inicio,
+                vigencia_fim: form.vigencia_fim,
                 sepultura: form.sepultura.trim(),
                 quadra: selectedQuadra?.numero || form.quadra.trim(),
                 blockId: selectedQuadra?.id || "",
@@ -545,7 +680,8 @@ export default function ContratosComponent() {
             contato_responsavel: normalized.contato_responsavel,
             numero_titulo: normalized.numero_titulo,
             status: normalized.status || "ativo",
-            validade_titulo: normalized.validade_titulo,
+            vigencia_inicio: normalized.vigencia_inicio,
+            vigencia_fim: normalized.vigencia_fim,
             sepultura: normalized.sepultura,
             quadra: quadraOptions.find((quadra) => String(quadra.numero) === String(normalized.quadra) || String(quadra.id) === String(normalized.quadra))?.numero || normalized.quadra,
             valor: String(normalized.valor ?? 0),
@@ -570,7 +706,8 @@ export default function ContratosComponent() {
         ["Cemitério", form.cemiterio || selectedCemeteryName],
         ["Quadra", form.quadra ? `Quadra ${form.quadra}` : ""],
         ["Sepultura", form.sepultura ? `Sepultura ${form.sepultura}` : ""],
-        ["Vigência", formatDateBR(form.validade_titulo)],
+        ["Vigência início", formatDateBR(form.vigencia_inicio)],
+        ["Vigência fim", formatDateBR(form.vigencia_fim)],
     ];
 
     const prepareDeleteTitulo = async (id) => {
@@ -789,7 +926,7 @@ export default function ContratosComponent() {
                                                         <Td>{normalized.cpf_titular || "-"}</Td>
                                                         <Td>{normalized.contato_responsavel || "-"}</Td>
                                                         <TdLocal>{formatLocal(normalized, selectedCemeteryName)}</TdLocal>
-                                                        <Td>{formatDateBR(normalized.validade_titulo)}</Td>
+                                                        <Td>{formatVigenciaLabel(normalized.vigencia_inicio, normalized.vigencia_fim)}</Td>
                                                         <TdValue>{formatCurrencyBRL(normalized.valor)}</TdValue>
                                                         <TdStatus>
                                                             <StatusBadge $status={normalized.status}>
@@ -831,7 +968,7 @@ export default function ContratosComponent() {
                     <form onSubmit={handleSaveTitulo}>
                         {!isViewingExisting ? (
                             <DefaultModalGrid>
-                                <div style={{ gridColumn: "1 / -1" }}>
+                                <div>
                                     <label>Nome do titular</label>
                                     <Input
                                         value={form.nome_titular}
@@ -903,7 +1040,7 @@ export default function ContratosComponent() {
                                     </SystemSelect>
                                     {errors.status ? <p style={errorStyle}>{errors.status}</p> : null}
                                 </div>
-                                
+
 
                                 <div>
                                     <label>Quadra</label>
@@ -922,26 +1059,79 @@ export default function ContratosComponent() {
                                     {errors.quadra ? <p style={errorStyle}>{errors.quadra}</p> : null}
                                 </div>
 
-                                <div>
+                                <SepulturaFieldRoot
+                                    ref={sepulturaPreviewRef}
+                                    onMouseEnter={openSepulturaPreview}
+                                    onMouseLeave={closeSepulturaPreview}
+                                >
                                     <label>Sepultura</label>
-                                    <Input
-                                        value={form.sepultura}
-                                        onChange={(event) => updateField("sepultura", event.target.value)}
-                                        placeholder="Exemplo: 05"
-                                        disabled={isSubmitting || Boolean(editingId)}
-                                    />
+                                    <SepulturaInputRow>
+                                        <Input
+                                            value={form.sepultura}
+                                            onChange={(event) => updateField("sepultura", event.target.value)}
+                                            placeholder="Exemplo: 05"
+                                            disabled={isSubmitting || Boolean(editingId)}
+                                        />
+                                        <SepulturaPreviewButton
+                                            type="button"
+                                            aria-label="Visualizar sepulturas disponíveis"
+                                            title={sepulturaPreviewMessage}
+                                            $active={isSepulturaPreviewOpen}
+                                            onClick={(event) => {
+                                                event.preventDefault();
+                                                toggleSepulturaPreviewPinned();
+                                            }}
+                                            disabled={isSubmitting}
+                                        >
+                                            <FaEye />
+                                        </SepulturaPreviewButton>
+                                    </SepulturaInputRow>
+                                    {isSepulturaPreviewOpen ? (
+                                        <SepulturaPreviewPanel>
+                                            <SepulturaPreviewHeader>
+                                                {selectedQuadra ? `Quadra ${selectedQuadra.numero}` : "Quadra não selecionada"}
+                                            </SepulturaPreviewHeader>
+                                            <SepulturaPreviewHint>{sepulturaPreviewMessage}</SepulturaPreviewHint>
+                                            {selectedQuadra && availableSepulturaNumbers.length ? (
+                                                <SepulturaPreviewGrid>
+                                                    {availableSepulturaNumbers.map((numero) => (
+                                                        <SepulturaPreviewOption
+                                                            key={numero}
+                                                            type="button"
+                                                            onClick={() => selectSepulturaFromPreview(numero)}
+                                                            disabled={Boolean(editingId) || isSubmitting}
+                                                            $selected={String(form.sepultura) === String(numero)}
+                                                        >
+                                                            {numero}
+                                                        </SepulturaPreviewOption>
+                                                    ))}
+                                                </SepulturaPreviewGrid>
+                                            ) : null}
+                                        </SepulturaPreviewPanel>
+                                    ) : null}
                                     {errors.sepultura ? <p style={errorStyle}>{errors.sepultura}</p> : null}
+                                </SepulturaFieldRoot>
+
+                                <div>
+                                    <label>Vigência início</label>
+                                    <Input
+                                        type="date"
+                                        value={form.vigencia_inicio}
+                                        onChange={(event) => updateField("vigencia_inicio", event.target.value)}
+                                        disabled={isSubmitting}
+                                    />
+                                    {errors.vigencia_inicio ? <p style={errorStyle}>{errors.vigencia_inicio}</p> : null}
                                 </div>
 
                                 <div>
-                                    <label>Vigência</label>
+                                    <label>Vigência fim</label>
                                     <Input
                                         type="date"
-                                        value={form.validade_titulo}
-                                        onChange={(event) => updateField("validade_titulo", event.target.value)}
+                                        value={form.vigencia_fim}
+                                        onChange={(event) => updateField("vigencia_fim", event.target.value)}
                                         disabled={isSubmitting}
                                     />
-                                    {errors.validade_titulo ? <p style={errorStyle}>{errors.validade_titulo}</p> : null}
+                                    {errors.vigencia_fim ? <p style={errorStyle}>{errors.vigencia_fim}</p> : null}
                                 </div>
                             </DefaultModalGrid>
                         ) : null}

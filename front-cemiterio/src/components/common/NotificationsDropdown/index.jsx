@@ -44,6 +44,10 @@ const getDaysUntil = (deadline) => {
   return Math.ceil(diff / DAY_MS);
 };
 
+const resolveContractDeadline = (contract) => (
+  contract?.vigencia_fim || contract?.validade_titulo_fim || contract?.validade_titulo || ""
+);
+
 const isConfirmedSepultamento = (sepultamento) => {
   const confirmed = sepultamento?.confirmado === true || String(sepultamento?.confirmado).toLowerCase() === "true";
   const concluded = String(sepultamento?.status ?? "").toLowerCase().includes("concl");
@@ -51,7 +55,8 @@ const isConfirmedSepultamento = (sepultamento) => {
 };
 
 const buildContractNotification = (contract) => {
-  const daysLeft = getDaysUntil(contract?.validade_titulo);
+  const deadline = resolveContractDeadline(contract);
+  const daysLeft = getDaysUntil(deadline);
   if (daysLeft === null || daysLeft < 0 || daysLeft >= 30) return null;
 
   const status = normalizeText(contract?.status);
@@ -61,7 +66,7 @@ const buildContractNotification = (contract) => {
     id: `contract-${contract?.id}`,
     type: "contract",
     title: contract?.nome_titular || "Contrato sem titular",
-    meta: `Título ${contract?.numero_titulo || "-"} • Vencimento ${formatDateDMY(contract?.validade_titulo, "-")}`,
+    meta: `Título ${contract?.numero_titulo || "-"} • Vencimento ${formatDateDMY(deadline, "-")}`,
     tag: contract?.cemiterio || "Contrato",
     daysLeft,
     tone: daysLeft <= 7 ? "rgba(180, 35, 24, 0.12)" : "rgba(178, 106, 0, 0.12)",

@@ -89,11 +89,12 @@ const COLLECTION_META = {
         action: (record) => (record?.update_at && record?.created_at && record.update_at !== record.created_at ? "UPDATE" : "CREATE"),
         timestampFields: ["update_at", "created_at"],
         actorFields: ["nome_titular", "nome_resp", "holderName"],
-        additionalFields: ["quadra", "sepultura", "valor", "status", "validade_titulo", "cemiterio"],
+        additionalFields: ["quadra", "sepultura", "valor", "status", "vigencia_inicio", "vigencia_fim", "cemiterio"],
         changeFields: [
             { field: "status", label: "Status" },
             { field: "valor", label: "Valor" },
-            { field: "validade_titulo", label: "Validade" },
+            { field: "vigencia_inicio", label: "Vigência início" },
+            { field: "vigencia_fim", label: "Vigência fim" },
         ],
     },
     pets: {

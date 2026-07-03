@@ -344,6 +344,105 @@ export const Input = styled.input`
   }
 `;
 
+export const SepulturaFieldRoot = styled.div`
+  position: relative;
+  min-width: 0;
+`;
+
+export const SepulturaInputRow = styled.div`
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  gap: 8px;
+  align-items: center;
+`;
+
+export const SepulturaPreviewButton = styled.button`
+  width: 42px;
+  min-height: 40px;
+  border: 1px solid ${({ $active }) => ($active ? "rgba(25, 25, 112, 0.35)" : "rgba(31, 38, 82, 0.12)")};
+  border-radius: 12px;
+  background: ${({ $active }) => ($active ? "rgba(25, 25, 112, 0.08)" : "#fff")};
+  color: #191970;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgba(25, 25, 112, 0.35);
+    background: rgba(25, 25, 112, 0.06);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+    transform: none;
+  }
+`;
+
+export const SepulturaPreviewPanel = styled.div`
+  position: absolute;
+  z-index: 2800;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(340px, calc(100vw - 48px));
+  box-sizing: border-box;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(31, 38, 82, 0.1);
+  background: #fff;
+  box-shadow: 0 18px 42px rgba(22, 28, 70, 0.16);
+`;
+
+export const SepulturaPreviewHeader = styled.div`
+  color: #191970;
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 4px;
+`;
+
+export const SepulturaPreviewHint = styled.p`
+  margin: 0 0 10px;
+  color: #6c7293;
+  font-size: 12px;
+  line-height: 1.35;
+`;
+
+export const SepulturaPreviewGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+  gap: 6px;
+  max-height: 170px;
+  overflow-y: auto;
+  padding-right: 2px;
+`;
+
+export const SepulturaPreviewOption = styled.button`
+  min-height: 34px;
+  border: 1px solid ${({ $selected }) => ($selected ? "rgba(25, 25, 112, 0.58)" : "rgba(31, 38, 82, 0.1)")};
+  border-radius: 8px;
+  background: ${({ $selected }) => ($selected ? "#191970" : "#f7f8ff")};
+  color: ${({ $selected }) => ($selected ? "#fff" : "#191970")};
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgba(25, 25, 112, 0.38);
+    background: ${({ $selected }) => ($selected ? "#191970" : "rgba(25, 25, 112, 0.08)")};
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+    transform: none;
+  }
+`;
+
 export const BtnPrimaryClose = styled.button`
   background: #fff;
   color: #191970;
