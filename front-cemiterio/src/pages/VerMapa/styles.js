@@ -167,6 +167,34 @@ export const CovaItem = styled.button`
     gap:4px;
   }
 
+  & .cova-progress {
+    width: 50px;
+    height: 5px;
+    display: grid;
+    grid-template-columns: repeat(var(--slot-count, 1), minmax(0, 1fr));
+    gap: 2px;
+    align-items: stretch;
+    margin-top: 1px;
+  }
+
+  & .cova-progress-slot {
+    min-width: 0;
+    border-radius: 999px;
+    background: ${({ $progressContrast }) => (
+      $progressContrast === "light" ? "rgba(255,255,255,0.36)" : "rgba(0,0,0,0.18)"
+    )};
+    box-shadow: inset 0 0 0 1px ${({ $progressContrast }) => (
+      $progressContrast === "light" ? "rgba(255,255,255,0.42)" : "rgba(0,0,0,0.08)"
+    )};
+  }
+
+  & .cova-progress-slot[data-filled="true"] {
+    background: ${({ $progressContrast }) => ($progressContrast === "light" ? "#fff" : "#000")};
+    box-shadow: ${({ $progressContrast }) => (
+      $progressContrast === "light" ? "0 0 0 1px rgba(255,255,255,0.72)" : "none"
+    )};
+  }
+
   & .cova-petCap{    
     font-size: 10px;
     font-weight: 600;

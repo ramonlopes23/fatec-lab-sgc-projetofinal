@@ -1368,13 +1368,18 @@ export default function VerMapa() {
                                 const sepCount = getSepultadosCountBySepLocal(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
                                 const petCount = getPetsCountBySepLocal(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
 
-                                const capacidadeTotal = Number(grave?.bodyCapacity ?? cova?.capacidade ?? 0);
+                                const capacidadeDisponivel = Number(grave?.bodyCapacity ?? cova?.capacidade ?? 0);
                                 const occupiedCount =
                                     sepCount > 0
                                         ? sepCount
-                                        : backendStatus === "OCCUPIED" && capacidadeTotal > 0
-                                            ? capacidadeTotal
+                                        : backendStatus === "OCCUPIED" && capacidadeDisponivel > 0
+                                            ? capacidadeDisponivel
                                             : 0;
+                                const capacidadeTotal = Number.isFinite(capacidadeDisponivel)
+                                    ? capacidadeDisponivel + occupiedCount
+                                    : occupiedCount;
+                                const slotCount = capacidadeTotal > 0 ? capacidadeTotal : 0;
+                                const occupiedSlots = Math.min(Math.max(occupiedCount, 0), slotCount);
 
                                 let displayStatus = "disponivel";
 
@@ -1393,11 +1398,27 @@ export default function VerMapa() {
                                         borderColor={(displayStatus === "reservada" || displayStatus === "particular_ocupada") ? "#d2b24a" : undefined}
                                         borderWidth={(displayStatus === "reservada" || displayStatus === "particular_ocupada") ? 5 : undefined}
                                         $selected={String(selectedCova?.id) === String(cova.id)}
+                                        $progressContrast={displayStatus === "ocupada" || displayStatus === "particular_ocupada" ? "light" : "dark"}
                                         onClick={() => handleClickCova(cova)}
                                         title={`Sepultura ${cova.numero} - ${displayStatus} (${occupiedCount}/${capacidadeTotal}${petCount > 0 ? ` | 🐾 ${petCount}` : ""})`}
                                     >
                                         <CovaNumber aria-hidden="true">{cova.numero}</CovaNumber>
                                         <span className="cova-capacity" aria-hidden="true"><PiFlowerTulipBold />{`${occupiedCount}/${capacidadeTotal}`}  </span>
+                                        {slotCount > 0 ? (
+                                            <span
+                                                className="cova-progress"
+                                                style={{ "--slot-count": slotCount }}
+                                                aria-hidden="true"
+                                            >
+                                                {Array.from({ length: slotCount }).map((_, slotIndex) => (
+                                                    <span
+                                                        key={slotIndex}
+                                                        className="cova-progress-slot"
+                                                        data-filled={slotIndex < occupiedSlots ? "true" : "false"}
+                                                    />
+                                                ))}
+                                            </span>
+                                        ) : null}
                                         {petCount > 0 && (
                                             <>
                                                 <span className="cova-divider" aria-hidden="true" />
