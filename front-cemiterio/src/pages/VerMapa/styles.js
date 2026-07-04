@@ -1083,3 +1083,29 @@ export const ChartLegend = styled.div`
     padding-top: 0;
   }
 `;
+
+export const SepulturaPreviewButton = styled.button`
+  width: 42px;
+  min-height: 40px;
+  border: 1px solid ${({ $active }) => ($active ? "rgba(25, 25, 112, 0.35)" : "rgba(31, 38, 82, 0.12)")};
+  border-radius: 12px;
+  background: ${({ $active }) => ($active ? "rgba(25, 25, 112, 0.08)" : "#fff")};
+  color: #191970;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgba(25, 25, 112, 0.35);
+    background: rgba(25, 25, 112, 0.06);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+    transform: none;
+  }
+`;

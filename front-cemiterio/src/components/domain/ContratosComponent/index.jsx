@@ -5,6 +5,7 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
+import { useLocation } from "react-router-dom";
 import {
     FaCheckCircle,
     FaClock,
@@ -220,6 +221,7 @@ export default function ContratosComponent() {
     const [isSepulturaPreviewOpen, setIsSepulturaPreviewOpen] = useState(false);
     const [isSepulturaPreviewPinned, setIsSepulturaPreviewPinned] = useState(false);
     const sepulturaPreviewRef = useRef(null);
+    const location = useLocation();
     const { showSuccess, showError, ToastElement } = useToastFeedback();
 
     const cemeteries = useCemeteryStore((state) => state.cemeteries);
@@ -277,6 +279,15 @@ export default function ContratosComponent() {
     useEffect(() => {
         loadContratos();
     }, [loadContratos]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const incomingSearch = params.get("search") || params.get("numero_titulo") || location.state?.contratoSearch || "";
+        if (incomingSearch) {
+            setQuery(incomingSearch);
+            setStatusFilter("all");
+        }
+    }, [location.search, location.state]);
 
     const normalizedTitulos = useMemo(() => titulos.map(normalizeContract), [titulos]);
 

@@ -140,35 +140,18 @@
       "number": 2,
       "graveType": "EARTH",
       "bodyCapacity": 1,
-      "areaType": "PERPETUAL",
+      "areaType": "COMMON",
       "blockId": "4718",
       "status": "AVAILABLE",
       "blocked": false,
-      "contractTitle": "01",
-      "holderName": "teste",
-      "holderCpf": "12345678909",
-      "holderContact": "11987035409"
+      "contractTitle": "",
+      "holderName": "",
+      "holderCpf": "",
+      "holderContact": "",
+      "area_type": "COMMON"
     }
   ],
-  "contratos": [
-    {
-      "id": "17f2",
-      "nome_titular": "teste",
-      "cpf_titular": "12345678909",
-      "contato_responsavel": "11987035409",
-      "numero_titulo": "01",
-      "status": "ativo",
-      "vigencia_inicio": "2026-07-03",
-      "vigencia_fim": "2026-07-24",
-      "sepultura": "2",
-      "quadra": "1",
-      "blockId": "4718",
-      "cemiterio": "cemiterio teste",
-      "valor": 120,
-      "update_at": "2026-07-03T13:20",
-      "created_at": "2026-07-03T13:20"
-    }
-  ],
+  "contratos": [],
   "pets": [],
   "ossarios": [
     {

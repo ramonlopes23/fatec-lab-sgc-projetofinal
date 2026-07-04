@@ -15,8 +15,8 @@ import EventTimeline from "../../components/common/EventTimeline";
 import DefaultModal from "../../components/common/DefaultModal";
 import CustomSelect from "../../components/common/CustomSelect";
 import { GiCoffin } from "react-icons/gi";
-import { FaChartPie } from "react-icons/fa";
-import { useLocation } from "react-router-dom";
+import { FaChartPie, FaEye, FaFileContract } from "react-icons/fa";
+import { useLocation, useNavigate } from "react-router-dom";
 import { MdPets } from "react-icons/md";
 import { LuChevronDown } from "react-icons/lu";
 import { PiFlowerTulipLight, PiFlowerTulipBold } from "react-icons/pi";
@@ -89,6 +89,7 @@ import {
     StructureGridFull,
     StructureSectionToggle,
     StructureChevron,
+    SepulturaPreviewButton,
 } from "./styles";
 
 import * as mapHelpers from "../../utils/mapHelpers";
@@ -167,6 +168,7 @@ export default function VerMapa() {
     const [covasData, setCovasData] = useState([]);
     const [ossariosAll, setOssariosAll] = useState([]);
     const [petsAll, setPetsAll] = useState([]);
+    const [contratosAll, setContratosAll] = useState([]);
     const [exumacoesAll, setExumacoesAll] = useState([]);
     const [falecidosAll, setFalecidosAll] = useState([]);
     const [isMapLoading, setIsMapLoading] = useState(true);
@@ -263,6 +265,7 @@ export default function VerMapa() {
     }, [loadCemeteries]);
 
     const location = useLocation();
+    const navigate = useNavigate();
 
 
     const handleAddQuadra = () => {
@@ -829,12 +832,13 @@ export default function VerMapa() {
 
             setCovasData(normalizedCovasData);
 
-            const [rSep, rExu, rPets, rOss, rFal] = await Promise.allSettled([
+            const [rSep, rExu, rPets, rOss, rFal, rContratos] = await Promise.allSettled([
                 api.get("/sepultamentos"),
                 api.get("/exumacoes"),
                 api.get("/pets"),
                 api.get("/ossarios"),
                 api.get("/falecidos"),
+                api.get("/contratos"),
             ]);
 
             const sepData =
@@ -857,12 +861,17 @@ export default function VerMapa() {
                 rFal.status === "fulfilled" && Array.isArray(rFal.value?.data)
                     ? rFal.value.data
                     : [];
+            const contratosData =
+                rContratos.status === "fulfilled" && Array.isArray(rContratos.value?.data)
+                    ? rContratos.value.data
+                    : [];
 
             setSepultamentosAll(sepData);
             setExumacoesAll(exuData);
             setFalecidosAll(falecidosData);
             setPetsAll(petsData);
             setOssariosAll(ossariosData);
+            setContratosAll(contratosData);
 
             const pendingMap = {};
             exuData.forEach((ex) => {
@@ -999,7 +1008,10 @@ export default function VerMapa() {
     }, []);
 
 
-    const quadraSelecionada = quadras.find(q => String(q.id) === String(selectedQuadraId)) || { covas: [] };
+    const quadraSelecionada = useMemo(
+        () => quadras.find(q => String(q.id) === String(selectedQuadraId)) || { covas: [] },
+        [quadras, selectedQuadraId]
+    );
 
     /*  const handleSelectQuadra = (e) => {
          const v = e?.target?.value;
@@ -1088,6 +1100,58 @@ export default function VerMapa() {
     const selectedCovaQuadraKey = selectedCovaMeta.quadraKey;
     const selectedCovaNumeroKey = selectedCovaMeta.numeroKey;
     const numeroForModal = selectedCovaMeta.numeroLabel;    /* const nomeSepForModal = sepDataForModal?.nome_sep ?? sepDataForModal?.falecido?.nome_fal ?? sepDataForModal?.falecido?.nome ?? null; */
+    const contratoForModal = useMemo(() => {
+        if (!selectedCova) return null;
+
+        const grave = selectedGraveForModal || {};
+        const titleKeys = [
+            grave.contractTitle,
+            grave.contract_title,
+            selectedCova?.cova?.grave?.contractTitle,
+            selectedCova?.sep?.numero_titulo,
+            sepDataForModal?.numero_titulo,
+            modalForm?.numero_titulo,
+        ].filter((value) => value !== null && value !== undefined && String(value).trim() !== "");
+
+        const contractId = sepDataForModal?.contrato_id ?? modalForm?.contrato_id ?? selectedCova?.sep?.contrato_id ?? "";
+        const byIdOrTitle = contratosAll.find((contrato) => (
+            (contractId && String(contrato?.id) === String(contractId)) ||
+            titleKeys.some((key) => String(contrato?.numero_titulo) === String(key))
+        ));
+        if (byIdOrTitle) return byIdOrTitle;
+
+        const quadraKeys = [
+            selectedCovaQuadraKey,
+            quadraSelecionada?.id,
+            quadraSelecionada?.num_quadra,
+            grave.blockId,
+            grave.block?.id,
+        ].filter((value) => value !== null && value !== undefined && String(value).trim() !== "").map(String);
+        const sepulturaNumber = String(selectedCovaNumeroKey || "").trim();
+        if (!quadraKeys.length || !sepulturaNumber) return null;
+
+        return contratosAll.find((contrato) => (
+            String(contrato?.sepultura || "").trim() === sepulturaNumber &&
+            quadraKeys.includes(String(contrato?.blockId ?? contrato?.quadra ?? "").trim())
+        )) || null;
+    }, [
+        contratosAll,
+        modalForm,
+        quadraSelecionada,
+        selectedCova,
+        selectedCovaNumeroKey,
+        selectedCovaQuadraKey,
+        selectedGraveForModal,
+        sepDataForModal,
+    ]);
+    const hasContratoForModal = Boolean(contratoForModal);
+    const openContratoForModal = () => {
+        if (!contratoForModal?.numero_titulo) return;
+        const search = encodeURIComponent(contratoForModal.numero_titulo);
+        navigate(`/contratos?search=${search}`, {
+            state: { contratoSearch: contratoForModal.numero_titulo },
+        });
+    };
     const selectedCovaSepultadosCount = selectedCova
         ? getSepultadosCountBySepLocal(selectedCova, selectedCovaQuadraKey || selectedQuadraId)
         : 0;
@@ -1334,8 +1398,8 @@ export default function VerMapa() {
                     </SortDropdownWrapper>
 
                     <QuadraActions>
-                        <SystemButton style={{ width: "100px", paddingLeft: "1px", paddingRight: "1px", background:"#fff", color:"#191970" }} type="button" disabled={isMapLoading} onClick={handleAddQuadra}><SquarePlus /> Quadra </SystemButton>
-                        <SystemButton style={{ width: "115px", paddingLeft: "1px", paddingRight: "1px", background:"#fff", color:"#191970" }} type="button" disabled={isMapLoading} onClick={handleAddCova}><SquarePlus /> Sepultura </SystemButton>
+                        <SystemButton style={{ width: "100px", paddingLeft: "1px", paddingRight: "1px", background: "#fff", color: "#191970" }} type="button" disabled={isMapLoading} onClick={handleAddQuadra}><SquarePlus /> Quadra </SystemButton>
+                        <SystemButton style={{ width: "115px", paddingLeft: "1px", paddingRight: "1px", background: "#fff", color: "#191970" }} type="button" disabled={isMapLoading} onClick={handleAddCova}><SquarePlus /> Sepultura </SystemButton>
                     </QuadraActions>
                 </MapToolbar>
 
@@ -1735,6 +1799,44 @@ export default function VerMapa() {
                                 <SectionHint>Há {selectedCovaSepultadosCount} falecido(s) sepultado(s). A indisponibilidade só pode ser alterada quando a sepultura estiver vazia.</SectionHint>
                             ) : null}
                         </SectionCard>
+                        {hasContratoForModal ? (
+                            <SectionCard style={{border: "1px solid #d2b24a"}}>
+                                <SectionHeader>
+                                    <div>
+                                        <SectionTitle>Contrato / título de posse</SectionTitle>
+                                        <SectionHint>Dados vinculados à sepultura particular ou reservada.</SectionHint>
+                                    </div>
+                                </SectionHeader>
+
+                                <InfoGrid >
+                                    <InfoTile style={{border: "1px solid #d2b24a"}}>
+                                        <InfoLabel>Nº do título</InfoLabel>
+                                        <InfoValue>{contratoForModal.numero_titulo || "-"}</InfoValue>
+                                    </InfoTile>
+                                    <InfoTile style={{border: "1px solid #d2b24a"}}>
+                                        <InfoLabel>Titular</InfoLabel>
+                                        <InfoValue>{contratoForModal.nome_titular || "-"}</InfoValue>
+                                    </InfoTile>
+                                    <InfoTile style={{border: "1px solid #d2b24a"}}>
+                                        <InfoLabel>Contato responsável</InfoLabel>
+                                        <InfoValue>{contratoForModal.contato_responsavel || "-"}</InfoValue>
+                                    </InfoTile>
+                                    <InfoTile style={{border: "1px solid #d2b24a"}}>
+                                        <InfoLabel>Visualizar título de posse</InfoLabel>
+                                        <SepulturaPreviewButton
+                                            type="button"
+                                            onClick={openContratoForModal}
+                                            sx={{ mt: 2 }}
+                                            disabled={!contratoForModal.numero_titulo}
+                                        >
+                                            <FaFileContract />
+                                        </SepulturaPreviewButton>
+                                    </InfoTile>
+                                </InfoGrid>
+
+
+                            </SectionCard>
+                        ) : null}
                         <SectionCard>
                             <SectionHeader>
                                 <div>
@@ -1745,7 +1847,7 @@ export default function VerMapa() {
 
                             <CovaPetsSection
                                 selectedCova={selectedCova}
-                                sepultamentos={modalSepList} 
+                                sepultamentos={modalSepList}
                                 petsAll={petsAll}
                                 onPetCreated={(createdPet) => {
                                     setPetsAll((prev) => {
