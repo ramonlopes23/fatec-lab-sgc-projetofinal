@@ -70,7 +70,7 @@ export default function Cadastros() {
     const [showFalList, setShowFalList] = useState(false);
     const [contratos, setContratos] = useState([]);
     const [isIndigente, setIsIndigente] = useState(false);
-    const { cep: cepResp, setCep: setCepResp, endereco: enderecoResp, setEndereco: setEnderecoResp, loading: loadingCep, handleCepChange, handleCepBlur } = useViacepLookup();
+    const { cep: cepResp, setCep: setCepResp, endereco: enderecoResp, setEndereco: setEnderecoResp, loading: loadingCep, notFound: cepRespNotFound, handleCepChange, handleCepBlur } = useViacepLookup();
     const { cidades, quadras, covas, falecidos, setFalecidos } = useApiInitDataCad();
     const { availableCovas, tipoCovaSelecionada, handleQuadraSepChange } = useAvailableCovas(covas, form, setForm);
     
@@ -378,6 +378,7 @@ export default function Cadastros() {
                                 validateFieldOnChange={validateFieldOnChange}
                                 isSubmitting={isSubmitting}
                                 cepResp={cepResp}
+                                cepRespNotFound={cepRespNotFound}
                                 loadingCep={loadingCep}
                                 fieldSxStyle={fieldSxStyle}
                                 labelSxStyle={labelSxStyle}

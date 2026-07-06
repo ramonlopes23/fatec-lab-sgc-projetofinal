@@ -274,7 +274,6 @@ export default function CemiteriosComponent() {
 
             const occupancyRate = totalCapacity > 0 ? (occupiedSpaces / totalCapacity) * 100 : 0;
 
-            acc.totalCemeteries += 1;
             acc.activeCemeteries += cemetery.active ? 1 : 0;
             acc.inactiveCemeteries += cemetery.active ? 0 : 1;
             acc.totalCapacity += totalCapacity;

@@ -13,7 +13,7 @@ import StepContent from "@mui/material/StepContent";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import DateTimePicker from "../../common/StableDateTimePicker";
 import { LuChevronDown } from "react-icons/lu";
 import { formatDateKey, formatDateTimeKey, formatDateDMY, formatDateTimeDMY, parseDateValue } from "../../../utils/date";
 import {
@@ -48,6 +48,7 @@ function FalecidoProcess({
     isSubmitting,
     isIndigente,
     cepResp,
+    cepRespNotFound,
     loadingCep,
     fieldSxStyle,
     labelSxStyle,
@@ -362,7 +363,15 @@ function FalecidoProcess({
                             {loadingCep && <InlineFeedback>Buscando...</InlineFeedback>}
                         </Grid>
                         <Grid size={{ xs: 12 }}>
-                            <TextField fullWidth variant="outlined" label="Endereço do responsável" name="endereco_resp" placeholder="Rua, bairro, cidade - UF" {...textFieldProps("endereco_resp")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label={cepRespNotFound ? "Nenhum endereço encontrado para esse CEP" : "Endereço do responsável"}
+                                name="endereco_resp"
+                                placeholder="Rua, bairro, cidade - UF"
+                                {...textFieldProps("endereco_resp")}
+                                error={!!fieldErrors.endereco_resp || cepRespNotFound}
+                            />
                         </Grid>
                     </Grid>
                     <Box sx={{ mb: 2, mt: 3, display: "flex", gap: 1 }}>
@@ -400,7 +409,7 @@ function FalecidoProcess({
                             <Grid size={{ xs: 12, md: 6 }}><strong>Nome do médico responsável:</strong> {form.nome_doutor || "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>Data de Nascimento:</strong> {form.data_nasc ? formatDateDMY(form.data_nasc) : "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>Data e Hora de Falecimento:</strong> {form.dh_falec ? formatDateTimeDMY(form.dh_falec) : "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Responsavel:</strong> {form.nome_resp || "-"}</Grid>
+                            <Grid size={{ xs: 12, md: 6 }}><strong>Responsável:</strong> {form.nome_resp || "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>Parentesco:</strong> {form.parentesco || "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>Contato:</strong> {form.tel_resp || "-"}</Grid>
                             <Grid size={{ xs: 12, md: 6 }}><strong>CPF do responsável:</strong> {form.doc_resp || "-"}</Grid>
