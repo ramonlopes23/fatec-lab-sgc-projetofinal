@@ -39,18 +39,44 @@ export const cepMask = (value) => {
   return digits.replace(/(\d{5})(\d)/, "$1-$2");
 };
 
+export const parseCurrencyInput = (value) => {
+  if (typeof value === "number") return value;
+
+  const normalized = String(value || "")
+    .replace(/[^\d,.-]/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".");
+
+  const amount = Number(normalized);
+  return Number.isFinite(amount) ? amount : 0;
+};
+
+export const currencyInputMask = (value) => {
+  if (typeof value === "number") {
+    return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  }
+
+  const digits = String(value || "").replace(/\D/g, "");
+  const amount = Number(digits || 0) / 100;
+  return amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+};
+
 export const applyMaskByFieldName = (fieldName, value) => {
   switch (fieldName) {
     case "cpf":
     case "doc_resp":
+    case "cpf_titular":
       return cpfMask(value);
     case "rg":
       return rgMask(value);
     case "tel_resp":
+    case "contato_responsavel":
       return phoneMask(value);
     case "cep_resp":
     case "cepResp":
       return cepMask(value);
+    case "valor":
+      return currencyInputMask(value);
     default:
       return value;
   }

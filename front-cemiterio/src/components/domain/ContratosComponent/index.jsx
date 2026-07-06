@@ -71,7 +71,7 @@ import { getBlocks } from "../../../services/blockService.js";
 import { getGrave, createGrave, updateGrave } from "../../../services/graveService.js";
 import { getSepultamentos } from "../../../services/sepultamentoService.js";
 import { useCemeteryStore } from "../../../stores";
-import { formatCurrencyBRL, formatDateDMY, formatDateTimeKey, getValidityBucket, normalizeSearchText, parseDateValue } from "../../../utils";
+import { applyMaskByFieldName, currencyInputMask, formatCurrencyBRL, formatDateDMY, formatDateTimeKey, getValidityBucket, normalizeSearchText, parseCurrencyInput, parseDateValue } from "../../../utils";
 import { useFormModal, useToastFeedback } from "../../../hooks";
 import ConfirmationDialog from "../../common/ConfirmationDialog";
 import SystemButton from "../../common/SystemButton";
@@ -471,21 +471,16 @@ export default function ContratosComponent() {
         return occupied;
     }, [editingId, normalizedTitulos, quadraOptions, selectedQuadraKeys, sepulturas]);
 
-    const availableSepulturaNumbers = useMemo(() => {
-        if (!selectedQuadra) return [];
-
-        const capacity = Number(selectedQuadra.max || 0);
-        if (!Number.isFinite(capacity) || capacity <= 0) return [];
-
-        return Array.from({ length: capacity }, (_, index) => String(index + 1))
-            .filter((number) => !occupiedSepulturaNumbers.has(number));
-    }, [occupiedSepulturaNumbers, selectedQuadra]);
+    const previewSepulturaNumbers = useMemo(() => (
+        Array.from(occupiedSepulturaNumbers)
+            .sort((left, right) => String(left).localeCompare(String(right), "pt-BR", { numeric: true }))
+    ), [occupiedSepulturaNumbers]);
 
     const sepulturaPreviewMessage = !selectedQuadra
-        ? "Selecione uma quadra para visualizar os números disponíveis."
-        : availableSepulturaNumbers.length
-            ? `${availableSepulturaNumbers.length} número(s) disponível(is) na quadra ${selectedQuadra.numero}.`
-            : "Nenhum número disponível para a quadra selecionada.";
+        ? "Selecione uma quadra para visualizar os números já cadastrados."
+        : previewSepulturaNumbers.length
+            ? `${previewSepulturaNumbers.length} número(s) já cadastrado(s) na quadra ${selectedQuadra.numero}.`
+            : "Nenhum número cadastrado para a quadra selecionada.";
 
     const openSepulturaPreview = () => {
         setIsSepulturaPreviewOpen(true);
@@ -499,13 +494,6 @@ export default function ContratosComponent() {
     const toggleSepulturaPreviewPinned = () => {
         setIsSepulturaPreviewOpen((current) => !current || !isSepulturaPreviewPinned);
         setIsSepulturaPreviewPinned((current) => !current);
-    };
-
-    const selectSepulturaFromPreview = (numero) => {
-        if (editingId || isSubmitting) return;
-        updateField("sepultura", numero);
-        setIsSepulturaPreviewPinned(false);
-        setIsSepulturaPreviewOpen(false);
     };
 
     useEffect(() => {
@@ -554,7 +542,7 @@ export default function ContratosComponent() {
         const nextErrors = {};
         const numero = form.numero_titulo.trim();
         const nome = form.nome_titular.trim();
-        const valor = Number(form.valor);
+        const valor = parseCurrencyInput(form.valor);
         const sepulturaNumber = Number(form.sepultura);
 
         if (!nome) nextErrors.nome_titular = "Informe o nome do titular";
@@ -623,7 +611,7 @@ export default function ContratosComponent() {
                 quadra: selectedQuadra?.numero || form.quadra.trim(),
                 blockId: selectedQuadra?.id || "",
                 cemiterio: String(form.cemiterio || selectedCemeteryName || "").trim(),
-                valor: Number(form.valor),
+                valor: parseCurrencyInput(form.valor),
                 update_at: now,
             };
 
@@ -695,7 +683,7 @@ export default function ContratosComponent() {
             vigencia_fim: normalized.vigencia_fim,
             sepultura: normalized.sepultura,
             quadra: quadraOptions.find((quadra) => String(quadra.numero) === String(normalized.quadra) || String(quadra.id) === String(normalized.quadra))?.numero || normalized.quadra,
-            valor: String(normalized.valor ?? 0),
+            valor: currencyInputMask(normalized.valor ?? 0),
             cemiterio: normalized.cemiterio || selectedCemeteryName,
         });
     };
@@ -712,7 +700,7 @@ export default function ContratosComponent() {
         ["CPF do titular", form.cpf_titular],
         ["Contato do responsável", form.contato_responsavel],
         ["Número do título", form.numero_titulo],
-        ["Valor", formatCurrencyBRL(form.valor)],
+        ["Valor mensal", formatCurrencyBRL(parseCurrencyInput(form.valor))],
         ["Status", statusLabel(form.status)],
         ["Cemitério", form.cemiterio || selectedCemeteryName],
         ["Quadra", form.quadra ? `Quadra ${form.quadra}` : ""],
@@ -917,7 +905,7 @@ export default function ContratosComponent() {
                                             <Th>Contato</Th>
                                             <Th>Local</Th>
                                             <Th>Vigência</Th>
-                                            <Th>Valor</Th>
+                                            <Th>Valor mensal</Th>
                                             <Th>Status</Th>
                                             <Th>Ações</Th>
                                         </Tr>
@@ -994,7 +982,7 @@ export default function ContratosComponent() {
                                     <label>CPF do titular</label>
                                     <Input
                                         value={form.cpf_titular}
-                                        onChange={(event) => updateField("cpf_titular", event.target.value)}
+                                        onChange={(event) => updateField("cpf_titular", applyMaskByFieldName("cpf_titular", event.target.value))}
                                         placeholder="000.000.000-00"
                                         disabled={isSubmitting}
                                     />
@@ -1005,8 +993,8 @@ export default function ContratosComponent() {
                                     <label>Contato do responsável</label>
                                     <Input
                                         value={form.contato_responsavel}
-                                        onChange={(event) => updateField("contato_responsavel", event.target.value)}
-                                        placeholder="Telefone ou e-mail"
+                                        onChange={(event) => updateField("contato_responsavel", applyMaskByFieldName("contato_responsavel", event.target.value))}
+                                        placeholder="(00) 00000-0000"
                                         disabled={isSubmitting}
                                     />
                                     {errors.contato_responsavel ? <p style={errorStyle}>{errors.contato_responsavel}</p> : null}
@@ -1024,13 +1012,13 @@ export default function ContratosComponent() {
                                 </div>
 
                                 <div>
-                                    <label>Valor</label>
+                                    <label>Valor mensal</label>
                                     <Input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
+                                        type="text"
+                                        inputMode="numeric"
                                         value={form.valor}
-                                        onChange={(event) => updateField("valor", event.target.value)}
+                                        onChange={(event) => updateField("valor", applyMaskByFieldName("valor", event.target.value))}
+                                        placeholder="R$ 0,00"
                                         disabled={isSubmitting}
                                     />
                                     {errors.valor ? <p style={errorStyle}>{errors.valor}</p> : null}
@@ -1085,7 +1073,7 @@ export default function ContratosComponent() {
                                         />
                                         <SepulturaPreviewButton
                                             type="button"
-                                            aria-label="Visualizar sepulturas disponíveis"
+                                            aria-label="Visualizar sepulturas cadastradas"
                                             title={sepulturaPreviewMessage}
                                             $active={isSepulturaPreviewOpen}
                                             onClick={(event) => {
@@ -1103,14 +1091,13 @@ export default function ContratosComponent() {
                                                 {selectedQuadra ? `Quadra ${selectedQuadra.numero}` : "Quadra não selecionada"}
                                             </SepulturaPreviewHeader>
                                             <SepulturaPreviewHint>{sepulturaPreviewMessage}</SepulturaPreviewHint>
-                                            {selectedQuadra && availableSepulturaNumbers.length ? (
+                                            {selectedQuadra && previewSepulturaNumbers.length ? (
                                                 <SepulturaPreviewGrid>
-                                                    {availableSepulturaNumbers.map((numero) => (
+                                                    {previewSepulturaNumbers.map((numero) => (
                                                         <SepulturaPreviewOption
                                                             key={numero}
                                                             type="button"
-                                                            onClick={() => selectSepulturaFromPreview(numero)}
-                                                            disabled={Boolean(editingId) || isSubmitting}
+                                                            disabled
                                                             $selected={String(form.sepultura) === String(numero)}
                                                         >
                                                             {numero}
@@ -1175,3 +1162,4 @@ export default function ContratosComponent() {
         </>
     );
 }
+
