@@ -75,6 +75,7 @@ import {
     ToggleStatusText,
     QuadraSelectButton,
     QuadraDropdown,
+    EmptyQuadraDropdownLabel,
     CompactField,
     SectionCard,
     SectionHeader,
@@ -230,7 +231,6 @@ export default function VerMapa() {
         quadra_cova: "",
         num_cova: "",
         tipo_cova: "cova",
-        status: "",
         blocked: false,
         capacidade: "",
         concessao: {
@@ -461,7 +461,6 @@ export default function VerMapa() {
             quadra_cova: "",
             num_cova: "",
             tipo_cova: "cova",
-            status: "disponivel",
             blocked: false,
             capacidade: "",
             concessao: {
@@ -760,6 +759,7 @@ export default function VerMapa() {
         const graveType = graveTypeMap[tipo] || "EARTH";
         const areaType = formCova.concessao?.ativa ? "PERPETUAL" : "COMMON";
         const blocked = false;
+        // Toda sepultura nasce disponível; os demais rótulos são derivados por contrato, bloqueio ou sepultamentos.
         const backendStatus = "AVAILABLE";
 
 
@@ -1343,12 +1343,18 @@ export default function VerMapa() {
                         <QuadraDropdown
                             $isOpen={isQuadraDropdownOpen}
                             aria-hidden={!isQuadraDropdownOpen}>
-                            <GridQuadras
-                                quadrasDesc={quadrasDesc}
-                                value={selectedQuadraId}
-                                onChange={handleGridChange}
-                                columnsMinWidth={40}
-                            />
+                            {quadrasDesc.length > 0 ? (
+                                <GridQuadras
+                                    quadrasDesc={quadrasDesc}
+                                    value={selectedQuadraId}
+                                    onChange={handleGridChange}
+                                    columnsMinWidth={40}
+                                />
+                            ) : (
+                                <EmptyQuadraDropdownLabel>
+                                    Nenhuma quadra cadastrada nesse cemitério
+                                </EmptyQuadraDropdownLabel>
+                            )}
                         </QuadraDropdown>
 
                     </QuadraDropdownWrapper>
@@ -1634,41 +1640,31 @@ export default function VerMapa() {
                         {structureSectionsOpen.sepultura ? (
                             <form onSubmit={handleCreateCova}>
                                 <StructureTripleGrid>
-                                    <StructureGridSpanTwo>
-                                        <Field>
-                                            <Label>Quadra</Label>
-                                            <CustomSelect
-                                                name="quadra_cova"
-                                                value={formCova.quadra_cova}
-                                                onChange={handleCovaChange}
-                                                placeholder="Selecione a quadra"
-                                                options={quadrasDesc.map(getQuadraOption)}
-                                                renderValue={(_, option) => (
-                                                    <InfoPill>{formatQuadraDisplay(option.raw)}</InfoPill>
-                                                )}
-                                                renderDropdown={({ selectOption }) => (
-                                                    <GridQuadras
-                                                        quadrasDesc={quadrasDesc}
-                                                        value={formCova.quadra_cova}
-                                                        onChange={(quadra) => {
-                                                            const option = quadra
-                                                                ? getQuadraOption(quadra)
-                                                                : null;
-                                                            selectOption(option);
-                                                        }}
-                                                        columnsMinWidth={40}
-                                                    />
-                                                )}
-                                            />
-                                        </Field>
-                                    </StructureGridSpanTwo>
-
                                     <Field>
-                                        <Label>Status</Label>
-                                        <SystemSelect name="status" value={formCova.status} onChange={handleCovaChange}>
-                                            <option value="disponivel">Disponível</option>
-                                            <option value="indisponivel">Indisponível</option>
-                                        </SystemSelect>
+                                        <Label>Quadra</Label>
+                                        <CustomSelect
+                                            name="quadra_cova"
+                                            value={formCova.quadra_cova}
+                                            onChange={handleCovaChange}
+                                            placeholder="Selecione a quadra"
+                                            options={quadrasDesc.map(getQuadraOption)}
+                                            renderValue={(_, option) => (
+                                                <InfoPill>{formatQuadraDisplay(option.raw)}</InfoPill>
+                                            )}
+                                            renderDropdown={({ selectOption }) => (
+                                                <GridQuadras
+                                                    quadrasDesc={quadrasDesc}
+                                                    value={formCova.quadra_cova}
+                                                    onChange={(quadra) => {
+                                                        const option = quadra
+                                                            ? getQuadraOption(quadra)
+                                                            : null;
+                                                        selectOption(option);
+                                                    }}
+                                                    columnsMinWidth={40}
+                                                />
+                                            )}
+                                        />
                                     </Field>
 
                                     <Field>
@@ -1800,7 +1796,7 @@ export default function VerMapa() {
                             ) : null}
                         </SectionCard>
                         {hasContratoForModal ? (
-                            <SectionCard style={{border: "1px solid #d2b24a"}}>
+                            <SectionCard style={{ border: "1px solid #d2b24a" }}>
                                 <SectionHeader>
                                     <div>
                                         <SectionTitle>Contrato / título de posse</SectionTitle>
@@ -1809,19 +1805,19 @@ export default function VerMapa() {
                                 </SectionHeader>
 
                                 <InfoGrid >
-                                    <InfoTile style={{border: "1px solid #d2b24a"}}>
+                                    <InfoTile style={{ border: "1px solid #d2b24a" }}>
                                         <InfoLabel>Nº do título</InfoLabel>
                                         <InfoValue>{contratoForModal.numero_titulo || "-"}</InfoValue>
                                     </InfoTile>
-                                    <InfoTile style={{border: "1px solid #d2b24a"}}>
+                                    <InfoTile style={{ border: "1px solid #d2b24a" }}>
                                         <InfoLabel>Titular</InfoLabel>
                                         <InfoValue>{contratoForModal.nome_titular || "-"}</InfoValue>
                                     </InfoTile>
-                                    <InfoTile style={{border: "1px solid #d2b24a"}}>
+                                    <InfoTile style={{ border: "1px solid #d2b24a" }}>
                                         <InfoLabel>Contato responsável</InfoLabel>
                                         <InfoValue>{contratoForModal.contato_responsavel || "-"}</InfoValue>
                                     </InfoTile>
-                                    <InfoTile style={{border: "1px solid #d2b24a"}}>
+                                    <InfoTile style={{ border: "1px solid #d2b24a" }}>
                                         <InfoLabel>Visualizar título de posse</InfoLabel>
                                         <SepulturaPreviewButton
                                             type="button"
@@ -1954,7 +1950,7 @@ export default function VerMapa() {
                                                                     </InfoTile>
                                                                 </InfoGrid>
                                                                 {exumacoesPending[String(s.id)] ? (
-                                                                    <SystemButton type="button" tone="delete" onClick={() => cancelExumacao(s)}>Cancelar exumação</SystemButton>
+                                                                    <SystemButton style={{ marginTop: "10px" }} type="button" tone="delete" onClick={() => cancelExumacao(s)}>Cancelar exumação</SystemButton>
                                                                 ) : (
                                                                     <SystemButton style={{ marginTop: "15px" }} type="button" onClick={() => openExumacaoForm(s)}>Iniciar exumação</SystemButton>
                                                                 )}

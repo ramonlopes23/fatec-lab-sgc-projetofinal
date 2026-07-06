@@ -90,12 +90,13 @@ export const LegendWrapper = styled.div`
 
 export const InfoPill = styled.span`
   background: #f1f3ff;
+  height:12px;
   color: #191970;
-  padding: 6px 10px;
+  padding: 5px 10px;
   border-radius: 12px;
   font-weight: 700;
-  font-size: 13px;
-  border: 1px solid rgba(0,0,0,0.06);
+  font-size: 12px;
+  border: 1px solid rgba(9, 40, 144, 0.06);
 `;
 
 export const CovaGrid = styled.div`
@@ -643,6 +644,16 @@ export const QuadraDropdown = styled.div`
   transition: opacity 0.24s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.24s cubic-bezier(0.4, 0, 0.2, 1),
               visibility 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+`;
+
+export const EmptyQuadraDropdownLabel = styled.p`
+  margin: 0;
+  padding: 4px 2px;
+  color: #5f6680;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
 `;
 
 export const SortDropdown = styled(QuadraDropdown)`
