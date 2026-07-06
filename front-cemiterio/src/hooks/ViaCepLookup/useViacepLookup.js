@@ -4,6 +4,7 @@ export default function useViacepLookup() {
   const [cep, setCep] = useState("");
   const [endereco, setEndereco] = useState("");
   const [loading, setLoading] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   const normalizeCep = useCallback((value) => {
     return String(value || "").replace(/\D/g, "").slice(0, 8);
@@ -31,10 +32,17 @@ export default function useViacepLookup() {
     async (event) => {
       const digits = normalizeCep(event.target.value);
       setCep(digits);
+      setNotFound(false);
 
       if (digits.length === 8) {
         const found = await fetchViaCep(digits);
-        if (found) setEndereco(found.formatted);
+        if (found) {
+          setEndereco(found.formatted);
+          setNotFound(false);
+        } else {
+          setEndereco("");
+          setNotFound(true);
+        }
       }
     },
     [normalizeCep, fetchViaCep]
@@ -42,9 +50,18 @@ export default function useViacepLookup() {
 
   const handleCepBlur = useCallback(async () => {
     const digits = normalizeCep(cep);
-    if (!digits || digits.length !== 8) return;
+    if (!digits || digits.length !== 8) {
+      setNotFound(false);
+      return;
+    }
     const found = await fetchViaCep(digits);
-    if (found) setEndereco(found.formatted);
+    if (found) {
+      setEndereco(found.formatted);
+      setNotFound(false);
+    } else {
+      setEndereco("");
+      setNotFound(true);
+    }
   }, [cep, normalizeCep, fetchViaCep]);
 
   return {
@@ -53,6 +70,7 @@ export default function useViacepLookup() {
     endereco,
     setEndereco,
     loading,
+    notFound,
     handleCepChange,
     handleCepBlur,
   };
