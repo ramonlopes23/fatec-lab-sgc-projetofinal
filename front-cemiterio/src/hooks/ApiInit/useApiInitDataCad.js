@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../services/index.js";
-
-const normalizeQuadra = (quadra) => ({
-  ...quadra,
-  id: quadra?.id,
-  num_quadra: quadra?.num_quadra ?? quadra?.number ?? quadra?.numero ?? "",
-  nome: quadra?.nome ?? ((quadra?.num_quadra ?? quadra?.number ?? quadra?.numero) != null ? `Quadra ${quadra.num_quadra ?? quadra.number ?? quadra.numero}` : ""),
-});
+import { normalizeQuadra } from "../../utils/quadra.js";
 
 const normalizeCova = (cova) => {
   const areaType = String(cova?.areaType ?? cova?.area_type ?? "").toUpperCase();

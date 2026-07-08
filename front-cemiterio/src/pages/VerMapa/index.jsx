@@ -294,12 +294,12 @@ export default function VerMapa() {
             String(q.nome || "").endsWith(String(sepQuadraKey))
         );
 
-        const quadraNum = quadraObj?.num_quadra ?? sepQuadraKey;
+        const quadraNum = quadraObj?.num_quadra ?? quadraObj?.number ?? quadraObj?.numero ?? "";
 
         setExumacoesForm({
             sepultamentoId: sep.id,
             nome_sep: sep.nome_sep,
-            quadra_sep: String(quadraNum ?? ""),
+            quadra_sep: String(quadraNum || ""),
             num_sepultura_sep: sepNumeroKey,
             dh_exu: formatDateTimeKey(new Date()),
             motivo: "",
@@ -427,7 +427,7 @@ export default function VerMapa() {
 
         return {
             value: String(q.id),
-            label: `${formatQuadraDisplay(q)} ${full ? "(lotada)" : ""}`.trim(),
+            label: `${formatQuadraDisplay(q, [], "Quadra ", "sem número")} ${full ? "(lotada)" : ""}`.trim(),
             disabled: full,
             raw: q,
             key: String(q.id ?? q.num_sepultura ?? idx),
@@ -1012,6 +1012,10 @@ export default function VerMapa() {
         () => quadras.find(q => String(q.id) === String(selectedQuadraId)) || { covas: [] },
         [quadras, selectedQuadraId]
     );
+    const quadraSelecionadaLabel = formatQuadraDisplay(quadraSelecionada, [], "Quadra ", "");
+    const selectedQuadraButtonLabel = selectedQuadraId
+        ? quadraSelecionadaLabel || "Quadra sem número"
+        : "Selecione uma quadra";
 
     /*  const handleSelectQuadra = (e) => {
          const v = e?.target?.value;
@@ -1092,7 +1096,7 @@ export default function VerMapa() {
             sepultamento: sepDataForModal,
             quadraKey,
             numeroKey,
-            quadraLabel: quadra ? formatQuadraDisplay(quadra) : quadraKey || "-",
+            quadraLabel: quadra ? formatQuadraDisplay(quadra, [], "Quadra ", "sem número") : "Quadra sem número",
             numeroLabel: numeroKey || "-",
         };
     }, [quadras, quadrasDesc, selectedCova, selectedQuadraId, selectedGraveForModal, sepDataForModal]);
@@ -1334,7 +1338,7 @@ export default function VerMapa() {
                     <QuadraDropdownWrapper ref={dropdownRef}>
                         <QuadraSelectButton disabled={isMapLoading} onClick={() => { if (isMapLoading) return; setIsQuadraDropdownOpen(!isQuadraDropdownOpen) }}
                         >
-                            {selectedQuadraId ? formatQuadraDisplay(quadrasDesc.find((q) => String(q.id) === String(selectedQuadraId)) || selectedQuadraId) : "Selecione uma quadra"}
+                            {selectedQuadraButtonLabel}
                             <DropdownIcon>
                                 {isQuadraDropdownOpen ? "▲" : "▼"}
                             </DropdownIcon>
@@ -1411,7 +1415,7 @@ export default function VerMapa() {
 
                 <QuadraWrapper key={quadraSelecionada.id || "preview"}>
                     <QuadraHeader>
-                        <QuadraTitle>{quadraSelecionada.nome || "Nenhuma quadra selecionada"}</QuadraTitle>
+                        <QuadraTitle>{quadraSelecionadaLabel || "Nenhuma quadra selecionada"}</QuadraTitle>
                         <QuadraInfo key={String(quadraSelecionada.id)}>
                             <InfoPill>Capacidade máxima de sepulturas: {quadraSelecionada.max_covas > 0 ? quadraSelecionada.max_covas : "-"}</InfoPill>
                             <InfoPill>Número atual de sepulturas: {Array.isArray(quadraSelecionada.covas) ? quadraSelecionada.covas.length : getCovasCount?.(quadraSelecionada.num_quadra ?? quadraSelecionada.id) ?? 0}</InfoPill>
@@ -1649,7 +1653,7 @@ export default function VerMapa() {
                                             placeholder="Selecione a quadra"
                                             options={quadrasDesc.map(getQuadraOption)}
                                             renderValue={(_, option) => (
-                                                <InfoPill>{formatQuadraDisplay(option.raw)}</InfoPill>
+                                                <InfoPill>{formatQuadraDisplay(option.raw, [], "Quadra ", "sem número")}</InfoPill>
                                             )}
                                             renderDropdown={({ selectOption }) => (
                                                 <GridQuadras
@@ -1728,7 +1732,7 @@ export default function VerMapa() {
                     <DrawerComponent
                         open={modalOpen && selectedCova}
                         title={`Sepultura ${numeroForModal}`}
-                        subtitle={quadraSelecionada.nome || "Quadra selecionada"}
+                        subtitle={quadraSelecionadaLabel || "Quadra selecionada"}
                         width="440px"
                         zIndex={1200}
                         overlay="rgba(12, 16, 36, 0.28)"

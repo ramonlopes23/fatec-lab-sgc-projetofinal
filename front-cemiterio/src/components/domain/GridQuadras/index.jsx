@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { Tile, Grid, GridWrap, TileBadge, TileLabel } from "./styles"
-import { formatQuadraDisplay, resolveQuadraDisplay } from "../../../utils";
+import { formatQuadraDisplay, normalizeQuadra, resolveQuadraDisplay } from "../../../utils";
 
 const safeKey = (v, idx) => {
   if (v === undefined || v === null) return `idx-${idx}`;
@@ -31,9 +31,8 @@ function GridQuadras({
 
   const normalizedQuadras = useMemo(() => {
     return (quadrasDesc || []).map((q) => ({
-      ...q,
+      ...normalizeQuadra(q),
       id: normalizeId(q.id),
-      num_quadra: q.num_quadra ?? q.nome ?? String(q.id ?? ""),
     }));
   }, [quadrasDesc]);
 
@@ -93,9 +92,9 @@ function GridQuadras({
                 }
               }}
               aria-pressed={isSelected}
-              title={`${formatQuadraDisplay(q)}${q.status ? ` - ${q.status}` : ""}`}
+              title={`${formatQuadraDisplay(q, [], "", "Quadra sem número")}${q.status ? ` - ${q.status}` : ""}`}
             >
-              <TileLabel>{resolveQuadraDisplay(q)}</TileLabel>
+              <TileLabel>{resolveQuadraDisplay(q, [], "Sem número")}</TileLabel>
 
             </Tile>
           );

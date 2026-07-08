@@ -77,7 +77,7 @@ export default function Dashboard() {
                         || String(qt.number) === String(qKey)
                         || (qt.nome && String(qt.nome).endsWith(String(qKey)))
                     );
-                    quadra_num = resolveQuadraDisplay(qObj ?? qKey, quadras) || (qKey ?? null);
+                    quadra_num = resolveQuadraDisplay(qObj ?? qKey, quadras, "");
                 }
 
                 const num_sepultura = item.num_sepultura_sep ?? item.num_sepultura ?? item.numero ?? item.num_cova ?? null;

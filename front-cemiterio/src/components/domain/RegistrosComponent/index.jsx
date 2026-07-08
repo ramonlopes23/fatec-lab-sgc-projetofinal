@@ -10,7 +10,7 @@ import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import api from "../../../services/index.js";
 import { useFormModal, useToastFeedback } from "../../../hooks";
-import { formatDateDMY, normalizeText, parseDateValue, resolveQuadraDisplay, sortNumericText } from "../../../utils";
+import { formatDateDMY, normalizeQuadra, normalizeText, parseDateValue, resolveQuadraDisplay, sortNumericText } from "../../../utils";
 import {
   Actions,
   ChartStatBody,
@@ -187,16 +187,7 @@ const getCemiterio = (record) => (
   "-"
 );
 
-const getQuadra = (record) => (
-  resolveQuadraDisplay(
-    record?.quadra_num ||
-    record?.quadra ||
-    record?.sepultamento?.quadra_num ||
-    record?.sepultamento?.quadra_sep ||
-    record?.sepultamento?.quadra ||
-    ""
-  )
-);
+const getQuadra = (record) => String(record?.quadra_num || record?.sepultamento?.quadra_num || "").trim();
 
 const getSepultura = (record) => (
   record?.sepultura ||
@@ -278,7 +269,7 @@ export default function RegistrosComponent() {
       const falecidosData = Array.isArray(resFalecidos.data) ? resFalecidos.data : [];
       const exumacoesData = Array.isArray(resExumacoes.data) ? resExumacoes.data : [];
       const sepultamentosData = Array.isArray(resSepultamentos.data) ? resSepultamentos.data : [];
-      const quadrasData = Array.isArray(resQuadras.data) ? resQuadras.data : [];
+      const quadrasData = Array.isArray(resQuadras.data) ? resQuadras.data.map(normalizeQuadra) : [];
       const cemiteriosData = Array.isArray(resCemiterios.data) ? resCemiterios.data : [];
 
       const sepultamentosByFalecido = new Map();
@@ -300,11 +291,6 @@ export default function RegistrosComponent() {
           const falecidoId = normalizeId(falecido?.id);
           const sepultamento = sepultamentosByFalecido.get(falecidoId) || null;
           const exumacao = sepultamento ? exumacoesBySepultamento.get(normalizeId(sepultamento?.id)) || null : null;
-          const quadra = quadrasData.find((item) => (
-            String(item?.id) === String(sepultamento?.quadra_sep) ||
-            String(item?.id) === String(sepultamento?.quadra) ||
-            String(item?.num_quadra) === String(sepultamento?.quadra_sep)
-          )) || null;
           const cemiterio = cemiteriosData.find((item) => (
             String(item?.id) === String(sepultamento?.cemiterio) ||
             String(item?.nome) === String(sepultamento?.cemiterio) ||
@@ -315,7 +301,7 @@ export default function RegistrosComponent() {
             ...falecido,
             sepultamento,
             exumacao,
-            quadra_num: resolveQuadraDisplay(quadra?.num_quadra ?? quadra?.number ?? sepultamento?.quadra_sep ?? sepultamento?.quadra ?? "", quadrasData),
+            quadra_num: resolveQuadraDisplay(sepultamento?.quadra_sep ?? sepultamento?.quadra ?? "", quadrasData, ""),
             sepultura: sepultamento?.num_sepultura_sep ?? sepultamento?.num_sepultura ?? sepultamento?.sepultura ?? "",
             cemiterio: cemiterio?.nome_cemiterio || cemiterio?.nome || sepultamento?.cemiterio_nome || sepultamento?.cemiterio || "",
             data_obito_sep: sepultamento?.data_obito_sep || "",

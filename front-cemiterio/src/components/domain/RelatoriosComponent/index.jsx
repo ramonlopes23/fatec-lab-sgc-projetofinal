@@ -9,6 +9,7 @@ import api from "../../../services/index.js";
 import { useAuthStore } from "../../../stores/authStore";
 import sgcLogo from "../../../assets/SGC.png";
 import { formatDateDMY, parseDateValue } from "../../../utils/date";
+import { normalizeQuadra, resolveQuadraDisplay } from "../../../utils/quadra";
 import { formatCurrencyBRL } from "../../../utils/taxas";
 import DefaultModal from "../../common/DefaultModal";
 import RelatoriosExportActions from "./RelatoriosExportActions";
@@ -153,7 +154,7 @@ const getExumacaoName = (item) => {
     return item?.nome_sep || item?.nome || item?.falecido_nome || item?.nome_falecido || sepultamento?.nome_sep || sepultamento?.nome || "--";
 };
 
-const getExumacaoQuadra = (item) => {
+const getExumacaoQuadraReference = (item) => {
     const sepultamento = getNestedSepultamento(item);
     return item?.quadra_sep || item?.quadra || item?.quadra_id || sepultamento?.quadra_sep || sepultamento?.quadra || "";
 };
@@ -511,6 +512,7 @@ export default function RelatoriosComponent() {
     const user = useAuthStore((state) => state.user);
     const [sepultamentos, setSepultamentos] = useState([]);
     const [exumacoes, setExumacoes] = useState([]);
+    const [quadras, setQuadras] = useState([]);
     const [activeReport, setActiveReport] = useState("sepultamentos");
     const [isLoading, setIsLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState("");
@@ -522,20 +524,31 @@ export default function RelatoriosComponent() {
 
     const isExumacoesReport = activeReport === "exumacoes";
 
+    const getSepultamentoQuadra = (item) => (
+        resolveQuadraDisplay(item?.quadra_sep ?? item?.quadra ?? item?.quadra_id ?? "", quadras, "")
+    );
+
+    const getExumacaoQuadra = (item) => (
+        resolveQuadraDisplay(getExumacaoQuadraReference(item), quadras, "")
+    );
+
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
             try {
-                const [sepultamentosResponse, exumacoesResponse] = await Promise.all([
+                const [sepultamentosResponse, exumacoesResponse, quadrasResponse] = await Promise.all([
                     api.get("/sepultamentos").catch(() => ({ data: [] })),
                     api.get("/exumacoes").catch(() => ({ data: [] })),
+                    api.get("/quadras").catch(() => ({ data: [] })),
                 ]);
                 setSepultamentos(Array.isArray(sepultamentosResponse.data) ? sepultamentosResponse.data : []);
                 setExumacoes(Array.isArray(exumacoesResponse.data) ? exumacoesResponse.data : []);
+                setQuadras(Array.isArray(quadrasResponse.data) ? quadrasResponse.data.map(normalizeQuadra) : []);
             } catch (error) {
                 console.error("Erro ao carregar relatorios", error);
                 setSepultamentos([]);
                 setExumacoes([]);
+                setQuadras([]);
                 showError("Erro ao carregar relatórios");
             } finally {
                 setIsLoading(false);
@@ -552,7 +565,7 @@ export default function RelatoriosComponent() {
         return sepultamentos.filter((item) => {
             const name = normalizeText(item?.nome_sep || item?.nome);
             if (search && !name.includes(search)) return false;
-            if (filters.quadra && String(item?.quadra_sep ?? "") !== String(filters.quadra)) return false;
+            if (filters.quadra && String(getSepultamentoQuadra(item)) !== String(filters.quadra)) return false;
             if (filters.sepultura && String(item?.num_sepultura_sep ?? "") !== String(filters.sepultura)) return false;
 
             const isParticular = isParticularRecord(item);
@@ -565,7 +578,7 @@ export default function RelatoriosComponent() {
             if (end && date > end) return false;
             return true;
         });
-    }, [filters, sepultamentos]);
+    }, [filters, quadras, sepultamentos]);
 
     const filteredExumacoes = useMemo(() => {
         const search = normalizeText(filters.search);
@@ -585,7 +598,7 @@ export default function RelatoriosComponent() {
             if (end && date > end) return false;
             return true;
         });
-    }, [exumacoes, filters]);
+    }, [exumacoes, filters, quadras]);
 
     const filteredItems = isExumacoesReport ? filteredExumacoes : filteredSepultamentos;
 
@@ -698,18 +711,18 @@ export default function RelatoriosComponent() {
 
     const quadraOptions = useMemo(() => {
         const source = isExumacoesReport ? exumacoes : sepultamentos;
-        const values = Array.from(new Set(source.map((item) => String(isExumacoesReport ? getExumacaoQuadra(item) : item?.quadra_sep ?? "").trim()).filter(Boolean)));
+        const values = Array.from(new Set(source.map((item) => String(isExumacoesReport ? getExumacaoQuadra(item) : getSepultamentoQuadra(item)).trim()).filter(Boolean)));
         return values.sort(sortNumericText);
-    }, [exumacoes, isExumacoesReport, sepultamentos]);
+    }, [exumacoes, isExumacoesReport, quadras, sepultamentos]);
 
     const sepulturaOptions = useMemo(() => {
         const source = isExumacoesReport ? exumacoes : sepultamentos;
         const base = filters.quadra
-            ? source.filter((item) => String(isExumacoesReport ? getExumacaoQuadra(item) : item?.quadra_sep ?? "") === String(filters.quadra))
+            ? source.filter((item) => String(isExumacoesReport ? getExumacaoQuadra(item) : getSepultamentoQuadra(item)) === String(filters.quadra))
             : source;
         const values = Array.from(new Set(base.map((item) => String(isExumacoesReport ? getExumacaoSepultura(item) : item?.num_sepultura_sep ?? "").trim()).filter(Boolean)));
         return values.sort(sortNumericText);
-    }, [exumacoes, filters.quadra, isExumacoesReport, sepultamentos]);
+    }, [exumacoes, filters.quadra, isExumacoesReport, quadras, sepultamentos]);
 
     const destinoOptions = useMemo(() => {
         const values = Array.from(new Set(exumacoes.map((item) => classifyDestino(item)).filter(Boolean)));
@@ -772,7 +785,7 @@ export default function RelatoriosComponent() {
                     data: formatDateDMY(item?.dh_sep, "--"),
                     falecido: item?.nome_sep || item?.nome || "--",
                     documento: item?.cpf || item?.documento || item?.doc_falecido || "--",
-                    quadra: item?.quadra_sep || "--",
+                    quadra: getSepultamentoQuadra(item) || "--",
                     sepultura: item?.num_sepultura_sep || "--",
                     tipo: getTypeText(item),
                     taxa: formatCurrencyBRL(item?.taxa_valor),
@@ -801,7 +814,7 @@ export default function RelatoriosComponent() {
                 periodo: filters.periodo,
                 periodoInicial: filters.dataInicio || "",
                 periodoFinal: filters.dataFim || "",
-                quadra: filters.quadra || "",
+                quadra: filters.quadra ? `Quadra ${filters.quadra}` : "",
                 sepultura: filters.sepultura || "",
                 tipoSepultamento: !isExumacoesReport && filters.tipo !== "all" ? filters.tipo : "",
                 situacaoFinanceira: filters.situacaoFinanceira || "",
@@ -939,7 +952,7 @@ export default function RelatoriosComponent() {
             <Tr key={item?.id || `${item?.nome_sep || "sep"}-${index}`} $index={index}>
                 <Td>{formatDateDMY(item?.dh_sep, "--")}</Td>
                 <Td>{item?.nome_sep || item?.nome || "--"}</Td>
-                <Td>{item?.quadra_sep || "--"}</Td>
+                <Td>{getSepultamentoQuadra(item) || "--"}</Td>
                 <Td>{item?.num_sepultura_sep || "--"}</Td>
                 <Td>{getTypeText(item)}</Td>
                 <Td>{isParticular ? "Particular" : "Comum"}</Td>
@@ -997,7 +1010,7 @@ export default function RelatoriosComponent() {
         }
 
         return [
-            ["Quadra", selectedItem?.quadra_sep || "--"],
+            ["Quadra", getSepultamentoQuadra(selectedItem) || "--"],
             ["Sepultura", selectedItem?.num_sepultura_sep || "--"],
             ["Tipo", getTypeText(selectedItem)],
             ["Posse", isParticularRecord(selectedItem) ? "Particular" : "Comum"],

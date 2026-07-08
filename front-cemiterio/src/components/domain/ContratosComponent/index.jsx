@@ -71,7 +71,7 @@ import { getBlocks } from "../../../services/blockService.js";
 import { getGrave, createGrave, updateGrave } from "../../../services/graveService.js";
 import { getSepultamentos } from "../../../services/sepultamentoService.js";
 import { useCemeteryStore } from "../../../stores";
-import { applyMaskByFieldName, currencyInputMask, formatCurrencyBRL, formatDateDMY, formatDateTimeKey, getValidityBucket, normalizeSearchText, parseCurrencyInput, parseDateValue } from "../../../utils";
+import { applyMaskByFieldName, currencyInputMask, formatCurrencyBRL, formatDateDMY, formatDateTimeKey, formatQuadraDisplay, getValidityBucket, normalizeQuadra, normalizeSearchText, parseCurrencyInput, parseDateValue } from "../../../utils";
 import { useFormModal, useToastFeedback } from "../../../hooks";
 import ConfirmationDialog from "../../common/ConfirmationDialog";
 import SystemButton from "../../common/SystemButton";
@@ -261,7 +261,7 @@ export default function ContratosComponent() {
                 getSepultamentos().catch(() => []),
             ]);
             setTitulos(Array.isArray(data) ? data : []);
-            setQuadras(Array.isArray(blocksData) ? blocksData : []);
+            setQuadras(Array.isArray(blocksData) ? blocksData.map(normalizeQuadra) : []);
             setSepulturas(Array.isArray(gravesData) ? gravesData : []);
             setSepultamentos(Array.isArray(sepultamentosData) ? sepultamentosData : []);
         } catch (error) {
@@ -322,12 +322,16 @@ export default function ContratosComponent() {
 
     const quadraOptions = useMemo(() => {
         return (quadras || [])
-            .map((quadra) => ({
-                id: String(quadra?.id ?? quadra?.num_quadra ?? ""),
-                numero: String(quadra?.num_quadra ?? quadra?.number ?? quadra?.numero ?? quadra?.id ?? "").trim(),
-                nome: quadra?.nome || quadra?.name || "",
-                max: Number(quadra?.max_covas || quadra?.maxGraves || 0),
-            }))
+            .map((quadra) => {
+                const normalized = normalizeQuadra(quadra);
+                return {
+                    ...normalized,
+                    id: String(normalized?.id ?? normalized?.num_quadra ?? ""),
+                    numero: String(normalized?.num_quadra ?? "").trim(),
+                    nome: formatQuadraDisplay(normalized, [], "Quadra ", "sem número"),
+                    max: Number(normalized?.max_covas || normalized?.maxGraves || 0),
+                };
+            })
             .filter((quadra) => quadra.id && quadra.numero)
             .sort((left, right) => String(left.numero).localeCompare(String(right.numero), "pt-BR", { numeric: true }));
     }, [quadras]);
@@ -338,6 +342,7 @@ export default function ContratosComponent() {
     ), [form.quadra, quadraOptions]);
 
     const quadraSelectValue = selectedQuadra?.numero || form.quadra || "";
+    const selectedQuadraLabel = selectedQuadra ? formatQuadraDisplay(selectedQuadra, [], "Quadra ", "sem número") : "";
     const modalQuadraOptions = useMemo(() => {
         if (!quadraSelectValue || quadraOptions.some((quadra) => String(quadra.numero) === String(quadraSelectValue))) {
             return quadraOptions;
@@ -479,7 +484,7 @@ export default function ContratosComponent() {
     const sepulturaPreviewMessage = !selectedQuadra
         ? "Selecione uma quadra para visualizar os números já cadastrados."
         : previewSepulturaNumbers.length
-            ? `${previewSepulturaNumbers.length} número(s) já cadastrado(s) na quadra ${selectedQuadra.numero}.`
+            ? `${previewSepulturaNumbers.length} número(s) já cadastrado(s) na ${selectedQuadraLabel}.`
             : "Nenhum número cadastrado para a quadra selecionada.";
 
     const openSepulturaPreview = () => {
@@ -703,7 +708,7 @@ export default function ContratosComponent() {
         ["Valor mensal", formatCurrencyBRL(parseCurrencyInput(form.valor))],
         ["Status", statusLabel(form.status)],
         ["Cemitério", form.cemiterio || selectedCemeteryName],
-        ["Quadra", form.quadra ? `Quadra ${form.quadra}` : ""],
+        ["Quadra", selectedQuadraLabel || (form.quadra ? "Quadra não identificada" : "")],
         ["Sepultura", form.sepultura ? `Sepultura ${form.sepultura}` : ""],
         ["Vigência início", formatDateBR(form.vigencia_inicio)],
         ["Vigência fim", formatDateBR(form.vigencia_fim)],
@@ -1051,7 +1056,7 @@ export default function ContratosComponent() {
                                         <option value="">Selecione a quadra</option>
                                         {modalQuadraOptions.map((quadra) => (
                                             <option key={quadra.id} value={quadra.numero}>
-                                                {quadra.nome || `Quadra ${quadra.numero}`}
+                                                {quadra.nome || formatQuadraDisplay(quadra, [], "Quadra ", "sem número")}
                                             </option>
                                         ))}
                                     </SystemSelect>
@@ -1088,7 +1093,7 @@ export default function ContratosComponent() {
                                     {isSepulturaPreviewOpen ? (
                                         <SepulturaPreviewPanel>
                                             <SepulturaPreviewHeader>
-                                                {selectedQuadra ? `Quadra ${selectedQuadra.numero}` : "Quadra não selecionada"}
+                                                {selectedQuadraLabel || "Quadra não selecionada"}
                                             </SepulturaPreviewHeader>
                                             <SepulturaPreviewHint>{sepulturaPreviewMessage}</SepulturaPreviewHint>
                                             {selectedQuadra && previewSepulturaNumbers.length ? (

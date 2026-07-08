@@ -17,7 +17,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LuChevronDown } from "react-icons/lu";
 import { formatDateKey, formatDateTimeKey, parseDateValue } from "../../../utils/date";
-import { resolveQuadraDisplay } from "../../../utils";
+import { formatQuadraDisplay } from "../../../utils";
 import { hasErrors } from "../../../utils/validation"
 import {
     SearchFieldWrapper,
@@ -370,7 +370,7 @@ function SepultamentoProcess({
                                     <MenuItem value="">Selecione a quadra</MenuItem>
                                     {quadras.map((quadra) => (
                                         <MenuItem key={String(quadra.id)} value={String(quadra.id)}>
-                                            {`Quadra ${resolveQuadraDisplay(quadra)}`}
+                                            {formatQuadraDisplay(quadra, [], "Quadra ", "sem número")}
                                         </MenuItem>
                                     ))}
                                 </Select>

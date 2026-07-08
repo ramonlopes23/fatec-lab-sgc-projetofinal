@@ -61,9 +61,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                 const dataLabel = formatDateDMY(item.rawDate, "");
                 const dataHoraLabel = formatDateNormalized(item.rawDate, dataLabel);
 
-                const quadraStr = typeof item.quadraCandidate === "object"
-                    ? (item.quadraCandidate.num_quadra ?? item.quadraCandidate.number ?? item.quadraCandidate.id ?? "")
-                    : String(item.quadraCandidate ?? "");
+                const quadraRef = item.quadraCandidate ?? "";
                 return {
                     id: `evt-${item._type}-${item.id ?? Math.random().toString(36).slice(2, 9)}`,
                     nomeFalecido: item.nome,
@@ -71,7 +69,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                     dataLabel,
                     dataHoraLabel,
                     horario,
-                    quadra: resolveQuadraDisplay(quadraStr, quadras),
+                    quadra: resolveQuadraDisplay(quadraRef, quadras, "Sem número"),
                     cova: item.cova,
                     status: item.status,
                     tipo: item._type,
