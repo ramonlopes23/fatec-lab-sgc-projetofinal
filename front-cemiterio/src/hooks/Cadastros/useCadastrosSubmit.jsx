@@ -1,7 +1,7 @@
 import { useState } from "react";
 import api from "../../services/index.js";
 import { PROCESS_TYPES } from "../../pages/Cadastros/constants.js";
-import { findTaxaByCodigo, formatDateKey, formatDateTimeKey } from "../../utils";
+import { findTaxaByCodigo, formatDateKey, formatDateTimeKey, formatTaxaLabel, getSepulturaCapacity, getTaxaId, getTaxaValor } from "../../utils";
 
 export default function useCadastrosSubmit({
     form,
@@ -49,9 +49,9 @@ export default function useCadastrosSubmit({
                 ...form,
                 nome: form.nome_sep || form.nome_fal || "",
                 nome_sep: form.nome_sep || form.nome_fal || "",
-                taxa_id: selectedTaxa?.id ?? form.taxa_id ?? "",
-                taxa_valor: Number(selectedTaxa?.valor ?? form.taxa_valor ?? 0),
-                taxa_label: selectedTaxa?.label ?? "",
+                taxa_id: getTaxaId(selectedTaxa) || form.taxa_id || "",
+                taxa_valor: selectedTaxa ? getTaxaValor(selectedTaxa) : Number(form.taxa_valor ?? 0),
+                taxa_label: formatTaxaLabel(selectedTaxa),
                 foi_exumado: false,
                 status: form.com_velorio ? "Aguardando velorio" : "Pendente",
                 confirmado: false,
@@ -65,7 +65,7 @@ export default function useCadastrosSubmit({
                 return;
             }
 
-            const cap = Number(foundCheck.bodyCapacity ?? foundCheck.capacidade ?? 0);
+            const cap = Number(getSepulturaCapacity(foundCheck));
             if (cap <= 0) {
                 await api.patch(`/covas/${foundCheck.id}`, { status: "OCCUPIED", bodyCapacity: 0 }).catch(() => { });
                 showError("A sepultura selecionada esta lotada. Escolha outra sepultura.");

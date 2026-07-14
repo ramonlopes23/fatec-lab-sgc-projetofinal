@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { INITIAL_FALECIDO_FORM, INITIAL_SEPULTAMENTO_FORM, PROCESS_TYPES } from "../../pages/Cadastros/constants";
+import { getFalecidoId, getFalecidoName } from "../../utils/falecido";
 
 export default function useFormClear({
   clearAllErrors,
@@ -38,8 +39,8 @@ export default function useFormClear({
   }, [clearAllErrors, clearSaved, setActiveStep, setBusca, setForm, setIsIndigente, setSearchFal, setShowFalList]);
 
   const resetToSepultamento = useCallback((falecidoCriado, fallbackNome) => {
-    const id = falecidoCriado?.id || "";
-    const nome = falecidoCriado?.nome_fal || falecidoCriado?.nome || fallbackNome || "";
+    const id = getFalecidoId(falecidoCriado);
+    const nome = getFalecidoName(falecidoCriado) || fallbackNome || "";
 
     setProcessType(PROCESS_TYPES.sepultamento);
     setActiveStep(0);

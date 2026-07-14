@@ -5,7 +5,7 @@ import { FaSkullCrossbones } from "react-icons/fa";
 import { FaTools } from "react-icons/fa";
 import api from "../../../services/index.js";
 import { useToastFeedback } from "../../../hooks";
-import { formatDateNormalized, parseDateValue, resolveQuadraDisplay } from "../../../utils";
+import { formatDateNormalized, getFalecidoId, getFalecidoIdFromRecord, getFalecidoName, getSepulturaCapacity, getSepulturaNumber, getSepulturaQuadraRef, normalizeFalecido, parseDateValue, resolveQuadraDisplay } from "../../../utils";
 import SystemButton from "../../common/SystemButton";
 
 export default function Dashboard() {
@@ -32,16 +32,16 @@ export default function Dashboard() {
 
         const fallback = await api.get("/covas").catch(() => null);
         const allGraves = Array.isArray(fallback?.data) ? fallback.data : [];
-        return allGraves.find((g) => String(g.blockId ?? g.quadra_cova ?? g.quadra ?? "") === String(quadra)
-            && String(g.number ?? g.num_cova ?? g.numero ?? "") === String(num)) ?? null;
+        return allGraves.find((g) => String(getSepulturaQuadraRef(g)) === String(quadra)
+            && String(getSepulturaNumber(g)) === String(num)) ?? null;
     };
 
     const getActiveConfirmedSepsCount = async (quadra, num) => {
         const rS = await api.get("/sepultamentos").catch(() => null);
         const seps = Array.isArray(rS?.data) ? rS.data : [];
         return seps.filter((s) => {
-            const sameQuadra = String(s.quadra_sep ?? s.quadra ?? "") === String(quadra);
-            const sameNum = String(s.num_sepultura_sep ?? s.num_sepultura ?? s.numero ?? "") === String(num);
+            const sameQuadra = String(getSepulturaQuadraRef(s)) === String(quadra);
+            const sameNum = String(getSepulturaNumber(s)) === String(num);
             const active = s.foi_exumado !== true;
             return sameQuadra && sameNum && active && isConfirmedSepultamento(s);
         }).length;
@@ -57,7 +57,7 @@ export default function Dashboard() {
                 api.get("/quadras"),
             ]);
 
-            const loadedFalecidos = rFalecidos.data || [];
+            const loadedFalecidos = Array.isArray(rFalecidos.data) ? rFalecidos.data.map(normalizeFalecido) : [];
             const loadedSepultamentos = rSep.data || [];
             const sep = loadedSepultamentos.map(s => ({ ...s, _type: "Sepultamento" }));
             const vel = (rVel.data || []).map(v => ({ ...v, _type: "Velório" }));
@@ -65,8 +65,8 @@ export default function Dashboard() {
             const quadras = rQuadras.data || [];
 
             const all = [...vel, ...sep, ...exu].map(item => {
-                const fk = item.falecido ?? item.falecido_id ?? item.falecidoId;
-                const f = loadedFalecidos.find(fr => String(fr.id) === String(fk));
+                const fk = getFalecidoIdFromRecord(item);
+                const f = loadedFalecidos.find(fr => getFalecidoId(fr) === String(fk));
 
                 let quadra_num = null;
                 if (item._type === "Sepultamento") {
@@ -80,12 +80,12 @@ export default function Dashboard() {
                     quadra_num = resolveQuadraDisplay(qObj ?? qKey, quadras, "");
                 }
 
-                const num_sepultura = item.num_sepultura_sep ?? item.num_sepultura ?? item.numero ?? item.num_cova ?? null;
+                const num_sepultura = getSepulturaNumber(item) || null;
                 const velorio_inicio = item.dh_inicio_velorio ?? item.data_velorio ?? null;
 
                 return {
                     ...item,
-                    nome_fal: item.nome_sep || item.nome_vel || item.nome_exu || (f ? (f.nome_fal || f.nome) : item.nome),
+                    nome_fal: item.nome_sep || item.nome_vel || item.nome_exu || getFalecidoName(f) || item.nome,
                     falecido: f || null,
                     quadra_num,
                     num_sepultura,
@@ -186,11 +186,11 @@ export default function Dashboard() {
                     const sep = rSep?.data ?? null;
                     if (sep) {
                         const quadra = sep.quadra_sep ?? sep.quadra;
-                        const num = sep.num_sepultura_sep ?? sep.num_sepultura ?? sep.numero;
+                        const num = getSepulturaNumber(sep);
                         if (quadra != null && num != null) {
                             const found = await resolveGraveBySep(quadra, num);
                             if (found && found.id != null) {
-                                const curCap = Number(found.bodyCapacity ?? found.capacidade ?? 0);
+                                const curCap = Number(getSepulturaCapacity(found));
                                 const newCap = Math.max(0, curCap - 1);
                                 const activeConfirmedSeps = await getActiveConfirmedSepsCount(quadra, num);
                                 const newStatus = activeConfirmedSeps > 0 ? "OCCUPIED" : "AVAILABLE";
@@ -220,11 +220,11 @@ export default function Dashboard() {
                         const sep = rSep?.data ?? null;
                         if (sep) {
                             const quadra = sep.quadra_sep ?? sep.quadra;
-                            const num = sep.num_sepultura_sep ?? sep.num_sepultura ?? sep.numero;
+                            const num = getSepulturaNumber(sep);
                             if (quadra != null && num != null) {
                                 const found = await resolveGraveBySep(quadra, num);
                                 if (found && found.id != null) {
-                                    const curCap = Number(found.bodyCapacity ?? found.capacidade ?? 0);
+                                    const curCap = Number(getSepulturaCapacity(found));
                                     const newCap = curCap + 1;
 
                                     const activeConfirmedSeps = await getActiveConfirmedSepsCount(quadra, num);
@@ -265,7 +265,7 @@ export default function Dashboard() {
                     {processosPendentes.length ? processosPendentes.map((p) => (
                         <ProcessItem key={`${p._type}-${p.id}`}>
                             <ProcessInfo>
-                                <strong>{p.nome_fal || p.nome}</strong>
+                                <strong>{getFalecidoName(p) || p.nome}</strong>
                                 {p._type === "Velório" && (p.dh_inicio_velorio || p.data_velorio) && <span>Velório: {formatDateNormalized(p.dh_inicio_velorio || p.data_velorio, "-")}{p.dh_fim_velorio ? ` até ${formatDateNormalized(p.dh_fim_velorio, "-")}` : ""}</span>}
                                 {p._type === "Exumação" && p.dh_exu && <span>Exumação: {formatDateNormalized(p.dh_exu, "-")}</span>}
                                 {p._type === "Sepultamento" && p.dh_sep && (

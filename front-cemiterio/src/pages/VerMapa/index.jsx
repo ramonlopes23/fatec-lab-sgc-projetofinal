@@ -21,7 +21,7 @@ import { MdPets } from "react-icons/md";
 import { LuChevronDown } from "react-icons/lu";
 import { PiFlowerTulipLight, PiFlowerTulipBold } from "react-icons/pi";
 import { SquarePlus } from 'lucide-react';
-import { formatDateTimeDMY, formatDateTimeKey, formatQuadraDisplay, parseDateValue } from "../../utils";
+import { findContratoByReference, formatDateTimeDMY, formatDateTimeKey, formatQuadraDisplay, getContratoContato, getContratoNumeroTitulo, getContratoQuadraRef, getContratoSepulturaRef, getContratoTitularNome, getFalecidoDeathDate, getFalecidoId, getFalecidoIdFromRecord, getFalecidoName, getFalecidoResponsibleName, getFalecidoResponsiblePhone, getSepulturaCapacity, normalizeFalecido, normalizeSepultura, parseDateValue } from "../../utils";
 import {
     QuadraDropdownWrapper,
     Container,
@@ -814,18 +814,8 @@ export default function VerMapa() {
 
 
             const normalizedCovasData = gravesData.map((grave) => ({
-                id: grave?.id,
-                quadra_cova: String(mapHelpers.resolveBlockId(grave?.blockId ?? grave?.block) || ""),
-                num_cova: grave?.number ?? "",
-                tipo_cova: String(grave?.graveType || "").toUpperCase() === "MAUSOLEUM" ? "gaveta" : "cova",
-                capacidade: grave?.bodyCapacity === null || grave?.bodyCapacity === undefined ? "" : Number(grave.bodyCapacity),
-                status: grave?.blocked || String(grave?.status || "").toUpperCase() === "MAINTENANCE"
-                    ? "indisponivel"
-                    : String(grave?.status || "").toUpperCase() === "OCCUPIED"
-                        ? "ocupada"
-                        : "livre",
+                ...normalizeSepultura(grave),
                 active: grave?.active,
-                blocked: grave?.blocked,
                 reason: grave?.reason ?? "",
                 grave,
             }));
@@ -859,7 +849,7 @@ export default function VerMapa() {
                     : [];
             const falecidosData =
                 rFal.status === "fulfilled" && Array.isArray(rFal.value?.data)
-                    ? rFal.value.data
+                    ? rFal.value.data.map(normalizeFalecido)
                     : [];
             const contratosData =
                 rContratos.status === "fulfilled" && Array.isArray(rContratos.value?.data)
@@ -900,13 +890,13 @@ export default function VerMapa() {
             if (sepId) {
                 const sep = sepData.find((s) => String(s.id) === String(sepId));
                 if (sep) {
-                    const falId = sep?.falecido ?? sep?.falecido_id ?? sep?.falecidoId;
+                    const falId = getFalecidoIdFromRecord(sep);
                     let fal = null;
 
                     if (falId) {
                         try {
                             const rf = await api.get(`/falecidos/${falId}`);
-                            fal = rf.data;
+                            fal = normalizeFalecido(rf.data);
                         } catch (e) {
                             console.error("Erro ao buscar falecido", e);
                         }
@@ -1046,12 +1036,12 @@ export default function VerMapa() {
         (async () => {
             const first = list[0] ?? cova.sep ?? null;
             if (first) {
-                const falId = cova.sep?.falecido ?? cova.sep?.falecido_id ?? cova.sep?.falecidoId;
+                const falId = getFalecidoIdFromRecord(first);
                 let fal = null;
                 if (falId) {
                     try {
                         const rf = await api.get(`/falecidos/${falId}`);
-                        fal = rf.data;
+                        fal = normalizeFalecido(rf.data);
                     } catch (e) {
                         console.error("Erro", e)
                     };
@@ -1103,7 +1093,7 @@ export default function VerMapa() {
 
     const selectedCovaQuadraKey = selectedCovaMeta.quadraKey;
     const selectedCovaNumeroKey = selectedCovaMeta.numeroKey;
-    const numeroForModal = selectedCovaMeta.numeroLabel;    /* const nomeSepForModal = sepDataForModal?.nome_sep ?? sepDataForModal?.falecido?.nome_fal ?? sepDataForModal?.falecido?.nome ?? null; */
+    const numeroForModal = selectedCovaMeta.numeroLabel;
     const contratoForModal = useMemo(() => {
         if (!selectedCova) return null;
 
@@ -1118,10 +1108,8 @@ export default function VerMapa() {
         ].filter((value) => value !== null && value !== undefined && String(value).trim() !== "");
 
         const contractId = sepDataForModal?.contrato_id ?? modalForm?.contrato_id ?? selectedCova?.sep?.contrato_id ?? "";
-        const byIdOrTitle = contratosAll.find((contrato) => (
-            (contractId && String(contrato?.id) === String(contractId)) ||
-            titleKeys.some((key) => String(contrato?.numero_titulo) === String(key))
-        ));
+        const byIdOrTitle = findContratoByReference(contractId, contratosAll)
+            || titleKeys.map((key) => findContratoByReference(key, contratosAll)).find(Boolean);
         if (byIdOrTitle) return byIdOrTitle;
 
         const quadraKeys = [
@@ -1135,8 +1123,8 @@ export default function VerMapa() {
         if (!quadraKeys.length || !sepulturaNumber) return null;
 
         return contratosAll.find((contrato) => (
-            String(contrato?.sepultura || "").trim() === sepulturaNumber &&
-            quadraKeys.includes(String(contrato?.blockId ?? contrato?.quadra ?? "").trim())
+            getContratoSepulturaRef(contrato) === sepulturaNumber &&
+            quadraKeys.includes(getContratoQuadraRef(contrato))
         )) || null;
     }, [
         contratosAll,
@@ -1149,11 +1137,12 @@ export default function VerMapa() {
         sepDataForModal,
     ]);
     const hasContratoForModal = Boolean(contratoForModal);
+    const contratoNumeroForModal = getContratoNumeroTitulo(contratoForModal);
     const openContratoForModal = () => {
-        if (!contratoForModal?.numero_titulo) return;
-        const search = encodeURIComponent(contratoForModal.numero_titulo);
+        if (!contratoNumeroForModal) return;
+        const search = encodeURIComponent(contratoNumeroForModal);
         navigate(`/contratos?search=${search}`, {
-            state: { contratoSearch: contratoForModal.numero_titulo },
+            state: { contratoSearch: contratoNumeroForModal },
         });
     };
     const selectedCovaSepultadosCount = selectedCova
@@ -1181,7 +1170,7 @@ export default function VerMapa() {
         const sepIds = new Set(sepultamentosDaCova.map((sep) => String(sep.id ?? sep._id ?? "")).filter(Boolean));
         const falecidoIds = new Set(
             sepultamentosDaCova
-                .map((sep) => sep?.falecido ?? sep?.falecido_id ?? sep?.falecidoId)
+                .map(getFalecidoIdFromRecord)
                 .filter((id) => id !== null && id !== undefined && id !== "")
                 .map(String)
         );
@@ -1201,7 +1190,7 @@ export default function VerMapa() {
 
         sepultamentosDaCova.forEach((sep) => {
             const date = resolveDate(sep.dh_sep, sep.data_hora, sep.createdAt, sep.created_at, sep.data_obito_sep);
-            const name = sep.nome_sep || sep.falecido?.nome_fal || sep.falecido?.nome || "Falecido não identificado";
+            const name = getFalecidoName(sep) || "Falecido não identificado";
             events.push({
                 id: `sep-${sep.id ?? `${selectedCovaQuadraKey}-${selectedCovaNumeroKey}-${date || name}`}`,
                 label: "Sepultamento registrado",
@@ -1213,13 +1202,13 @@ export default function VerMapa() {
         });
 
         (falecidosAll || [])
-            .filter((falecido) => falecidoIds.has(String(falecido?.id ?? falecido?._id ?? "")))
+            .filter((falecido) => falecidoIds.has(getFalecidoId(falecido)))
             .forEach((falecido) => {
-                const date = resolveDate(falecido.createdAt, falecido.created_at, falecido.data_obito_fal, falecido.data_obito);
+                const date = resolveDate(falecido.createdAt, falecido.created_at, getFalecidoDeathDate(falecido));
                 events.push({
-                    id: `fal-${falecido.id ?? falecido._id}`,
+                    id: `fal-${getFalecidoId(falecido)}`,
                     label: "Falecido vinculado",
-                    text: falecido.nome_fal || falecido.nome || "Falecido vinculado",
+                    text: getFalecidoName(falecido) || "Falecido vinculado",
                     timestamp: date,
                     meta: formatMeta(date),
                     tone: "neutral",
@@ -1442,7 +1431,7 @@ export default function VerMapa() {
                                 const sepCount = getSepultadosCountBySepLocal(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
                                 const petCount = getPetsCountBySepLocal(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
 
-                                const capacidadeDisponivel = Number(grave?.bodyCapacity ?? cova?.capacidade ?? 0);
+                                const capacidadeDisponivel = Number(getSepulturaCapacity(cova));
                                 const occupiedCount =
                                     sepCount > 0
                                         ? sepCount
@@ -1811,15 +1800,15 @@ export default function VerMapa() {
                                 <InfoGrid >
                                     <InfoTile style={{ border: "1px solid #d2b24a" }}>
                                         <InfoLabel>Nº do título</InfoLabel>
-                                        <InfoValue>{contratoForModal.numero_titulo || "-"}</InfoValue>
+                                        <InfoValue>{contratoNumeroForModal || "-"}</InfoValue>
                                     </InfoTile>
                                     <InfoTile style={{ border: "1px solid #d2b24a" }}>
                                         <InfoLabel>Titular</InfoLabel>
-                                        <InfoValue>{contratoForModal.nome_titular || "-"}</InfoValue>
+                                        <InfoValue>{getContratoTitularNome(contratoForModal) || "-"}</InfoValue>
                                     </InfoTile>
                                     <InfoTile style={{ border: "1px solid #d2b24a" }}>
                                         <InfoLabel>Contato responsável</InfoLabel>
-                                        <InfoValue>{contratoForModal.contato_responsavel || "-"}</InfoValue>
+                                        <InfoValue>{getContratoContato(contratoForModal) || "-"}</InfoValue>
                                     </InfoTile>
                                     <InfoTile style={{ border: "1px solid #d2b24a" }}>
                                         <InfoLabel>Visualizar título de posse</InfoLabel>
@@ -1827,7 +1816,7 @@ export default function VerMapa() {
                                             type="button"
                                             onClick={openContratoForModal}
                                             sx={{ mt: 2 }}
-                                            disabled={!contratoForModal.numero_titulo}
+                                            disabled={!contratoNumeroForModal}
                                         >
                                             <FaFileContract />
                                         </SepulturaPreviewButton>
@@ -1882,12 +1871,12 @@ export default function VerMapa() {
                                                                     setModalExpandedIndex(expanded ? null : idx);
                                                                     if (!expanded) {
                                                                         (async () => {
-                                                                            const falId = s?.falecido ?? s?.falecido_id ?? s?.falecidoId;
+                                                                            const falId = getFalecidoIdFromRecord(s);
                                                                             let fall = null;
                                                                             if (falId) {
                                                                                 try {
                                                                                     const rf = await api.get(`/falecidos/${falId}`);
-                                                                                    fall = rf.data;
+                                                                                    fall = normalizeFalecido(rf.data);
                                                                                 } catch (e) {
                                                                                     console.error("Erro ", e)
                                                                                 }
@@ -1898,7 +1887,7 @@ export default function VerMapa() {
                                                                 }}
                                                             >
                                                                 <SepItemContent>
-                                                                    <SepItemName>{s.nome_sep || s.falecido || "-"}</SepItemName>
+                                                                    <SepItemName>{getFalecidoName(s) || getFalecidoIdFromRecord(s) || "-"}</SepItemName>
 
                                                                 </SepItemContent>
                                                             </SepItemButton>
@@ -1910,12 +1899,12 @@ export default function VerMapa() {
                                                                     setModalExpandedIndex(willExpand ? idx : null);
                                                                     if (willExpand) {
                                                                         (async () => {
-                                                                            const falId = s?.falecido ?? s?.falecido_id ?? s?.falecidoId;
+                                                                            const falId = getFalecidoIdFromRecord(s);
                                                                             let fall = null;
                                                                             if (falId) {
                                                                                 try {
                                                                                     const rf = await api.get(`/falecidos/${falId}`);
-                                                                                    fall = rf.data;
+                                                                                    fall = normalizeFalecido(rf.data);
                                                                                 } catch (e) {
                                                                                     console.error("Erro ", e)
                                                                                 }
@@ -1934,7 +1923,7 @@ export default function VerMapa() {
                                                                 <InfoGrid>
                                                                     <InfoTile>
                                                                         <InfoLabel>Nome do sepultado</InfoLabel>
-                                                                        <InfoValue>{modalForm.nome_sep || modalForm.falecido?.nome_fal || modalForm.falecido?.nome || "-"}</InfoValue>
+                                                                        <InfoValue>{getFalecidoName(modalForm) || "-"}</InfoValue>
                                                                     </InfoTile>
                                                                     <InfoTile>
                                                                         <InfoLabel>Sepultamento</InfoLabel>
@@ -1942,15 +1931,15 @@ export default function VerMapa() {
                                                                     </InfoTile>
                                                                     <InfoTile>
                                                                         <InfoLabel>Data do óbito</InfoLabel>
-                                                                        <InfoValue>{modalForm.data_obito || modalForm.data_obito_sep || "-"}</InfoValue>
+                                                                        <InfoValue>{getFalecidoDeathDate(modalForm) || "-"}</InfoValue>
                                                                     </InfoTile>
                                                                     <InfoTile>
                                                                         <InfoLabel>Responsável</InfoLabel>
-                                                                        <InfoValue>{modalForm.nome_resp || modalForm.falecido?.nome_resp || "-"}</InfoValue>
+                                                                        <InfoValue>{getFalecidoResponsibleName(modalForm) || "-"}</InfoValue>
                                                                     </InfoTile>
                                                                     <InfoTile>
                                                                         <InfoLabel>Contato</InfoLabel>
-                                                                        <InfoValue>{modalForm.tel_resp || modalForm.falecido?.tel_resp || "-"}</InfoValue>
+                                                                        <InfoValue>{getFalecidoResponsiblePhone(modalForm) || "-"}</InfoValue>
                                                                     </InfoTile>
                                                                 </InfoGrid>
                                                                 {exumacoesPending[String(s.id)] ? (
@@ -1970,7 +1959,7 @@ export default function VerMapa() {
                                         <InfoGrid>
                                             <InfoTile>
                                                 <InfoLabel>Nome do sepultado</InfoLabel>
-                                                <InfoValue>{sepDataForModal.nome_sep || sepDataForModal.falecido?.nome_fal || sepDataForModal.falecido?.nome || "-"}</InfoValue>
+                                                <InfoValue>{getFalecidoName(sepDataForModal) || "-"}</InfoValue>
                                             </InfoTile>
                                             <InfoTile>
                                                 <InfoLabel>Sepultamento</InfoLabel>
@@ -1978,7 +1967,7 @@ export default function VerMapa() {
                                             </InfoTile>
                                             <InfoTile>
                                                 <InfoLabel>Data do óbito</InfoLabel>
-                                                <InfoValue>{sepDataForModal.data_obito || sepDataForModal.data_obito_sep || "-"}</InfoValue>
+                                                <InfoValue>{getFalecidoDeathDate(sepDataForModal) || "-"}</InfoValue>
                                             </InfoTile>
                                         </InfoGrid>
                                     ) : null

@@ -1,40 +1,8 @@
 import { useEffect, useState } from "react";
 import api from "../../services/index.js";
+import { normalizeFalecido } from "../../utils/falecido.js";
 import { normalizeQuadra } from "../../utils/quadra.js";
-
-const normalizeCova = (cova) => {
-  const areaType = String(cova?.areaType ?? cova?.area_type ?? "").toUpperCase();
-  const graveType = String(cova?.graveType ?? cova?.tipo_cova ?? "").toUpperCase();
-  const backendStatus = String(cova?.status ?? "").toUpperCase();
-  const blocked = Boolean(cova?.blocked);
-  const status = blocked
-    ? "indisponivel"
-    : backendStatus === "MAINTENANCE"
-      ? "indisponivel"
-      : backendStatus === "OCCUPIED"
-        ? "ocupada"
-        : areaType === "PERPETUAL"
-          ? "reservada"
-          : "disponivel";
-
-  return {
-    ...cova,
-    id: cova?.id,
-    quadra_cova: String(cova?.quadra_cova ?? cova?.blockId ?? cova?.block ?? cova?.quadra ?? cova?.quadra_sep ?? ""),
-    num_cova: cova?.num_cova ?? cova?.number ?? cova?.numero ?? cova?.num_sepultura ?? "",
-    tipo_cova:
-      cova?.tipo_cova ??
-      (graveType === "MAUSOLEUM" ? "gaveta" : "cova"),
-    capacidade: cova?.capacidade ?? cova?.bodyCapacity ?? 0,
-    status,
-    blocked,
-    areaType,
-    concessao: {
-      ...(cova?.concessao ?? {}),
-      ativa: cova?.concessao?.ativa ?? areaType === "PERPETUAL",
-    },
-  };
-};
+import { normalizeSepultura } from "../../utils/sepultura.js";
 
 export default function useApiInitDataCad() {
   const [cidades, setCidades] = useState([]);
@@ -54,14 +22,17 @@ export default function useApiInitDataCad() {
       .then(([rq, rc]) => {
         if (!mounted) return;
         const quadrasData = Array.isArray(rq.data) ? rq.data.map(normalizeQuadra) : [];
-        const covasData = Array.isArray(rc.data) ? rc.data.map(normalizeCova) : [];
+        const covasData = Array.isArray(rc.data) ? rc.data.map(normalizeSepultura) : [];
         setQuadras(quadrasData);
         setCovas(covasData);
       })
       .catch(() => { if (mounted) { setQuadras([]); setCovas([]); } });
 
     api.get("/falecidos")
-      .then((res) => { if (mounted) setFalecidos(res.data || []); })
+      .then((res) => {
+        if (!mounted) return;
+        setFalecidos(Array.isArray(res.data) ? res.data.map(normalizeFalecido) : []);
+      })
       .catch(() => { if (mounted) setFalecidos([]); });
 
     return () => { mounted = false; };

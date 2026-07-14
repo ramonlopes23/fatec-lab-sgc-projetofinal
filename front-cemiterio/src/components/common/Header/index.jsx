@@ -5,7 +5,7 @@ import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { FiLogOut } from 'react-icons/fi';
 import { useNavigate } from "react-router-dom";
 import { useAuthStore, useCemeteryStore } from "../../../stores";
-import { formatDateDMY } from "../../../utils";
+import { formatDateDMY, getCemiterioFoundation, getCemiterioId, getCemiterioName, isCemiterioActive } from "../../../utils";
 import NotificationsDropdown from "../NotificationsDropdown";
 import {
     CemeteryButton,
@@ -99,8 +99,8 @@ export default function Header({ isSidebarOpen }) {
 
     const selectedCemetery = useMemo(() => {
         return (
-            cemeteries.find((cemetery) => String(cemetery?.id) === String(selectedCemeteryId)) ||
-            cemeteries.find((cemetery) => cemetery?.active !== false) ||
+            cemeteries.find((cemetery) => String(getCemiterioId(cemetery)) === String(selectedCemeteryId)) ||
+            cemeteries.find((cemetery) => isCemiterioActive(cemetery)) ||
             cemeteries[0] ||
             null
         );
@@ -128,7 +128,7 @@ export default function Header({ isSidebarOpen }) {
                     >
                         <span>
                             {selectedCemetery
-                                ? selectedCemetery.name
+                                ? getCemiterioName(selectedCemetery)
                                 : loading
                                     ? "Carregando cemitérios..."
                                     : "Selecione um cemitério"}
@@ -151,23 +151,23 @@ export default function Header({ isSidebarOpen }) {
                             !error &&
                             cemeteries.map((cemetery) => {
                                 const isSelected =
-                                    String(cemetery.id) === String(selectedCemeteryId);
+                                    String(getCemiterioId(cemetery)) === String(selectedCemeteryId);
 
                                 return (
                                     <CemeteryItem
-                                        key={cemetery.id}
+                                        key={getCemiterioId(cemetery)}
                                         type="button"
                                         role="option"
                                         aria-selected={isSelected}
                                         data-selected={isSelected}
-                                        onClick={() => handleSelectCemetery(cemetery.id)}
+                                        onClick={() => handleSelectCemetery(getCemiterioId(cemetery))}
                                     >
                                             <CemeteryMeta>
-                                            <CemeteryName>{cemetery.name}</CemeteryName>
-                                            <span>Fundação: {formatDateDMY(cemetery.foundation, String(cemetery.foundation))}</span>
+                                            <CemeteryName>{getCemiterioName(cemetery)}</CemeteryName>
+                                            <span>Fundação: {formatDateDMY(getCemiterioFoundation(cemetery), getCemiterioFoundation(cemetery))}</span>
                                         </CemeteryMeta>
-                                        <CemeteryStatus data-active={cemetery.active !== false}>
-                                            {cemetery.active !== false ? "Ativo" : "Inativo"}
+                                        <CemeteryStatus data-active={isCemiterioActive(cemetery)}>
+                                            {isCemiterioActive(cemetery) ? "Ativo" : "Inativo"}
                                         </CemeteryStatus>
                                     </CemeteryItem>
                                 );

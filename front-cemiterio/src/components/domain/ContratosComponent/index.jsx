@@ -71,7 +71,7 @@ import { getBlocks } from "../../../services/blockService.js";
 import { getGrave, createGrave, updateGrave } from "../../../services/graveService.js";
 import { getSepultamentos } from "../../../services/sepultamentoService.js";
 import { useCemeteryStore } from "../../../stores";
-import { applyMaskByFieldName, currencyInputMask, formatCurrencyBRL, formatDateDMY, formatDateTimeKey, formatQuadraDisplay, getValidityBucket, normalizeQuadra, normalizeSearchText, parseCurrencyInput, parseDateValue } from "../../../utils";
+import { applyMaskByFieldName, currencyInputMask, formatCurrencyBRL, formatDateDMY, formatDateTimeKey, formatQuadraDisplay, getCemiterioId, getCemiterioName, getContratoCemiterioName, getContratoId, getContratoNumeroTitulo, getContratoQuadraRef, getContratoSepulturaRef, getContratoVigenciaFim, getContratoVigenciaInicio, getSepulturaCapacity, getSepulturaNumber as resolveSepulturaNumber, getSepulturaQuadraRef, getValidityBucket, isCemiterioActive, normalizeContrato, normalizeContratoStatus, normalizeQuadra, normalizeSearchText, parseCurrencyInput, parseDateValue } from "../../../utils";
 import { useFormModal, useToastFeedback } from "../../../hooks";
 import ConfirmationDialog from "../../common/ConfirmationDialog";
 import SystemButton from "../../common/SystemButton";
@@ -143,14 +143,6 @@ const filterTextFieldSx = {
 
 const formatDateBR = (value) => formatDateDMY(value, value || "-");
 
-const resolveContractVigenciaInicio = (contract) => (
-    contract?.vigencia_inicio || contract?.validade_titulo_inicio || contract?.data_inicio || ""
-);
-
-const resolveContractVigenciaFim = (contract) => (
-    contract?.vigencia_fim || contract?.validade_titulo_fim || contract?.validade_titulo || contract?.data_fim || ""
-);
-
 const formatVigenciaLabel = (inicio, fim) => {
     const formattedInicio = formatDateBR(inicio);
     const formattedFim = formatDateBR(fim);
@@ -161,27 +153,16 @@ const formatVigenciaLabel = (inicio, fim) => {
     return "-";
 };
 
-const STATUS_ALIASES = {
-    active: "ativo",
-    inactive: "inativo",
-    expired: "vencido",
-};
-
-const normalizeStatus = (status) => {
-    const normalized = String(status || "").trim().toLowerCase();
-    return STATUS_ALIASES[normalized] || normalized;
-};
-
 const statusLabel = (status) => {
-    const normalized = normalizeStatus(status);
+    const normalized = normalizeContratoStatus(status);
     const found = STATUS_OPTIONS.find((item) => item.value === normalized);
     return found ? found.label : (status || "-");
 };
 
 const formatLocal = (contract, cemeteryNameFallback) => {
-    const cemeteryName = String(contract?.cemiterio || cemeteryNameFallback || "").trim();
-    const quadra = String(contract?.quadra || "").trim();
-    const sepultura = String(contract?.sepultura || "").trim();
+    const cemeteryName = getContratoCemiterioName(contract) || cemeteryNameFallback || "";
+    const quadra = getContratoQuadraRef(contract);
+    const sepultura = getContratoSepulturaRef(contract);
 
     return [cemeteryName, quadra ? `Quadra ${quadra}` : "", sepultura ? `Sepultura ${sepultura}` : ""]
         .filter(Boolean)
@@ -189,22 +170,11 @@ const formatLocal = (contract, cemeteryNameFallback) => {
 };
 
 const normalizeContract = (contract) => {
-    const vigenciaInicio = resolveContractVigenciaInicio(contract);
-    const vigenciaFim = resolveContractVigenciaFim(contract);
-
+    const normalized = normalizeContrato(contract);
     return {
-        id: contract?.id ?? contract?.numero_titulo ?? "",
-        nome_titular: String(contract?.nome_titular || "").trim(),
-        cpf_titular: String(contract?.cpf_titular || contract?.cpf || "").trim(),
-        contato_responsavel: String(contract?.contato_responsavel || contract?.telefone || contract?.tel_resp || "").trim(),
-        numero_titulo: String(contract?.numero_titulo || "").trim(),
-        status: normalizeStatus(contract?.status) || "ativo",
-        vigencia_inicio: vigenciaInicio,
-        vigencia_fim: vigenciaFim,
-        sepultura: String(contract?.sepultura || "").trim(),
-        quadra: String(contract?.quadra || "").trim(),
-        valor: Number(contract?.valor ?? contract?.valor_anual ?? 0),
-        cemiterio: String(contract?.cemiterio || contract?.cemiterio_nome || "").trim(),
+        ...normalized,
+        vigencia_inicio: getContratoVigenciaInicio(contract),
+        vigencia_fim: getContratoVigenciaFim(contract),
     };
 };
 
@@ -227,13 +197,13 @@ export default function ContratosComponent() {
     const cemeteries = useCemeteryStore((state) => state.cemeteries);
     const selectedCemeteryId = useCemeteryStore((state) => state.selectedCemeteryId);
     const selectedCemetery = useMemo(() => (
-        cemeteries.find((cemetery) => String(cemetery?.id) === String(selectedCemeteryId))
-        || cemeteries.find((cemetery) => cemetery?.active !== false)
+        cemeteries.find((cemetery) => String(getCemiterioId(cemetery)) === String(selectedCemeteryId))
+        || cemeteries.find((cemetery) => isCemiterioActive(cemetery))
         || cemeteries[0]
         || null
     ), [cemeteries, selectedCemeteryId]);
 
-    const selectedCemeteryName = selectedCemetery?.name || "";
+    const selectedCemeteryName = getCemiterioName(selectedCemetery);
 
     const initialFormFactory = () => ({ ...INITIAL_FORM, cemiterio: selectedCemeteryName });
 
@@ -358,13 +328,9 @@ export default function ContratosComponent() {
         ];
     }, [quadraOptions, quadraSelectValue]);
 
-    const getSepulturaQuadraKey = (sepultura) => String(
-        sepultura?.blockId ?? sepultura?.block ?? sepultura?.quadra_cova ?? sepultura?.quadra ?? sepultura?.quadra_sep ?? ""
-    );
+    const getSepulturaQuadraKey = (sepultura) => getSepulturaQuadraRef(sepultura);
 
-    const getSepulturaNumber = (sepultura) => String(
-        sepultura?.number ?? sepultura?.num_cova ?? sepultura?.numero ?? sepultura?.num_sepultura_sep ?? sepultura?.sepultura ?? ""
-    ).trim();
+    const getSepulturaNumber = (sepultura) => resolveSepulturaNumber(sepultura);
 
     const getQuadraKeysForContract = (contract) => {
         const quadra = quadraOptions.find((item) => String(item.numero) === String(contract?.quadra) || String(item.id) === String(contract?.quadra));
@@ -384,13 +350,9 @@ export default function ContratosComponent() {
         )) || null;
     };
 
-    const getSepultamentoQuadraKey = (sepultamento) => String(
-        sepultamento?.quadra_sep ?? sepultamento?.quadra ?? sepultamento?.blockId ?? sepultamento?.block ?? ""
-    );
+    const getSepultamentoQuadraKey = (sepultamento) => getSepulturaQuadraRef(sepultamento);
 
-    const getSepultamentoNumber = (sepultamento) => String(
-        sepultamento?.num_sepultura_sep ?? sepultamento?.sepultura ?? sepultamento?.number ?? sepultamento?.num_cova ?? ""
-    ).trim();
+    const getSepultamentoNumber = (sepultamento) => resolveSepulturaNumber(sepultamento);
 
     const getLinkedSepultadosCount = (contract) => {
         const quadraKeys = getQuadraKeysForContract(contract);
@@ -412,7 +374,7 @@ export default function ContratosComponent() {
 
     const getPostContractGraveStatus = (contract, sepultura) => {
         const sepultadosCount = getLinkedSepultadosCount(contract);
-        const capacity = Number(sepultura?.bodyCapacity ?? sepultura?.capacidade ?? 0);
+        const capacity = Number(getSepulturaCapacity(sepultura));
         const currentStatus = String(sepultura?.status || "").toUpperCase();
 
         if (sepultadosCount > 0 || currentStatus === "OCCUPIED" || capacity <= 0) {
@@ -584,7 +546,7 @@ export default function ContratosComponent() {
         }
 
         const duplicated = titulos.some(
-            (item) => item.id !== editingId && String(item.numero_titulo || "").trim().toLowerCase() === numero.toLowerCase()
+            (item) => getContratoId(item) !== editingId && getContratoNumeroTitulo(item).toLowerCase() === numero.toLowerCase()
         );
         if (duplicated) nextErrors.numero_titulo = "Já existe um título com esse número";
 
@@ -924,7 +886,7 @@ export default function ContratosComponent() {
                                             filteredTitulos.map((item, index) => {
                                                 const normalized = normalizeContract(item);
                                                 return (
-                                                    <Tr key={String(normalized.id || normalized.numero_titulo)} index={index}>
+                                                    <Tr key={getContratoId(normalized) || getContratoNumeroTitulo(normalized)} index={index}>
                                                         <Td>{normalized.numero_titulo}</Td>
                                                         <Td>{normalized.nome_titular}</Td>
                                                         <Td>{normalized.cpf_titular || "-"}</Td>

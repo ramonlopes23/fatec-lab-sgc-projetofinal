@@ -10,6 +10,7 @@ import {
   RULES_VELORIO,
   validateForm,
 } from "../../utils/validation";
+import { isTituloPosseSim } from "../../utils/contrato";
 import { ALLOWED_FAL_INDI, PROCESS_TYPES, VELORIO_FIELDS } from "../../pages/Cadastros/constants";
 
 export default function useFormValidation(form, processType, isIndigente, searchFal) {
@@ -83,7 +84,7 @@ export default function useFormValidation(form, processType, isIndigente, search
 
     if (processType === PROCESS_TYPES.sepultamento) {
       rules = { ...RULES_SEPULTAMENTO };
-      if (String(form?.titulo_posse ?? "").toLowerCase() !== "sim") {
+      if (!isTituloPosseSim(form?.titulo_posse)) {
         delete rules.numero_titulo;
         delete rules.nome_titular;
       }

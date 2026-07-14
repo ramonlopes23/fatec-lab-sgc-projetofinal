@@ -10,7 +10,7 @@ import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import api from "../../../services/index.js";
 import { useFormModal, useToastFeedback } from "../../../hooks";
-import { formatDateDMY, normalizeQuadra, normalizeText, parseDateValue, resolveQuadraDisplay, sortNumericText } from "../../../utils";
+import { formatDateDMY, getFalecidoCpf, getFalecidoDeathDate, getFalecidoId, getFalecidoIdFromRecord, getFalecidoMotherName, getFalecidoName, getSepulturaNumber, normalizeCemiterio, normalizeFalecido, normalizeQuadra, normalizeText, parseDateValue, resolveCemiterioName, resolveQuadraDisplay, sortNumericText } from "../../../utils";
 import {
   Actions,
   ChartStatBody,
@@ -108,18 +108,16 @@ const initialFilters = {
 
 const normalizeId = (value) => (value === undefined || value === null ? "" : String(value));
 
-const getFalecidoIdFromSepultamento = (sepultamento) => normalizeId(
-  sepultamento?.falecidoId ?? sepultamento?.falecido_id ?? sepultamento?.falecido
-);
+const getFalecidoIdFromSepultamento = (sepultamento) => getFalecidoIdFromRecord(sepultamento);
 
 const getSepultamentoIdFromExumacao = (exumacao) => normalizeId(
   exumacao?.sepultamentoId ?? exumacao?.sepultamento_id ?? exumacao?.sepultamento
 );
 
-const getFalecidoNome = (falecido) => falecido?.nome_fal || falecido?.nome || falecido?.nome_sep || "-";
-const getCpf = (falecido) => falecido?.cpf || "-";
-const getMae = (falecido) => falecido?.filiacao_mae || "-";
-const getObitoDate = (record) => record?.data_obito || record?.dh_falec || record?.data_obito_sep || record?.sepultamento?.data_obito_sep || "";
+const getFalecidoNome = (falecido) => getFalecidoName(falecido) || "-";
+const getCpf = (falecido) => getFalecidoCpf(falecido) || "-";
+const getMae = (falecido) => getFalecidoMotherName(falecido) || "-";
+const getObitoDate = (record) => getFalecidoDeathDate(record);
 
 const getCadastroDate = (record) => (
   record?.created_at || record?.createdAt || record?.data_cadastro || record?.dh_falec || record?.data_obito || record?.sepultamento?.dh_sep
@@ -179,24 +177,12 @@ const situacaoTone = (key) => {
 };
 
 const getCemiterio = (record) => (
-  record?.cemiterio_nome ||
-  record?.cemiterio ||
-  record?.sepultamento?.cemiterio_nome ||
-  record?.sepultamento?.cemiterio ||
-  record?.sepultamento?.cemetery ||
-  "-"
+  record?.cemiterio_nome || record?.cemiterio || record?.sepultamento?.cemiterio_nome || record?.sepultamento?.cemiterio || record?.sepultamento?.cemetery || "-"
 );
 
 const getQuadra = (record) => String(record?.quadra_num || record?.sepultamento?.quadra_num || "").trim();
 
-const getSepultura = (record) => (
-  record?.sepultura ||
-  record?.num_sepultura ||
-  record?.sepultamento?.num_sepultura_sep ||
-  record?.sepultamento?.num_sepultura ||
-  record?.sepultamento?.sepultura ||
-  ""
-);
+const getSepultura = (record) => getSepulturaNumber(record) || getSepulturaNumber(record?.sepultamento) || "";
 
 const isCurrentMonth = (value) => {
   const date = parseDateValue(value);
@@ -266,11 +252,11 @@ export default function RegistrosComponent() {
         api.get("/cemiterios").catch(() => ({ data: [] })),
       ]);
 
-      const falecidosData = Array.isArray(resFalecidos.data) ? resFalecidos.data : [];
+      const falecidosData = Array.isArray(resFalecidos.data) ? resFalecidos.data.map(normalizeFalecido) : [];
       const exumacoesData = Array.isArray(resExumacoes.data) ? resExumacoes.data : [];
       const sepultamentosData = Array.isArray(resSepultamentos.data) ? resSepultamentos.data : [];
       const quadrasData = Array.isArray(resQuadras.data) ? resQuadras.data.map(normalizeQuadra) : [];
-      const cemiteriosData = Array.isArray(resCemiterios.data) ? resCemiterios.data : [];
+      const cemiteriosData = Array.isArray(resCemiterios.data) ? resCemiterios.data.map(normalizeCemiterio) : [];
 
       const sepultamentosByFalecido = new Map();
       sepultamentosData.forEach((sepultamento) => {
@@ -288,22 +274,18 @@ export default function RegistrosComponent() {
       const enriched = falecidosData
         .filter((falecido) => !falecido?.arquivado)
         .map((falecido) => {
-          const falecidoId = normalizeId(falecido?.id);
+          const falecidoId = getFalecidoId(falecido);
           const sepultamento = sepultamentosByFalecido.get(falecidoId) || null;
           const exumacao = sepultamento ? exumacoesBySepultamento.get(normalizeId(sepultamento?.id)) || null : null;
-          const cemiterio = cemiteriosData.find((item) => (
-            String(item?.id) === String(sepultamento?.cemiterio) ||
-            String(item?.nome) === String(sepultamento?.cemiterio) ||
-            String(item?.nome_cemiterio) === String(sepultamento?.cemiterio)
-          )) || null;
+          const cemiterio = resolveCemiterioName(sepultamento?.cemiterio ?? sepultamento?.cemiterio_nome ?? sepultamento?.cemetery ?? "", cemiteriosData, "");
 
           return {
             ...falecido,
             sepultamento,
             exumacao,
             quadra_num: resolveQuadraDisplay(sepultamento?.quadra_sep ?? sepultamento?.quadra ?? "", quadrasData, ""),
-            sepultura: sepultamento?.num_sepultura_sep ?? sepultamento?.num_sepultura ?? sepultamento?.sepultura ?? "",
-            cemiterio: cemiterio?.nome_cemiterio || cemiterio?.nome || sepultamento?.cemiterio_nome || sepultamento?.cemiterio || "",
+            sepultura: getSepulturaNumber(sepultamento),
+            cemiterio: cemiterio || sepultamento?.cemiterio_nome || sepultamento?.cemiterio || "",
             data_obito_sep: sepultamento?.data_obito_sep || "",
           };
         });

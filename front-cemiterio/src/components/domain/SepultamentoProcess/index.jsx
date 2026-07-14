@@ -17,7 +17,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LuChevronDown } from "react-icons/lu";
 import { formatDateKey, formatDateTimeKey, parseDateValue } from "../../../utils/date";
-import { formatQuadraDisplay } from "../../../utils";
+import { formatQuadraDisplay, getContratoId, getContratoNumeroTitulo, getFalecidoId, getFalecidoName, getSepulturaNumber, getTaxaCodigo, getTaxaId, isTituloPosseSim, normalizeSepulturaStatus } from "../../../utils";
 import { hasErrors } from "../../../utils/validation"
 import {
     SearchFieldWrapper,
@@ -56,7 +56,7 @@ function SepultamentoProcess({
     selectSxStyle,
 }) {
     const [expandedSteps, setExpandedSteps] = useState({ 0: true });
-    const isTituloPosse = String(form.titulo_posse ?? "").toLowerCase() === "sim";
+    const isTituloPosse = isTituloPosseSim(form.titulo_posse);
 
     const toggleStepExpanded = (stepIndex) => {
         setExpandedSteps((prev) => ({
@@ -240,15 +240,15 @@ function SepultamentoProcess({
                                     <SearchResults>
                                         {filteredFalecidos.map((falecido) => (
                                             <SearchResultItem
-                                                key={falecido.id}
+                                                key={getFalecidoId(falecido)}
                                                 onMouseDown={(event) => {
                                                     event.preventDefault();
-                                                    handleSelectFalecido(String(falecido.id));
-                                                    setSearchFal(falecido.nome_fal || falecido.nome || "");
+                                                    handleSelectFalecido(getFalecidoId(falecido));
+                                                    setSearchFal(getFalecidoName(falecido));
                                                     setShowFalList(false);
                                                 }}
                                             >
-                                                {falecido.nome_fal || falecido.nome}
+                                                {getFalecidoName(falecido)}
                                             </SearchResultItem>
                                         ))}
                                     </SearchResults>
@@ -332,8 +332,8 @@ function SepultamentoProcess({
                                 >
                                     <MenuItem value="">Selecione o título</MenuItem>
                                     {(Array.isArray(contratos) ? contratos : []).map((contrato) => (
-                                        <MenuItem key={String(contrato.id ?? contrato.numero_titulo)} value={String(contrato.id ?? contrato.numero_titulo)}>
-                                            {contrato.numero_titulo || contrato.id}
+                                        <MenuItem key={getContratoId(contrato)} value={getContratoId(contrato)}>
+                                            {getContratoNumeroTitulo(contrato) || getContratoId(contrato)}
                                         </MenuItem>
                                     ))}
                                 </Select>
@@ -391,8 +391,8 @@ function SepultamentoProcess({
                                 >
                                     <MenuItem value="">Selecione a sepultura</MenuItem>
                                     {availableCovas.map((cova) => {
-                                        const val = String(cova.num_cova ?? cova.number ?? cova.numero ?? cova.num_sepultura ?? "");
-                                        const isReserved = String(cova.status ?? "").toLowerCase().includes("reserv");
+                                        const val = getSepulturaNumber(cova);
+                                        const isReserved = normalizeSepulturaStatus(cova) === "reservada";
                                         return (
                                             <MenuItem key={String(cova.id ?? `${cova.quadra_cova}-${cova.num_cova}`)} value={val}>
                                                 {val}{isReserved ? " (Particular)" : ""}
@@ -414,7 +414,7 @@ function SepultamentoProcess({
                                 <Select label="Taxa de sepultamento" name="taxa" value={form.taxa} onChange={handleChange} disabled={isSubmitting} sx={selectSxStyle}>
                                     <MenuItem value="">Selecione o tipo de taxa</MenuItem>
                                     {(taxaOptions || []).map((taxa) => (
-                                        <MenuItem key={String(taxa.id ?? taxa.codigo)} value={taxa.codigo}>
+                                        <MenuItem key={getTaxaId(taxa) || getTaxaCodigo(taxa)} value={getTaxaCodigo(taxa)}>
                                             {taxa.label}
                                         </MenuItem>
                                     ))}

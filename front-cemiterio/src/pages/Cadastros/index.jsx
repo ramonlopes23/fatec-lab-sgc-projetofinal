@@ -4,7 +4,7 @@ import Box from "@mui/material/Box";
 import api from "../../services/index.js";
 import ConfirmationDialog from "../../components/common/ConfirmationDialog";
 import { useApiInitDataCad, useAvailableCovas, useCidadeBusca, useFalecidoSearch, useFileUpload, useFormClear, useFormValidation, useLocalStorage, useTaxas, useToastFeedback, useViacepLookup, useCadastrosSubmit } from "../../hooks";
-import { applyMaskByFieldName, capitalizeWords, findTaxaByCodigo } from "../../utils";
+import { applyMaskByFieldName, capitalizeWords, findContratoByReference, findFalecidoByReference, findTaxaByCodigo, getContratoId, getContratoNumeroTitulo, getContratoQuadraRef, getContratoSepulturaRef, getContratoTitularNome, getFalecidoCpf, getFalecidoDeathDate, getFalecidoId, getFalecidoName, getTaxaId, getTaxaValor, isTituloPosseSim, normalizeContrato } from "../../utils";
 import SepultamentoProcess from "../../components/domain/SepultamentoProcess";
 import FalecidoProcess from "../../components/domain/FalecidoProcess";
 import {
@@ -17,8 +17,6 @@ import {
     PROCESS_TYPE_SUBTITLES,
     STEPS_DECEASED,
     STORAGE_KEY,
-    TAXA_LABEL,
-    TAXA_MAP,
     VELORIO_FIELDS,
     normalizeProcessType,
 } from "./constants";
@@ -37,16 +35,6 @@ const processFromPath = (pathname) => (
         ? PROCESS_TYPES.sepultamento
         : PROCESS_TYPES.falecido
 );
-
-const normalizeContract = (contract) => ({
-    id: contract?.id ?? contract?.numero_titulo ?? "",
-    numero_titulo: String(contract?.numero_titulo || "").trim(),
-    nome_titular: String(contract?.nome_titular || "").trim(),
-    blockId: String(contract?.blockId || "").trim(),
-    quadra: String(contract?.quadra || "").trim(),
-    sepultura: String(contract?.sepultura || "").trim(),
-    cemiterio: String(contract?.cemiterio || "").trim(),
-});
 
 export default function Cadastros() {
 
@@ -170,7 +158,7 @@ export default function Cadastros() {
             .then((response) => {
                 if (!mounted) return;
                 const data = Array.isArray(response?.data) ? response.data : [];
-                setContratos(data.map(normalizeContract));
+                setContratos(data.map(normalizeContrato));
             })
             .catch((error) => {
                 console.warn("Erro ao carregar contratos para sepultamento", error);
@@ -213,7 +201,7 @@ export default function Cadastros() {
         updateFieldByName(name, maskedValue);
         validateFieldOnChange(name, maskedValue);
 
-        if (name === "titulo_posse" && String(maskedValue).toLowerCase() !== "sim") {
+        if (name === "titulo_posse" && !isTituloPosseSim(maskedValue)) {
             updateFieldByName("contrato_id", "");
             updateFieldByName("numero_titulo", "");
             updateFieldByName("nome_titular", "");
@@ -229,8 +217,8 @@ export default function Cadastros() {
 
         if (name === "taxa") {
             const selectedTaxa = findTaxaByCodigo(taxas, maskedValue);
-            updateFieldByName("taxa_valor", selectedTaxa?.valor ?? TAXA_MAP[maskedValue] ?? 0);
-            updateFieldByName("taxa_id", selectedTaxa?.id ?? "");
+            updateFieldByName("taxa_valor", selectedTaxa ? getTaxaValor(selectedTaxa) : 0);
+            updateFieldByName("taxa_id", getTaxaId(selectedTaxa));
         }
     }, [taxas, updateFieldByName, validateFieldOnChange, clearFieldError]);
 
@@ -241,14 +229,14 @@ export default function Cadastros() {
             return;
         }
 
-        const falecido = falecidos.find((item) => String(item.id) === raw);
-        const id = falecido ? falecido.id : "";
+        const falecido = findFalecidoByReference(raw, falecidos);
+        const id = getFalecidoId(falecido);
         setForm((prev) => ({
             ...prev,
             falecido_id: id,
             falecido: id,
-            nome_sep: falecido ? (falecido.nome_fal || falecido.nome) : prev.nome_sep,
-            data_obito_sep: falecido?.dh_falec || prev.data_obito_sep,
+            nome_sep: getFalecidoName(falecido) || prev.nome_sep,
+            data_obito_sep: getFalecidoDeathDate(falecido) || prev.data_obito_sep,
         }));
     };
 
@@ -267,15 +255,15 @@ export default function Cadastros() {
             return;
         }
 
-        const contract = contratos.find((item) => String(item.id) === raw || String(item.numero_titulo) === raw);
+        const contract = findContratoByReference(raw, contratos);
         if (!contract) return;
 
         updateFieldByName("titulo_posse", "Sim");
-        updateFieldByName("contrato_id", String(contract.id ?? ""));
-        updateFieldByName("numero_titulo", contract.numero_titulo);
-        updateFieldByName("nome_titular", contract.nome_titular);
-        updateFieldByName("quadra_sep", contract.blockId || contract.quadra || "");
-        updateFieldByName("num_sepultura_sep", contract.sepultura);
+        updateFieldByName("contrato_id", getContratoId(contract));
+        updateFieldByName("numero_titulo", getContratoNumeroTitulo(contract));
+        updateFieldByName("nome_titular", getContratoTitularNome(contract));
+        updateFieldByName("quadra_sep", getContratoQuadraRef(contract));
+        updateFieldByName("num_sepultura_sep", getContratoSepulturaRef(contract));
         updateFieldByName("coveiro_sep", "");
         clearFieldError("numero_titulo");
         clearFieldError("nome_titular");
@@ -330,8 +318,9 @@ export default function Cadastros() {
     const cpfDoFalecidoSelecionado = useMemo(() => {
         const id = form.falecido || form.falecido_id;
         if (id) {
-            const falecido = (falecidos || []).find((item) => String(item.id) === String(id));
-            if (falecido?.cpf) return applyMaskByFieldName("cpf", falecido.cpf);
+            const falecido = findFalecidoByReference(id, falecidos);
+            const cpf = getFalecidoCpf(falecido);
+            if (cpf) return applyMaskByFieldName("cpf", cpf);
         }
         return form.cpf ? applyMaskByFieldName("cpf", form.cpf) : "-";
     }, [falecidos, form.cpf, form.falecido, form.falecido_id]);

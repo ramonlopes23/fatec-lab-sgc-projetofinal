@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { getCemeteries } from "../services/cemeteryService";
+import { getCemiterioId, isCemiterioActive, normalizeCemiterio } from "../utils/cemiterio.js";
 
 export const useCemeteryStore = create(
     persist(
@@ -15,15 +16,15 @@ export const useCemeteryStore = create(
 
                 try {
                     const data = await getCemeteries();
-                    const cemeteries = Array.isArray(data) ? data : [];
+                    const cemeteries = Array.isArray(data) ? data.map(normalizeCemiterio) : [];
                     const currentSelectedId = get().selectedCemeteryId;
                     const selectedExists =
                         currentSelectedId != null &&
-                        cemeteries.some((cemetery) => String(cemetery?.id) === String(currentSelectedId));
+                        cemeteries.some((cemetery) => String(getCemiterioId(cemetery)) === String(currentSelectedId));
 
                     const fallbackCemetery =
-                        cemeteries.find((cemetery) => cemetery?.active !== false) || cemeteries[0] || null;
-                    const nextSelectedId = selectedExists ? currentSelectedId : fallbackCemetery?.id ?? null;
+                        cemeteries.find((cemetery) => isCemiterioActive(cemetery)) || cemeteries[0] || null;
+                    const nextSelectedId = selectedExists ? currentSelectedId : getCemiterioId(fallbackCemetery) || null;
 
                     set({
                         cemeteries,

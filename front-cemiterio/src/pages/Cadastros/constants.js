@@ -95,14 +95,6 @@ export const DEFAULT_TAXAS = [
     { id: "taxa-indigente", codigo: "indigente", descricao: "ISENÇÃO POR INDIGÊNCIA", valor: 0, tipo: "sepultamento", active: true, isencao: true, vigencia_inicio: "", vigencia_fim: "" },
 ];
 
-export const TAXA_MAP = DEFAULT_TAXAS.reduce((acc, taxa) => ({ ...acc, [taxa.codigo]: taxa.valor }), {});
-
-export const TAXA_LABEL = DEFAULT_TAXAS.reduce((acc, taxa) => {
-    const valor = Number(taxa.valor || 0);
-    const valorLabel = taxa.isencao ? "" : ` - R$${valor.toFixed(2).replace(".", ",")}`;
-    return { ...acc, [taxa.codigo]: `${taxa.descricao}${valorLabel}` };
-}, {});
-
 export const NAME_CASE_FIELDS = new Set([
     "nome_fal",
     "filiacao_pai",

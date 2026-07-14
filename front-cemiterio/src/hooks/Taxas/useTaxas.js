@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getTaxas } from "../../services/taxaService";
-import { buildTaxaOptions, getFallbackTaxas, normalizeTaxa } from "../../utils/taxas";
+import { buildTaxaOptions, getFallbackTaxas, isTaxaActive, normalizeTaxa } from "../../utils/taxas";
 
 export default function useTaxas({ autoLoad = true, onlyActive = false } = {}) {
     const [taxas, setTaxas] = useState(() => getFallbackTaxas());
@@ -17,12 +17,12 @@ export default function useTaxas({ autoLoad = true, onlyActive = false } = {}) {
                 ? data.map(normalizeTaxa)
                 : getFallbackTaxas();
 
-            setTaxas(onlyActive ? normalized.filter((taxa) => taxa.active) : normalized);
+            setTaxas(onlyActive ? normalized.filter(isTaxaActive) : normalized);
             return normalized;
         } catch (err) {
             console.error("Erro ao carregar taxas", err);
             const fallback = getFallbackTaxas();
-            setTaxas(onlyActive ? fallback.filter((taxa) => taxa.active) : fallback);
+            setTaxas(onlyActive ? fallback.filter(isTaxaActive) : fallback);
             setError("Nao foi possivel carregar taxas da API. Usando taxas padrao.");
             return fallback;
         } finally {

@@ -1,3 +1,6 @@
+import { hasTituloPosse } from "./contrato.js";
+import { getSepulturaCapacity, getSepulturaNumber, getSepulturaQuadraRef, normalizeSepulturaStatus } from "./sepultura.js";
+
 export const resolveBlockId = (value) => {
   if (value && typeof value === "object") {
     return value.id ?? value.blockId ?? "";
@@ -11,30 +14,17 @@ export const normalizeMapKey = (value) => {
 };
 
 export const resolveCovaNumber = (cova = {}, sepultamento = {}, grave = {}) => normalizeMapKey(
-  sepultamento?.num_sepultura_sep ??
-  sepultamento?.num_sepultura ??
-  sepultamento?.numero ??
-  sepultamento?.num_cova ??
-  cova?.numero ??
-  cova?.num_cova ??
-  cova?.num_sepultura_sep ??
-  cova?.cova?.num_cova ??
-  cova?.cova?.grave?.number ??
-  grave?.number ??
-  ""
+  getSepulturaNumber(sepultamento) ||
+  getSepulturaNumber(cova) ||
+  getSepulturaNumber(grave)
 );
 
 export const resolveCovaQuadraKey = (cova = {}, sepultamento = {}, grave = {}, fallbackQuadra = "") => normalizeMapKey(
-  cova?.cova?.quadra_cova ??
-  cova?.quadra_cova ??
-  cova?.quadra_sep ??
-  cova?.sep?.quadra_sep ??
-  sepultamento?.quadra_sep ??
-  sepultamento?.quadra ??
-  sepultamento?.quadra_cova ??
-  resolveBlockId(grave?.blockId ?? grave?.block) ??
-  fallbackQuadra ??
-  ""
+  getSepulturaQuadraRef(cova) ||
+  getSepulturaQuadraRef(sepultamento) ||
+  getSepulturaQuadraRef(grave) ||
+  resolveBlockId(grave?.blockId ?? grave?.block) ||
+  fallbackQuadra
 );
 
 export const COVA_SORT_MODES = {
@@ -43,7 +33,7 @@ export const COVA_SORT_MODES = {
 };
 
 export const compareCovaNumber = (a, b) =>
-  normalizeMapKey(a?.numero).localeCompare(normalizeMapKey(b?.numero), "pt-BR", {
+  normalizeMapKey(getSepulturaNumber(a) || a?.numero).localeCompare(normalizeMapKey(getSepulturaNumber(b) || b?.numero), "pt-BR", {
     numeric: true,
     sensitivity: "base",
   });
@@ -51,14 +41,8 @@ export const compareCovaNumber = (a, b) =>
 export const sortCovasByNumber = (covas = []) => [...covas].sort(compareCovaNumber);
 
 export const normalizeCovaStatus = (s) => {
-  if (!s && s !== 0) return "livre";
-  const raw = String(s).toLowerCase();
-  if (raw.includes("reserv")) return "reservada";
-  if (raw.includes("indispon")) return "indisponivel";
-  if (raw.includes("maintenance") || raw.includes("manuten")) return "indisponivel";
-  if (raw.includes("ocup")) return "ocupada";
-  if (raw === "livre" || raw === "disponivel") return "livre";
-  return raw;
+  const status = normalizeSepulturaStatus({ status: s });
+  return status === "disponivel" ? "livre" : status;
 };
 
 export const getSepultadosCount = (sepultamentosAll = [], quadraOrId) => {
@@ -76,7 +60,7 @@ export const getSepultadosCount = (sepultamentosAll = [], quadraOrId) => {
     if (String(sQ) === qStr) {
       const id = s.id ?? s._id ?? null;
       if (id != null) ids.add(String(id));
-      else ids.add(`${qStr}-${s.num_sepultura_sep ?? s.num_sepultura ?? ""}-${s.dh_sep ?? s.data_obito_sep ?? ""}`);
+      else ids.add(`${qStr}-${getSepulturaNumber(s)}-${s.dh_sep ?? s.data_obito_sep ?? ""}`);
     }
   });
   return ids.size;
@@ -84,8 +68,8 @@ export const getSepultadosCount = (sepultamentosAll = [], quadraOrId) => {
 
 export const getSepultadosCountBySep = (cova, quadraId, sepultamentosAll = []) => {
   if (!cova) return 0;
-  const quadraKey = String(quadraId ?? cova.quadra_cova ?? "");
-  const numero = String(cova.numero ?? cova.num_cova ?? cova.num_sepultura_sep ?? "");
+  const quadraKey = String(quadraId ?? getSepulturaQuadraRef(cova) ?? "");
+  const numero = String(getSepulturaNumber(cova));
   if (!quadraKey || !numero) return 0;
 
   const ids = new Set();
@@ -94,8 +78,8 @@ export const getSepultadosCountBySep = (cova, quadraId, sepultamentosAll = []) =
     const confirmed = s.confirmado === true || String(s.confirmado).toLowerCase() === "true";
     const concluded = String(s.status ?? "").toLowerCase().includes("concl");
     if (!confirmed && !concluded) return;
-    const sQuadra = String(s.quadra_sep ?? "");
-    const sNum = String(s.num_sepultura_sep ?? "");
+    const sQuadra = String(getSepulturaQuadraRef(s));
+    const sNum = String(getSepulturaNumber(s));
     if (sQuadra === quadraKey && sNum === numero) {
       const id = s.id ?? s._id ?? null;
       if (id != null) ids.add(String(id));
@@ -112,15 +96,15 @@ export const getSepultadosCountBySep = (cova, quadraId, sepultamentosAll = []) =
 export const getPetsCountBySep = (cova, quadraId, petsAll = []) => {
   if (!cova) return 0;
 
-  const quadraKey = String(quadraId ?? cova.cova?.quadra_cova ?? cova.quadra_cova ?? cova.quadra_sep ?? "");
-  const numero = String(cova.numero ?? cova.num_cova ?? cova.num_sepultura_sep ?? "");
+  const quadraKey = String(quadraId ?? getSepulturaQuadraRef(cova) ?? "");
+  const numero = String(getSepulturaNumber(cova));
   if (!quadraKey || !numero) return 0;
 
   const ids = new Set();
   (petsAll || []).forEach((p) => {
     if (p.foi_exumado) return;
-    const pQuadra = String(p.quadra_sep ?? p.quadra ?? "");
-    const pNum = String(p.num_sepultura_sep ?? "");
+    const pQuadra = String(getSepulturaQuadraRef(p));
+    const pNum = String(getSepulturaNumber(p));
     if (pQuadra === quadraKey && pNum === numero) {
       const id = p.id ?? p._id ?? null;
       if (id != null) ids.add(String(id));
@@ -139,7 +123,7 @@ export const getCovaDisplayMeta = (cova, quadraSelecionada = {}, sepultamentosAl
 
   const sepCount = getSepultadosCountBySep(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra, sepultamentosAll);
   const petCount = getPetsCountBySep(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra, petsAll);
-  const capacidadeTotal = Number(grave?.bodyCapacity ?? cova?.capacidade ?? 0);
+  const capacidadeTotal = Number(getSepulturaCapacity(cova));
   const occupiedCount = sepCount > 0 ? sepCount : (backendStatus === "OCCUPIED" && capacidadeTotal > 0 ? capacidadeTotal : 0);
 
   let displayStatus = "disponivel";
@@ -194,12 +178,13 @@ export const buildQuadrasFromData = (visibleBlocks = [], covasData = [], sepulta
   };
 
   (covasData || []).forEach((cova) => {
-    const qKey = resolveVisibleQuadraKey(cova?.grave?.blockId ?? cova?.grave?.block ?? cova?.blockId ?? cova?.quadra ?? cova?.quadra_cova);
+    const qKey = resolveVisibleQuadraKey(getSepulturaQuadraRef(cova));
     if (!qKey) return;
 
     const quadraObj = quadraMap.get(qKey);
-    const numero = cova.num_cova ?? cova.num_sepultura ?? cova.numero ?? "";
-    const cap = cova.capacidade === "" || cova.capacidade === null ? null : Number(cova.capacidade);
+    const numero = getSepulturaNumber(cova);
+    const capacity = getSepulturaCapacity(cova);
+    const cap = capacity === "" || capacity === null ? null : Number(capacity);
     const normalizedStatus = cap !== null && !Number.isNaN(cap) && cap <= 0 ? "lotada" : normalizeCovaStatus(cova.status);
 
     quadraObj.covas.push({
@@ -216,12 +201,12 @@ export const buildQuadrasFromData = (visibleBlocks = [], covasData = [], sepulta
     const sepIsConcluded = confirmed || String(sep.status ?? "").toLowerCase().includes("concl");
     if (!sepIsConcluded) return;
 
-    const qKey = resolveVisibleQuadraKey(sep.quadra_sep ?? sep.quadra);
+    const qKey = resolveVisibleQuadraKey(getSepulturaQuadraRef(sep));
     if (!qKey) return;
 
     const quadraObj = quadraMap.get(qKey);
-    const numero = sep.num_sepultura_sep || sep.num_sepultura || sep.numero || "";
-    const titulo_posse = String(sep.titulo_posse ?? "").toLowerCase() === "sim";
+    const numero = getSepulturaNumber(sep);
+    const titulo_posse = hasTituloPosse(sep);
 
     const existing = quadraObj.covas.find((c) => String(c.numero) === String(numero));
 
@@ -249,7 +234,7 @@ export const buildQuadrasFromData = (visibleBlocks = [], covasData = [], sepulta
 };
 
 export const getSepCountsByQuadra = (sepultamentosAll = [], covasData = []) => {
-  const covaIdToQuadra = Object.fromEntries((covasData || []).map((c) => [String(c.id), String(c.quadra_cova ?? c.quadra ?? "")]));
+  const covaIdToQuadra = Object.fromEntries((covasData || []).map((c) => [String(c.id), getSepulturaQuadraRef(c)]));
 
   const tmp = {};
   const visibleSepData = (sepultamentosAll || []).filter((sep) => !sep.foi_exumado);
@@ -259,11 +244,11 @@ export const getSepCountsByQuadra = (sepultamentosAll = [], covasData = []) => {
     if (!confirmed && !concluded) return;
     const sepId = sep.id ?? sep._id ?? null;
     const quadraKey = String(
-      sep.quadra_sep ?? sep.quadra ?? covaIdToQuadra[String(sep.graveId ?? sep.grave_id ?? sep.covaId ?? sep.cova ?? "")] ?? "0"
+      getSepulturaQuadraRef(sep) || covaIdToQuadra[String(sep.graveId ?? sep.grave_id ?? sep.covaId ?? sep.cova ?? "")] || "0"
     );
     if (!tmp[quadraKey]) tmp[quadraKey] = new Set();
     if (sepId != null) tmp[quadraKey].add(String(sepId));
-    else tmp[quadraKey].add(`${quadraKey}-${sep.num_sepultura_sep ?? sep.num_sepultura ?? ""}-${sep.dh_sep ?? sep.data_obito_sep ?? ""}`);
+    else tmp[quadraKey].add(`${quadraKey}-${getSepulturaNumber(sep)}-${sep.dh_sep ?? sep.data_obito_sep ?? ""}`);
   });
   const countsObj = {};
   Object.keys(tmp).forEach((k) => { countsObj[k] = tmp[k].size; });

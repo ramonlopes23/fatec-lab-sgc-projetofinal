@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { isEmpty } from "../../utils/validation";
+import { getFalecidoName } from "../../utils/falecido";
 import { PROCESS_TYPES, normalizeProcessType } from "../../pages/Cadastros/constants";
 
 export default function useFalecidoSearch(falecidos, processType, saved, setForm) {
@@ -20,7 +20,7 @@ export default function useFalecidoSearch(falecidos, processType, saved, setForm
     const term = String(searchFal).toLowerCase();
     setFilteredFalecidos(
       (falecidos || [])
-        .filter((falecido) => ((falecido.nome_fal || falecido.nome) || "").toLowerCase().includes(term))
+        .filter((falecido) => getFalecidoName(falecido).toLowerCase().includes(term))
         .slice(0, 10),
     );
   }, [falecidos, processType, searchFal, setForm]);

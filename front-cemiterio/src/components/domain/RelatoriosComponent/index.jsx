@@ -7,10 +7,15 @@ import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import api from "../../../services/index.js";
 import { useAuthStore } from "../../../stores/authStore";
+import { useCemeteryStore } from "../../../stores/cemeteryStore";
 import sgcLogo from "../../../assets/SGC.png";
 import { formatDateDMY, parseDateValue } from "../../../utils/date";
+import { getCemiterioId, getCemiterioName } from "../../../utils/cemiterio";
+import { hasTituloPosse } from "../../../utils/contrato";
+import { getFalecidoCpf, getFalecidoName } from "../../../utils/falecido";
 import { normalizeQuadra, resolveQuadraDisplay } from "../../../utils/quadra";
-import { formatCurrencyBRL } from "../../../utils/taxas";
+import { getSepulturaNumber, getSepulturaQuadraRef } from "../../../utils/sepultura";
+import { classifyTaxaRecord, formatCurrencyBRL, getTaxaValorFromRecord } from "../../../utils/taxas";
 import DefaultModal from "../../common/DefaultModal";
 import RelatoriosExportActions from "./RelatoriosExportActions";
 import RelatoriosArrecadacaoMensalChart from "../../../charts/RelatoriosArrecadacaoMensalChart.jsx";
@@ -130,38 +135,26 @@ const filterTextFieldSx = {
     "& .MuiOutlinedInput-input": { fontSize: "14px" },
 };
 
-const isParticularRecord = (item) => {
-    const raw = normalizeText(item?.titulo_posse);
-    return ["sim", "s", "true", "1", "particular", "proprio", "propria"].some((token) => raw.includes(token));
-};
+const isParticularRecord = (item) => hasTituloPosse(item);
 
-const classifyTaxa = (item) => {
-    const code = normalizeText(item?.taxa);
-    const label = normalizeText(item?.taxa_label);
-    const type = normalizeText(item?.tipo);
-
-    if (code.includes("indig") || label.includes("indig") || type.includes("indig")) return "indigente";
-    if (code.includes("crianca") || label.includes("crianca") || label.includes("criança") || type.includes("crianca") || type.includes("criança")) return "crianca";
-    if (code.includes("adult") || label.includes("adult") || type.includes("adult")) return "adulto";
-    return "outros";
-};
+const classifyTaxa = (item) => classifyTaxaRecord(item, normalizeText);
 
 const getNestedSepultamento = (item) => item?.sepultamento || item?.sepultamento_data || item?.sepultamentoInfo || {};
 const getExumacaoDate = (item) => item?.dh_exu || item?.data_exumacao || item?.data_exu || item?.dh_exumacao;
 
 const getExumacaoName = (item) => {
     const sepultamento = getNestedSepultamento(item);
-    return item?.nome_sep || item?.nome || item?.falecido_nome || item?.nome_falecido || sepultamento?.nome_sep || sepultamento?.nome || "--";
+    return getFalecidoName(item) || getFalecidoName(sepultamento) || "--";
 };
 
 const getExumacaoQuadraReference = (item) => {
     const sepultamento = getNestedSepultamento(item);
-    return item?.quadra_sep || item?.quadra || item?.quadra_id || sepultamento?.quadra_sep || sepultamento?.quadra || "";
+    return getSepulturaQuadraRef(item) || getSepulturaQuadraRef(sepultamento);
 };
 
 const getExumacaoSepultura = (item) => {
     const sepultamento = getNestedSepultamento(item);
-    return item?.num_sepultura_sep || item?.sepultura || item?.num_sepultura || sepultamento?.num_sepultura_sep || sepultamento?.sepultura || "";
+    return getSepulturaNumber(item) || getSepulturaNumber(sepultamento);
 };
 
 const getExumacaoDestino = (item) => item?.destino || item?.destino_exu || item?.tipo_destino || "Nao informado";
@@ -510,6 +503,8 @@ const renderPrintHtml = (payload) => {
 
 export default function RelatoriosComponent() {
     const user = useAuthStore((state) => state.user);
+    const cemeteries = useCemeteryStore((state) => state.cemeteries);
+    const selectedCemeteryId = useCemeteryStore((state) => state.selectedCemeteryId);
     const [sepultamentos, setSepultamentos] = useState([]);
     const [exumacoes, setExumacoes] = useState([]);
     const [quadras, setQuadras] = useState([]);
@@ -523,9 +518,15 @@ export default function RelatoriosComponent() {
     const { showError, showWarning, ToastElement } = useToastFeedback();
 
     const isExumacoesReport = activeReport === "exumacoes";
+    const selectedCemetery = useMemo(() => (
+        cemeteries.find((cemetery) => String(getCemiterioId(cemetery)) === String(selectedCemeteryId)) ||
+        cemeteries[0] ||
+        null
+    ), [cemeteries, selectedCemeteryId]);
+    const reportCemeteryName = filters.cemiterio || getCemiterioName(selectedCemetery) || "Cemitério não informado";
 
     const getSepultamentoQuadra = (item) => (
-        resolveQuadraDisplay(item?.quadra_sep ?? item?.quadra ?? item?.quadra_id ?? "", quadras, "")
+        resolveQuadraDisplay(getSepulturaQuadraRef(item), quadras, "")
     );
 
     const getExumacaoQuadra = (item) => (
@@ -563,10 +564,10 @@ export default function RelatoriosComponent() {
         const { start, end } = resolvePeriodRange(filters);
 
         return sepultamentos.filter((item) => {
-            const name = normalizeText(item?.nome_sep || item?.nome);
+            const name = normalizeText(getFalecidoName(item));
             if (search && !name.includes(search)) return false;
             if (filters.quadra && String(getSepultamentoQuadra(item)) !== String(filters.quadra)) return false;
-            if (filters.sepultura && String(item?.num_sepultura_sep ?? "") !== String(filters.sepultura)) return false;
+            if (filters.sepultura && String(getSepulturaNumber(item)) !== String(filters.sepultura)) return false;
 
             const isParticular = isParticularRecord(item);
             if (filters.tipo === "particular" && !isParticular) return false;
@@ -632,7 +633,7 @@ export default function RelatoriosComponent() {
             const transferencias = filteredItems.filter((item) => isTransferenciaExumacao(item)).length;
             const monthCount = new Set(filteredItems.map((item) => getMonthKey(parseDateValue(getExumacaoDate(item)))).filter(Boolean)).size || 1;
             const mediaMensal = total / monthCount;
-            const arrecadacao = filteredItems.reduce((sum, item) => sum + (Number(item?.taxa_valor) || 0), 0);
+            const arrecadacao = filteredItems.reduce((sum, item) => sum + getTaxaValorFromRecord(item), 0);
 
             return [
                 {
@@ -668,7 +669,7 @@ export default function RelatoriosComponent() {
 
         const particulares = filteredItems.filter((item) => isParticularRecord(item)).length;
         const comuns = total - particulares;
-        const arrecadacao = filteredItems.reduce((sum, item) => sum + (Number(item?.taxa_valor) || 0), 0);
+        const arrecadacao = filteredItems.reduce((sum, item) => sum + getTaxaValorFromRecord(item), 0);
 
         return [
             {
@@ -704,7 +705,7 @@ export default function RelatoriosComponent() {
 
     const monthlySepultamentos = useMemo(() => buildMonthlySeries(filteredSepultamentos, () => 1), [filteredSepultamentos]);
     const monthlyExumacoes = useMemo(() => buildMonthlySeries(filteredExumacoes, () => 1, getExumacaoDate), [filteredExumacoes]);
-    const monthlyRevenue = useMemo(() => buildMonthlySeries(filteredSepultamentos, (item) => Number(item?.taxa_valor) || 0), [filteredSepultamentos]);
+    const monthlyRevenue = useMemo(() => buildMonthlySeries(filteredSepultamentos, getTaxaValorFromRecord), [filteredSepultamentos]);
     const sepultamentoTypeSeries = useMemo(() => buildTypeSeries(filteredSepultamentos), [filteredSepultamentos]);
     const exumacaoTypeSeries = useMemo(() => buildTypeSeries(filteredExumacoes, true), [filteredExumacoes]);
     const destinoSeries = useMemo(() => buildDestinoSeries(filteredExumacoes), [filteredExumacoes]);
@@ -720,7 +721,7 @@ export default function RelatoriosComponent() {
         const base = filters.quadra
             ? source.filter((item) => String(isExumacoesReport ? getExumacaoQuadra(item) : getSepultamentoQuadra(item)) === String(filters.quadra))
             : source;
-        const values = Array.from(new Set(base.map((item) => String(isExumacoesReport ? getExumacaoSepultura(item) : item?.num_sepultura_sep ?? "").trim()).filter(Boolean)));
+        const values = Array.from(new Set(base.map((item) => String(isExumacoesReport ? getExumacaoSepultura(item) : getSepulturaNumber(item)).trim()).filter(Boolean)));
         return values.sort(sortNumericText);
     }, [exumacoes, filters.quadra, isExumacoesReport, quadras, sepultamentos]);
 
@@ -765,7 +766,7 @@ export default function RelatoriosComponent() {
                     destino: getDestinoLabel(classifyDestino(item)),
                     ossario: classifyDestino(item) === "ossario" ? getExumacaoDestino(item) : "--",
                     responsavel: item?.responsavel || item?.coveiro || item?.usuario || "--",
-                    taxa: formatCurrencyBRL(item?.taxa_valor),
+                    taxa: formatCurrencyBRL(getTaxaValorFromRecord(item)),
                     situacao: getStatusLabel(item),
                 })),
             }
@@ -783,12 +784,12 @@ export default function RelatoriosComponent() {
                 ],
                 rows: filteredItems.map((item) => ({
                     data: formatDateDMY(item?.dh_sep, "--"),
-                    falecido: item?.nome_sep || item?.nome || "--",
-                    documento: item?.cpf || item?.documento || item?.doc_falecido || "--",
+                    falecido: getFalecidoName(item) || "--",
+                    documento: getFalecidoCpf(item) || "--",
                     quadra: getSepultamentoQuadra(item) || "--",
-                    sepultura: item?.num_sepultura_sep || "--",
+                    sepultura: getSepulturaNumber(item) || "--",
                     tipo: getTypeText(item),
-                    taxa: formatCurrencyBRL(item?.taxa_valor),
+                    taxa: formatCurrencyBRL(getTaxaValorFromRecord(item)),
                     situacaoFinanceira: getStatusLabel(item),
                     responsavel: item?.responsavel || item?.nome_resp || item?.coveiro_sep || "--",
                 })),
@@ -848,7 +849,7 @@ export default function RelatoriosComponent() {
             },
             metadata: {
                 logo: sgcLogo,
-                cemeteryName: filters.cemiterio || "Cemiterio do Cambiri",
+                cemeteryName: reportCemeteryName,
                 generatedAt: generatedAt.toISOString(),
                 generatedAtLabel: formatDateTimeBR(generatedAt),
                 userName: getUserName(user),
@@ -873,6 +874,7 @@ export default function RelatoriosComponent() {
         monthlyRevenue,
         monthlySepultamentos,
         periodLabel,
+        reportCemeteryName,
         sepultamentoTypeSeries,
         stats,
         user,
@@ -949,14 +951,14 @@ export default function RelatoriosComponent() {
     const renderSepultamentoRows = () => pageItems.map((item, index) => {
         const isParticular = isParticularRecord(item);
         return (
-            <Tr key={item?.id || `${item?.nome_sep || "sep"}-${index}`} $index={index}>
+            <Tr key={item?.id || `${getFalecidoName(item) || "sep"}-${index}`} $index={index}>
                 <Td>{formatDateDMY(item?.dh_sep, "--")}</Td>
-                <Td>{item?.nome_sep || item?.nome || "--"}</Td>
+                <Td>{getFalecidoName(item) || "--"}</Td>
                 <Td>{getSepultamentoQuadra(item) || "--"}</Td>
-                <Td>{item?.num_sepultura_sep || "--"}</Td>
+                <Td>{getSepulturaNumber(item) || "--"}</Td>
                 <Td>{getTypeText(item)}</Td>
                 <Td>{isParticular ? "Particular" : "Comum"}</Td>
-                <TdValue>{formatCurrencyBRL(item?.taxa_valor)}</TdValue>
+                <TdValue>{formatCurrencyBRL(getTaxaValorFromRecord(item))}</TdValue>
                 <Td>
                     <StatusBadge $tone={getStatusTone(item)}>{getStatusLabel(item)}</StatusBadge>
                 </Td>
@@ -979,7 +981,7 @@ export default function RelatoriosComponent() {
             <Td>{getExumacaoSepultura(item) || "--"}</Td>
             <Td>{getDestinoLabel(classifyDestino(item))}</Td>
             <Td>{getTypeText(item)}</Td>
-            <TdValue>{formatCurrencyBRL(item?.taxa_valor)}</TdValue>
+            <TdValue>{formatCurrencyBRL(getTaxaValorFromRecord(item))}</TdValue>
             <Td>
                 <StatusBadge $tone={getStatusTone(item)}>{getStatusLabel(item)}</StatusBadge>
             </Td>
@@ -1000,7 +1002,7 @@ export default function RelatoriosComponent() {
                 ["Sepultura", getExumacaoSepultura(selectedItem) || "--"],
                 ["Destino", getExumacaoDestino(selectedItem) || "--"],
                 ["Tipo", getTypeText(selectedItem)],
-                ["Taxa", formatCurrencyBRL(selectedItem?.taxa_valor)],
+                ["Taxa", formatCurrencyBRL(getTaxaValorFromRecord(selectedItem))],
                 ["Status", getStatusLabel(selectedItem)],
                 ["Data da exumacao", formatDateDMY(getExumacaoDate(selectedItem), "--")],
                 ["Motivo", selectedItem?.motivo || "--"],
@@ -1011,10 +1013,10 @@ export default function RelatoriosComponent() {
 
         return [
             ["Quadra", getSepultamentoQuadra(selectedItem) || "--"],
-            ["Sepultura", selectedItem?.num_sepultura_sep || "--"],
+            ["Sepultura", getSepulturaNumber(selectedItem) || "--"],
             ["Tipo", getTypeText(selectedItem)],
             ["Posse", isParticularRecord(selectedItem) ? "Particular" : "Comum"],
-            ["Taxa", formatCurrencyBRL(selectedItem?.taxa_valor)],
+            ["Taxa", formatCurrencyBRL(getTaxaValorFromRecord(selectedItem))],
             ["Status", getStatusLabel(selectedItem)],
             ["Data do sepultamento", formatDateDMY(selectedItem?.dh_sep, "--")],
             ["Data do obito", formatDateDMY(selectedItem?.data_obito_sep, "--")],
@@ -1325,7 +1327,7 @@ export default function RelatoriosComponent() {
 
             <DefaultModal
                 open={Boolean(selectedItem)}
-                title={isExumacoesReport ? getExumacaoName(selectedItem) : selectedItem?.nome_sep || selectedItem?.nome || "Detalhes do registro"}
+                title={isExumacoesReport ? getExumacaoName(selectedItem) : getFalecidoName(selectedItem) || "Detalhes do registro"}
                 subtitle={
                     isExumacoesReport
                         ? `Exumacao registrada em ${formatDateDMY(getExumacaoDate(selectedItem), "--")}.`

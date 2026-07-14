@@ -1,5 +1,11 @@
 import database from "../../db.json";
+import { getCemiterioName } from "../utils/cemiterio.js";
+import { getContratoCemiterioName, getContratoNumeroTitulo } from "../utils/contrato.js";
 import { parseDateValue } from "../utils/date.js";
+import { getFalecidoName } from "../utils/falecido.js";
+import { formatQuadraDisplay } from "../utils/quadra.js";
+import { formatSepulturaDisplay } from "../utils/sepultura.js";
+import { formatCurrencyBRL, getTaxaLabelFromRecord, getTaxaValorFromRecord } from "../utils/taxas.js";
 
 const AUDIT_LOG_PAGE_SIZE = 7;
 
@@ -161,6 +167,44 @@ const formatValue = (value) => {
     return String(value);
 };
 
+const formatLogFieldValue = (field, record) => {
+    if (!record) return formatValue("");
+
+    if (field === "quadra" || field === "quadra_sep") {
+        return formatQuadraDisplay(record?.[field], [], "Quadra ", formatValue(record?.[field]));
+    }
+
+    if (field === "sepultura" || field === "num_sepultura_sep") {
+        return formatSepulturaDisplay(record, "Sepultura ", formatValue(record?.[field]));
+    }
+
+    if (field === "nome_fal" || field === "nome_sep" || field === "falecido") {
+        return getFalecidoName(record) || formatValue(record?.[field]);
+    }
+
+    if (field === "taxa_label") {
+        return getTaxaLabelFromRecord(record) || formatValue(record?.[field]);
+    }
+
+    if (field === "taxa_valor") {
+        return formatCurrencyBRL(getTaxaValorFromRecord(record));
+    }
+
+    if (field === "valor") {
+        return formatCurrencyBRL(record?.valor);
+    }
+
+    if (field === "numero_titulo") {
+        return getContratoNumeroTitulo(record) || formatValue(record?.[field]);
+    }
+
+    if (field === "cemiterio") {
+        return getCemiterioName(record) || getContratoCemiterioName(record) || formatValue(record?.[field]);
+    }
+
+    return formatValue(record?.[field]);
+};
+
 const resolveActor = (record, meta) => {
     const actor = pickFirst(record, meta.actorFields) || "Sistema";
     return {
@@ -179,11 +223,11 @@ const buildEntity = (collectionName, record, meta) => ({
 
 const buildDescription = (collectionName, record, meta) => {
     const name = resolveActor(record, meta).name;
-    if (collectionName === "falecidos") return `Registro de falecimento vinculado a ${name}.`;
-    if (collectionName === "sepultamentos") return `Sepultamento registrado para ${pickFirst(record, ["nome", "nome_sep", "falecido"]) || "registro sem nome"}.`;
+    if (collectionName === "falecidos") return `Registro de falecimento vinculado a ${getFalecidoName(record) || name}.`;
+    if (collectionName === "sepultamentos") return `Sepultamento registrado para ${getFalecidoName(record) || "registro sem nome"}.`;
     if (collectionName === "velorios") return `Velório consolidado com status ${formatValue(record?.status).toLowerCase()}.`;
     if (collectionName === "exumacoes") return `Exumação registrada com destino ${formatValue(record?.destino).toLowerCase()}.`;
-    if (collectionName === "contratos") return `Contrato ${formatValue(record?.numero_titulo)} persistido para ${name}.`;
+    if (collectionName === "contratos") return `Contrato ${getContratoNumeroTitulo(record) || formatValue(record?.numero_titulo)} persistido para ${name}.`;
     if (collectionName === "pets") return `Pet vinculado ao sepultamento ${formatValue(record?.sepultamento_id)}.`;
     return `Evento rastreável derivado da coleção ${collectionName}.`;
 };
@@ -192,13 +236,13 @@ const buildChanges = (record, meta) => meta.changeFields.map((change) => ({
     field: change.field,
     label: change.label,
     before: "NÃO DISPONÍVEL NO DB.JSON",
-    after: formatValue(record?.[change.field]),
+    after: formatLogFieldValue(change.field, record),
 }));
 
 const buildAdditionalInfo = (record, meta) => {
     const info = {};
     meta.additionalFields.forEach((field) => {
-        info[field] = formatValue(record?.[field]);
+        info[field] = formatLogFieldValue(field, record);
     });
     return info;
 };

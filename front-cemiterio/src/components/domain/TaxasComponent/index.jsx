@@ -63,7 +63,7 @@ import DefaultModal, {
     DefaultModalGrid,
 } from "../../common/DefaultModal";
 import { useFormModal, useTaxas, useToastFeedback } from "../../../hooks";
-import { formatCurrencyBRL, formatDateDMY, formatTaxaLabel, isDateWithinNextDays, normalizeSearchText, normalizeTaxa } from "../../../utils";
+import { formatCurrencyBRL, formatDateDMY, formatTaxaLabel, getTaxaCodigo, getTaxaDescricao, getTaxaId, getTaxaTipo, getTaxaValor, getTaxaVigenciaFim, getTaxaVigenciaInicio, isDateWithinNextDays, isTaxaActive, normalizeSearchText, normalizeTaxa } from "../../../utils";
 
 const INITIAL_FORM = {
     codigo: "",
@@ -121,11 +121,11 @@ const formatTaxaTypeLabel = (value) => {
     return label.charAt(0).toUpperCase() + label.slice(1);
 };
 
-const isVencendoEm30Dias = (taxa) => isDateWithinNextDays(taxa?.vigencia_fim, 30);
+const isVencendoEm30Dias = (taxa) => isDateWithinNextDays(getTaxaVigenciaFim(taxa), 30);
 
 const formatVigencia = (taxa) => {
-    const inicio = formatDateDMY(taxa?.vigencia_inicio, "");
-    const fim = formatDateDMY(taxa?.vigencia_fim, "");
+    const inicio = formatDateDMY(getTaxaVigenciaInicio(taxa), "");
+    const fim = formatDateDMY(getTaxaVigenciaFim(taxa), "");
 
     if (inicio && fim) return `${inicio} até ${fim}`;
     if (inicio) return inicio;
@@ -165,7 +165,7 @@ function TaxasComponent() {
     const normalizedTaxas = useMemo(() => taxas.map((taxa) => normalizeTaxa(taxa)), [taxas]);
 
     const typeOptions = useMemo(() => {
-        const values = new Set(normalizedTaxas.map((taxa) => String(taxa.tipo || "").trim()).filter(Boolean));
+        const values = new Set(normalizedTaxas.map(getTaxaTipo).filter(Boolean));
         return Array.from(values).sort((a, b) => a.localeCompare(b));
     }, [normalizedTaxas]);
 
@@ -179,29 +179,29 @@ function TaxasComponent() {
 
         return normalizedTaxas.filter((taxa) => {
             const matchesSearch = !term || [
-                taxa.codigo,
-                taxa.descricao,
-                taxa.tipo,
-                String(taxa.valor ?? ""),
-                formatCurrencyBRL(taxa.valor),
+                getTaxaCodigo(taxa),
+                getTaxaDescricao(taxa),
+                getTaxaTipo(taxa),
+                String(getTaxaValor(taxa)),
+                formatCurrencyBRL(getTaxaValor(taxa)),
                 formatTaxaLabel(taxa),
             ].some((field) => normalizeSearchText(field).includes(term));
 
             const matchesStatus = statusFilter === "all"
-                || (statusFilter === "active" && taxa.active)
-                || (statusFilter === "inactive" && !taxa.active);
+                || (statusFilter === "active" && isTaxaActive(taxa))
+                || (statusFilter === "inactive" && !isTaxaActive(taxa));
 
             const matchesType = typeFilter === "all"
-                || normalizeSearchText(taxa.tipo) === normalizeSearchText(typeFilter);
+                || normalizeSearchText(getTaxaTipo(taxa)) === normalizeSearchText(typeFilter);
 
             return matchesSearch && matchesStatus && matchesType;
         });
     }, [normalizedTaxas, search, statusFilter, typeFilter]);
 
     const totalTaxas = normalizedTaxas.length;
-    const activeTaxas = normalizedTaxas.filter((taxa) => taxa.active).length;
-    const inactiveTaxas = normalizedTaxas.filter((taxa) => !taxa.active).length;
-    const vencerTaxas = normalizedTaxas.filter((taxa) => taxa.active && isVencendoEm30Dias(taxa)).length;
+    const activeTaxas = normalizedTaxas.filter(isTaxaActive).length;
+    const inactiveTaxas = normalizedTaxas.filter((taxa) => !isTaxaActive(taxa)).length;
+    const vencerTaxas = normalizedTaxas.filter((taxa) => isTaxaActive(taxa) && isVencendoEm30Dias(taxa)).length;
 
     const clearFilters = () => {
         setSearch("");
@@ -238,7 +238,7 @@ function TaxasComponent() {
             nextErrors.vigencia_fim = "Vigencia final deve ser posterior ao inicio";
         }
 
-        const duplicated = taxas.some((taxa) => taxa.id !== editingId && normalizeCode(taxa.codigo) === codigo);
+        const duplicated = taxas.some((taxa) => getTaxaId(taxa) !== editingId && normalizeCode(getTaxaCodigo(taxa)) === codigo);
         if (duplicated) nextErrors.codigo = "Ja existe uma taxa com esse codigo";
 
         setErrors(nextErrors);
@@ -290,14 +290,14 @@ function TaxasComponent() {
     const handleEdit = (taxa) => {
         const normalized = normalizeTaxa(taxa);
         setIsEditing(false);
-        openEdit(normalized.id, {
-            codigo: normalized.codigo,
-            descricao: normalized.descricao,
-            valor: String(normalized.valor ?? 0),
-            tipo: normalized.tipo || "sepultamento",
-            active: normalized.active,
-            vigencia_inicio: normalized.vigencia_inicio || "",
-            vigencia_fim: normalized.vigencia_fim || "",
+        openEdit(getTaxaId(normalized), {
+            codigo: getTaxaCodigo(normalized),
+            descricao: getTaxaDescricao(normalized),
+            valor: String(getTaxaValor(normalized)),
+            tipo: getTaxaTipo(normalized),
+            active: isTaxaActive(normalized),
+            vigencia_inicio: getTaxaVigenciaInicio(normalized),
+            vigencia_fim: getTaxaVigenciaFim(normalized),
         });
     };
 
@@ -331,14 +331,15 @@ function TaxasComponent() {
     };
 
     const confirmToggleStatus = async () => {
-        if (!pendingStatusTaxa?.id) return;
+        const pendingId = getTaxaId(pendingStatusTaxa);
+        if (!pendingId) return;
 
-        const nextActive = !pendingStatusTaxa.active;
+        const nextActive = !isTaxaActive(pendingStatusTaxa);
         setIsSubmitting(true);
         try {
-            await patchTaxaStatus(pendingStatusTaxa.id, nextActive);
+            await patchTaxaStatus(pendingId, nextActive);
             setTaxas((prev) => prev.map((item) => (
-                String(item.id) === String(pendingStatusTaxa.id)
+                String(getTaxaId(item)) === String(pendingId)
                     ? { ...item, active: nextActive, status: nextActive ? "active" : "inactive" }
                     : item
             )));
@@ -484,16 +485,17 @@ function TaxasComponent() {
                                             <Tr><Td colSpan={7}>Nenhuma taxa encontrada.</Td></Tr>
                                         ) : filteredTaxas.map((taxa, index) => {
                                             const normalized = normalizeTaxa(taxa);
+                                            const taxaActive = isTaxaActive(normalized);
                                             return (
-                                                <Tr key={String(normalized.id || normalized.codigo)} index={index}>
-                                                    <Td>{normalized.codigo}</Td>
-                                                    <Td>{normalized.descricao}</Td>
-                                                    <Td>{formatTaxaTypeLabel(normalized.tipo)}</Td>
-                                                    <Td>{formatCurrencyBRL(normalized.valor)}</Td>
+                                                <Tr key={getTaxaId(normalized) || getTaxaCodigo(normalized)} index={index}>
+                                                    <Td>{getTaxaCodigo(normalized)}</Td>
+                                                    <Td>{getTaxaDescricao(normalized)}</Td>
+                                                    <Td>{formatTaxaTypeLabel(getTaxaTipo(normalized))}</Td>
+                                                    <Td>{formatCurrencyBRL(getTaxaValor(normalized))}</Td>
                                                     <Td>{formatVigencia(normalized)}</Td>
                                                     <TdStatus>
-                                                        <StatusBadge $status={normalized.active ? "ativo" : "inativo"}>
-                                                            {normalized.active ? "Ativa" : "Inativa"}
+                                                        <StatusBadge $status={taxaActive ? "ativo" : "inativo"}>
+                                                            {taxaActive ? "Ativa" : "Inativa"}
                                                         </StatusBadge>
                                                     </TdStatus>
                                                     <Td>
@@ -501,7 +503,7 @@ function TaxasComponent() {
                                                             <IconBtn type="button" onClick={() => handleEdit(normalized)} disabled={isSubmitting}>
                                                                 <FaRegEdit />
                                                             </IconBtn>
-                                                            <IconBtn type="button" onClick={() => requestToggleStatus(normalized)} disabled={isSubmitting} data-danger={normalized.active ? "true" : undefined}>
+                                                            <IconBtn type="button" onClick={() => requestToggleStatus(normalized)} disabled={isSubmitting} data-danger={taxaActive ? "true" : undefined}>
                                                                 <FaPowerOff />
                                                             </IconBtn>
                                                         </Actions>
@@ -520,12 +522,12 @@ function TaxasComponent() {
                     open={confirmDialogOpen}
                     onClose={closeConfirmDialog}
                     onConfirm={confirmToggleStatus}
-                    title={pendingStatusTaxa?.active ? "Inativar taxa" : "Ativar taxa"}
-                    alertSeverity={pendingStatusTaxa?.active ? "warning" : "success"}
-                    alertMessage={pendingStatusTaxa?.active ? "A taxa ficará indisponível para novos lançamentos." : "A taxa voltará a ficar disponível para uso."}
-                    description={pendingStatusTaxa ? `Deseja ${pendingStatusTaxa.active ? "inativar" : "ativar"} a taxa ${pendingStatusTaxa.descricao}?` : "Confirme a alteração de status da taxa."}
-                    confirmLabel={pendingStatusTaxa?.active ? "Inativar" : "Ativar"}
-                    confirmTone={pendingStatusTaxa?.active ? "delete" : "confirm"}
+                    title={isTaxaActive(pendingStatusTaxa) ? "Inativar taxa" : "Ativar taxa"}
+                    alertSeverity={isTaxaActive(pendingStatusTaxa) ? "warning" : "success"}
+                    alertMessage={isTaxaActive(pendingStatusTaxa) ? "A taxa ficará indisponível para novos lançamentos." : "A taxa voltará a ficar disponível para uso."}
+                    description={pendingStatusTaxa ? `Deseja ${isTaxaActive(pendingStatusTaxa) ? "inativar" : "ativar"} a taxa ${getTaxaDescricao(pendingStatusTaxa)}?` : "Confirme a alteração de status da taxa."}
+                    confirmLabel={isTaxaActive(pendingStatusTaxa) ? "Inativar" : "Ativar"}
+                    confirmTone={isTaxaActive(pendingStatusTaxa) ? "delete" : "confirm"}
                     confirmDisabled={!pendingStatusTaxa}
                     isSubmitting={isSubmitting}
                     ariaDescriptionId="taxa-status-dialog-description"

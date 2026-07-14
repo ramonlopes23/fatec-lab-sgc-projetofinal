@@ -28,6 +28,8 @@ import { MdPets } from "react-icons/md";
 import { RxUpdate } from "react-icons/rx";
 import { TiDelete } from "react-icons/ti";
 import { formatDateTimeKey, formatDateDMY, formatDateTimeDMY } from "../../../utils/date";
+import { getFalecidoIdFromRecord, getFalecidoName } from "../../../utils/falecido";
+import { getSepulturaNumber, getSepulturaQuadraRef } from "../../../utils/sepultura";
 
 const makeInitialForm = (sep = null) => ({
     nome_pet: "",
@@ -39,7 +41,7 @@ const makeInitialForm = (sep = null) => ({
     status: "concluido",
     confirmado: true,
     sepultamento_id: sep?.id ? String(sep.id) : "",
-    falecido_id: sep?.falecido ?? sep?.falecido_id ?? sep?.falecidoId ?? "",
+    falecido_id: getFalecidoIdFromRecord(sep),
 });
 export default function CovaPetsSection({
     selectedCova,
@@ -63,35 +65,16 @@ export default function CovaPetsSection({
         setEditingPetId(null);
     }
 
-    const quadraKey = useMemo(
-        () =>
-            String(
-                selectedCova?.cova?.quadra_cova ??
-                selectedCova?.quadra_cova ??
-                selectedCova?.quadra_sep ??
-                selectedCova?.sep?.quadra_sep ??
-                ""
-            ),
-        [selectedCova]
-    );
+    const quadraKey = useMemo(() => getSepulturaQuadraRef(selectedCova), [selectedCova]);
 
-    const numero = useMemo(
-        () =>
-            String(
-                selectedCova?.numero ??
-                selectedCova?.num_cova ??
-                selectedCova?.num_sepultura_sep ??
-                ""
-            ),
-        [selectedCova]
-    );
+    const numero = useMemo(() => getSepulturaNumber(selectedCova), [selectedCova]);
 
     const modalPetList = useMemo(() => {
         if (!quadraKey || !numero) return [];
         return (Array.isArray(petsAll) ? petsAll : []).filter((p) => {
             if (p.foi_exumado) return false;
-            const pQuadra = String(p.quadra_sep ?? "");
-            const pNum = String(p.num_sepultura_sep ?? "");
+            const pQuadra = getSepulturaQuadraRef(p);
+            const pNum = getSepulturaNumber(p);
             return pQuadra === quadraKey && pNum === numero;
         });
     }, [petsAll, quadraKey, numero]);
@@ -111,7 +94,7 @@ export default function CovaPetsSection({
             const next = { ...prev, [name]: value };
             if (name === "sepultamento_id") {
                 const sep = (sepultamentos || []).find((s) => String(s.id) === String(value));
-                next.falecido_id = sep?.falecido ?? sep?.falecido_id ?? ""
+                next.falecido_id = getFalecidoIdFromRecord(sep)
             }
             return next;
         });
@@ -196,9 +179,9 @@ export default function CovaPetsSection({
             confirmado: true,
             foi_exumado: false,
             sepultamento_id: sep.id,
-            falecido_id: sep.falecido ?? sep.falecido_id ?? sep.falecidoId ?? formPet.falecido_id ?? "",
+            falecido_id: getFalecidoIdFromRecord(sep) || formPet.falecido_id || "",
             quadra_sep: sep.quadra_sep ?? quadraKey,
-            num_sepultura_sep: sep.num_sepultura_sep ?? sep.num_sepultura ?? numero,
+            num_sepultura_sep: getSepulturaNumber(sep) || numero,
             nome_sep: sep.nome_sep ?? "",
         };
 
@@ -249,8 +232,7 @@ export default function CovaPetsSection({
         ["Data/Hora do sepultamento", formPet.dh_sep_pet ? formatDateTimeDMY(formPet.dh_sep_pet) : ""],
         [
             "Sepultamento vinculado",
-            selectedPetSepultamento?.nome_sep ||
-                selectedPetSepultamento?.falecido?.nome_fal ||
+            getFalecidoName(selectedPetSepultamento) ||
                 (formPet.sepultamento_id ? `Sepultamento ${formPet.sepultamento_id}` : ""),
         ],
         ["Observações", formPet.obs_pet],
@@ -392,7 +374,7 @@ export default function CovaPetsSection({
                                     <option value="">Selecione</option>
                                     {(sepultamentos || []).map((s) => (
                                         <option key={s.id} value={String(s.id)}>
-                                            {s.nome_sep || s.falecido?.nome_fal || `Sepultamento ${s.id}`}
+                                            {getFalecidoName(s) || `Sepultamento ${s.id}`}
                                         </option>
                                     ))}
                                 </SystemSelect>
