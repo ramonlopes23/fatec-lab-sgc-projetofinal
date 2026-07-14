@@ -166,6 +166,36 @@ const downloadJson = (filename, payload) => {
     URL.revokeObjectURL(url);
 };
 
+const buildLogExportPayload = (logs = []) => ({
+    generatedAt: new Date().toISOString(),
+    total: logs.length,
+    records: logs.map((log) => ({
+        id: log.id,
+        codigo: log.eventCode,
+        dataHora: formatDateTimeDMY(log.timestamp, "-"),
+        timestamp: log.timestamp,
+        usuario: log.user?.name || "-",
+        usuarioOrigem: log.user?.sourceField || "-",
+        modulo: log.module || "-",
+        acao: getActionMeta(log.action).label,
+        status: getStatusMeta(log.status).label,
+        descricao: log.description || "-",
+        entidade: log.entity?.label || "-",
+        entidadeId: log.entity?.id || "-",
+        origem: log.sourceCollection || "-",
+        registroOrigem: log.sourceRecordId || "-",
+        alteracoes: (log.changes || []).map((change) => ({
+            campo: change.label || formatFieldLabel(change.field),
+            chave: change.field,
+            valorAnterior: formatListValue(change.before),
+            valorNovo: formatListValue(change.after),
+        })),
+        informacoesAdicionais: Object.fromEntries(
+            Object.entries(log.additionalInfo || {}).map(([key, value]) => [formatFieldLabel(key), formatListValue(value)])
+        ),
+    })),
+});
+
 export default function LogsComponent() {
     const navigate = useNavigate();
     const {
@@ -194,7 +224,7 @@ export default function LogsComponent() {
 
     const exportLogs = () => {
         const fileName = `logs-sistema-${new Date().toISOString().slice(0, 10)}.json`;
-        downloadJson(fileName, filteredLogs);
+        downloadJson(fileName, buildLogExportPayload(filteredLogs));
     };
 
     const copyEventId = async () => {
@@ -204,7 +234,7 @@ export default function LogsComponent() {
 
     const exportEvent = () => {
         if (!selectedLog) return;
-        downloadJson(`evento-${selectedLog.id}.json`, selectedLog);
+        downloadJson(`evento-${selectedLog.id}.json`, buildLogExportPayload([selectedLog]).records[0]);
     };
 
     const selectedTimelineItems = useMemo(() => {
