@@ -1555,13 +1555,13 @@ export default function VerMapa() {
                                 return (
                                     <CovaItem
                                         key={cova.id}
-                                        status={displayStatus}
-                                        borderColor={
+                                        $status={displayStatus}
+                                        $borderColor={
                                             displayStatus === "reservada" || displayStatus === "particular_ocupada"
                                                 ? "#d2b24a"
                                                 : undefined
                                         }
-                                        borderWidth={
+                                        $borderWidth={
                                             displayStatus === "reservada" || displayStatus === "particular_ocupada"
                                                 ? 5
                                                 : undefined
@@ -1617,9 +1617,9 @@ export default function VerMapa() {
                             <LegendButton
                                 key={s.key}
                                 type="button"
-                                color={s.color}
-                                borderColor={s.borderColor}
-                                borderWidth={s.borderWidth}
+                                $color={s.color}
+                                $borderColor={s.borderColor}
+                                $borderWidth={s.borderWidth}
                                 $active={statusFilter === s.key}
                                 onClick={() => setStatusFilter((current) => (current === s.key ? null : s.key))}
                                 aria-pressed={statusFilter === s.key}
@@ -1663,9 +1663,9 @@ export default function VerMapa() {
                             {statusList.map((s) => (
                                 <LegendItem
                                     key={s.key}
-                                    color={s.color}
-                                    borderColor={s.borderColor}
-                                    borderWidth={s.borderWidth}
+                                    $color={s.color}
+                                    $borderColor={s.borderColor}
+                                    $borderWidth={s.borderWidth}
                                 >
                                     <span className="color" />
                                     <span>{s.label}</span>

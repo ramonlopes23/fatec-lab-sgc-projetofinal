@@ -122,7 +122,7 @@ export const CovaItem = styled.button`
     justify-content: center;
     gap: 3px;
     width: 64px;
-    height: ${(p) => (p.hasPets ? "88px" : "88px")};
+    height: 88px;
     border-radius: 8px;
     cursor: pointer;
     box-sizing: border-box;
@@ -130,7 +130,7 @@ export const CovaItem = styled.button`
     padding-top: 12px;
 
     background: ${(p) => {
-        const s = String(p.status || "").toLowerCase();
+        const s = String(p.$status || "").toLowerCase();
         if (s === "reservada") return "#d2b24a";
         if (s === "particular_ocupada") return "#000";
         if (s === "ocupada") return "#000";
@@ -140,14 +140,14 @@ export const CovaItem = styled.button`
     }};
 
     color: ${(p) => {
-        const s = String(p.status || "").toLowerCase();
+        const s = String(p.$status || "").toLowerCase();
         if (s === "reservada") return "#000";
         if (s === "particular_ocupada" || s === "ocupada" || s === "indisponível" || s === "indisponivel")
             return "#fff";
         return "#191970";
     }};
 
-    border: ${(p) => `${p.borderWidth ?? 2}px solid ${p.borderColor ?? "transparent"}`};
+    border: ${(p) => `${p.$borderWidth ?? 2}px solid ${p.$borderColor ?? "transparent"}`};
     opacity: ${(p) => (p.$dimmed ? 0.28 : 1)};
     outline: ${(p) => (p.$selected ? "3px solid rgba(25, 25, 112, 0.28)" : "none")};
     outline-offset: 3px;
@@ -261,9 +261,9 @@ export const LegendItem = styled.div`
         width: 18px;
         height: 18px;
         border-radius: 4px;
-        background: ${({ color }) => color || "#ccc"};
-        border: ${({ borderColor, borderWidth }) =>
-            borderColor ? `${borderWidth ?? 2}px solid ${borderColor}` : "none"};
+        background: ${({ $color }) => $color || "#ccc"};
+        border: ${({ $borderColor, $borderWidth }) =>
+            $borderColor ? `${$borderWidth ?? 2}px solid ${$borderColor}` : "none"};
         box-sizing: border-box;
     }
 `;
@@ -340,9 +340,9 @@ export const LegendButton = styled.button`
         width: 18px;
         height: 18px;
         border-radius: 4px;
-        background: ${({ color }) => color || "#ccc"};
-        border: ${({ borderColor, borderWidth }) =>
-            borderColor ? `${borderWidth ?? 2}px solid ${borderColor}` : "none"};
+        background: ${({ $color }) => $color || "#ccc"};
+        border: ${({ $borderColor, $borderWidth }) =>
+            $borderColor ? `${$borderWidth ?? 2}px solid ${$borderColor}` : "none"};
         box-sizing: border-box;
     }
 
