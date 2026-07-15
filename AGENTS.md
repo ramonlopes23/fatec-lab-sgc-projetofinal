@@ -48,30 +48,36 @@ O projeto esta em estagio avancado de prototipo/integracao. Ele precisa funciona
 - A interface e as mensagens para o usuario devem permanecer em portugues do Brasil.
 - O codigo possui nomes de campos em portugues, ingles e formatos legados. Nao renomeie contratos de dados em massa como parte de uma tarefa pontual.
 
-Siga o estilo do arquivo tocado. O repositorio ainda possui variacoes de aspas, ponto e virgula e indentacao; evite uma reformatação ampla que esconda a mudanca funcional.
+Os arquivos elegiveis seguem a configuracao Prettier do app. Execute o formatador apenas no escopo necessario durante mudancas funcionais e evite misturar uma reformatação ampla com alteracoes de comportamento.
 
 ## Comandos de desenvolvimento
 
 Execute os comandos da aplicacao dentro de `front-cemiterio/`, salvo quando indicado:
 
 ```powershell
-npm install
+npm ci
 npm run dev
-npm test
+npm run mock:server
+npm run format:check
 npm run lint
+npm run test:unit
 npm run build
 npm run preview
 ```
 
-Para usar a base persistente local, execute a partir da raiz do repositorio:
+Use `npm install` quando uma dependencia precisar ser adicionada, removida ou atualizada e o `package-lock.json` tiver de ser regenerado.
+
+Para usar a base persistente local, execute no app `front-cemiterio`:
 
 ```powershell
-npx json-server front-cemiterio/db.json --port 3000
+npm run mock:server
 ```
 
 O frontend Vite normalmente abre em `http://localhost:5173`. A API real e acessada por `/api`, com proxy de desenvolvimento para `http://localhost:8080`.
 
-`front-cemiterio/test-api-flow.js` realiza requisicoes de escrita e cria quadras/covas no `db.json`. Nao execute esse script como validacao rotineira sem confirmar que a mutacao dos dados locais e aceitavel.
+`front-cemiterio/scripts/integration/test-api-flow.js` realiza requisicoes de escrita e cria quadras/covas no `db.json`. Nao execute esse script como validacao rotineira sem confirmar que a mutacao dos dados locais e aceitavel.
+
+O workflow `.github/workflows/ci.yml` executa formatacao, lint e build como gates bloqueantes. Testes unitarios e auditoria de dependencias de producao permanecem temporariamente nao bloqueantes enquanto as dividas conhecidas estiverem registradas no workflow.
 
 ## Modos de API
 
@@ -137,7 +143,7 @@ Nao crie commits, nao envie branches e nao abra pull requests sem solicitacao ex
 
 ## Validacao minima
 
-- Mudanca em utilitario ou regra pura: `npm test` e testes direcionados relevantes.
+- Mudanca em utilitario ou regra pura: `npm run test:unit` e testes direcionados relevantes.
 - Mudanca em JavaScript/JSX: `npm run lint`.
 - Mudanca estrutural, de rota, dependencia ou integracao: `npm run build`.
 - Mudanca de API local: valide o modo `dbjsonapi`; quando pertinente, confira tambem `mock` e o contrato esperado de `realApi`.
