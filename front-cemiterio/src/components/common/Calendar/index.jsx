@@ -4,6 +4,7 @@ import { resolveQuadraDisplay } from "../../../utils";
 import { Card, Subtitle, CardHeader, CardBody, CalendarGrid, DayCell, DayButton, Btn } from "./styles";
 import DefaultModal, { DefaultModalActions } from "../DefaultModal";
 import SystemButton from "../SystemButton";
+import { getCalendarEventKey } from "./utils";
 
 const hasTimePart = (value) => /(?:T|\s)\d{2}:\d{2}/.test(String(value ?? "").trim());
 
@@ -24,9 +25,10 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
     const [sepultamentosDia, setSepultamentosDia] = useState([]);
 
     const eventosFonte = useMemo(() => {
-        const normalizeSep = (s) => ({
+        const normalizeSep = (s, sourceIndex) => ({
             _type: "Sepultamento",
             id: s.id ?? s._id,
+            sourceIndex,
             nome: s.nome_sep,
             rawDate: s.dh_sep,
             quadraCandidate: s.num_quadra ?? s.quadra_sep,
@@ -35,9 +37,10 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
             extra: {},
         });
 
-        const normalizeExu = (x) => ({
+        const normalizeExu = (x, sourceIndex) => ({
             _type: "Exumação",
             id: x.id,
+            sourceIndex,
             nome: x.nome_sep,
             rawDate: x.dh_exu,
             quadraCandidate: x.quadra_sep ?? x.num_quadra,
@@ -57,7 +60,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
 
                 const quadraRef = item.quadraCandidate ?? "";
                 return {
-                    id: `evt-${item._type}-${item.id ?? Math.random().toString(36).slice(2, 9)}`,
+                    id: getCalendarEventKey(item._type, item.id, item.sourceIndex),
                     nomeFalecido: item.nome,
                     data,
                     dataLabel,
