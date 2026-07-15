@@ -3,11 +3,21 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "npm@10.9.3",
+  "engines": {
+    "node": ">=22.12.0",
+    "npm": ">=10.9.0"
+  },
   "scripts": {
     "dev": "vite",
+    "mock:server": "json-server db.json --port 3000",
     "build": "vite build",
     "lint": "eslint .",
-    "test": "node --test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run test:unit",
+    "test:unit": "node --test \"test/**/*.test.js\"",
+    "test:integration": "node scripts/integration/test-api-flow.js",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -20,7 +30,6 @@
     "chart.js": "^4.5.1",
     "date-fns": "^4.1.0",
     "lucide-react": "^1.22.0",
-    "prettier": "^3.6.2",
     "primeicons": "^7.0.0",
     "primereact": "^10.9.8",
     "react": "^19.1.1",
@@ -41,6 +50,8 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
+    "json-server": "^1.0.0-beta.3",
+    "prettier": "^3.6.2",
     "vite": "^7.1.2"
   }
 }
