@@ -45,7 +45,7 @@ jobs:
         run: npm run build
 
   unit-tests:
-    name: Unit tests (known baseline, non-blocking)
+    name: Unit tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -64,13 +64,7 @@ jobs:
         run: npm ci
 
       - name: Run unit tests
-        id: unit-tests
-        continue-on-error: true
         run: npm run test:unit
-
-      - name: Report known test debt
-        if: steps.unit-tests.outcome == 'failure'
-        run: echo "::warning::Unit tests still contain the known sepultamento/map baseline failures. Remove continue-on-error when that debt is resolved."
 
   security-audit:
     name: Production audit (known baseline, non-blocking)

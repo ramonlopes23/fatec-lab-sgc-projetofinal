@@ -99,7 +99,7 @@ src/
 
 O workflow `.github/workflows/ci.yml` executa em pushes e pull requests.
 
-Formatação, lint e build são gates bloqueantes. Os testes unitários e a auditoria de dependências de produção são executados como verificações temporariamente não bloqueantes enquanto suas dívidas conhecidas são tratadas. Os avisos no workflow devem ser removidos assim que esses baselines estiverem aprovados.
+Formatação, lint, testes unitários e build são gates bloqueantes. A auditoria de dependências de produção permanece temporariamente não bloqueante enquanto as vulnerabilidades conhecidas são tratadas. O aviso correspondente no workflow deve ser removido assim que esse baseline estiver aprovado.
 
 Antes de abrir um pull request, execute:
 

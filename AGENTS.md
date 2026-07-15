@@ -77,7 +77,7 @@ O frontend Vite normalmente abre em `http://localhost:5173`. A API real e acessa
 
 `front-cemiterio/scripts/integration/test-api-flow.js` realiza requisicoes de escrita e cria quadras/covas no `db.json`. Nao execute esse script como validacao rotineira sem confirmar que a mutacao dos dados locais e aceitavel.
 
-O workflow `.github/workflows/ci.yml` executa formatacao, lint e build como gates bloqueantes. Testes unitarios e auditoria de dependencias de producao permanecem temporariamente nao bloqueantes enquanto as dividas conhecidas estiverem registradas no workflow.
+O workflow `.github/workflows/ci.yml` executa formatacao, lint, testes unitarios e build como gates bloqueantes. A auditoria de dependencias de producao permanece temporariamente nao bloqueante enquanto a divida conhecida estiver registrada no workflow.
 
 ## Modos de API
 

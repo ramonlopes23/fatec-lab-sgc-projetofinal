@@ -13,11 +13,16 @@ import {
 } from "../src/utils/mapHelpers.js";
 
 const sepultamentosAll = [
-    { id: 1, quadra_sep: 10, num_sepultura_sep: 5, foi_exumado: false },
-    { id: 2, quadra_sep: 10, num_sepultura_sep: 5, foi_exumado: false },
-    { id: 3, quadra_sep: 10, num_sepultura_sep: 6, foi_exumado: true },
-    { id: 4, quadra_sep: 11, num_sepultura_sep: 1, foi_exumado: false },
-    { quadra_sep: 12, num_sepultura_sep: 2, dh_sep: "2024-10-01T10:00:00" },
+    { id: 1, quadra_sep: 10, num_sepultura_sep: 5, foi_exumado: false, confirmado: true },
+    { id: 2, quadra_sep: 10, num_sepultura_sep: 5, foi_exumado: false, status: "Concluído" },
+    { id: 3, quadra_sep: 10, num_sepultura_sep: 6, foi_exumado: true, confirmado: true },
+    { id: 4, quadra_sep: 11, num_sepultura_sep: 1, foi_exumado: false, confirmado: true },
+    {
+        quadra_sep: 12,
+        num_sepultura_sep: 2,
+        dh_sep: "2024-10-01T10:00:00",
+        status: "Concluído",
+    },
 ];
 
 const petsAll = [
@@ -142,7 +147,14 @@ test("buildQuadrasFromData assembles and sorts quadras with cova and sepultament
         ],
         [
             { id: "s1", quadra_sep: 1, num_sepultura_sep: 1, confirmado: true, status: "concluido" },
-            { id: "s2", quadra_sep: 2, num_sepultura_sep: 7, titulo_posse: "sim", confirmado: false },
+            {
+                id: "s2",
+                quadra_sep: 2,
+                num_sepultura_sep: 7,
+                titulo_posse: "sim",
+                confirmado: true,
+                status: "concluido",
+            },
         ]
     );
 
@@ -151,6 +163,30 @@ test("buildQuadrasFromData assembles and sorts quadras with cova and sepultament
     assert.equal(quadras[0].covas[0].status, "ocupada");
     assert.equal(quadras[1].covas[0].status, "ocupada");
     assert.equal(quadras[1].covas[0].sep.id, "s2");
+});
+
+test("pending sepultamentos do not occupy graves before confirmation", () => {
+    const pending = {
+        id: "pending",
+        quadra_sep: 10,
+        num_sepultura_sep: 5,
+        confirmado: false,
+        status: "Pendente",
+        foi_exumado: false,
+    };
+
+    assert.equal(getSepultadosCount([pending], 10), 0);
+    assert.equal(getSepultadosCountBySep({ numero: 5 }, 10, [pending]), 0);
+    assert.deepEqual(getSepCountsByQuadra([pending], [{ id: "c10", quadra_cova: 10 }]), {});
+
+    const quadras = buildQuadrasFromData(
+        [{ id: 10, number: 10, description: "A" }],
+        [{ id: "c10", quadra_cova: 10, num_cova: 5, status: "disponivel", capacidade: 1 }],
+        [pending]
+    );
+
+    assert.equal(quadras[0].covas[0].status, "livre");
+    assert.equal(quadras[0].covas[0].sep, undefined);
 });
 
 test("getVisibleBlocks filters blocks by selected cemetery", () => {
