@@ -1,15 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FaChartPie, FaCheckCircle, FaFilter, FaPlus, FaRegEdit, FaSearch, FaTimesCircle, FaTrash } from "react-icons/fa";
+import {
+    FaChartPie,
+    FaCheckCircle,
+    FaFilter,
+    FaPlus,
+    FaRegEdit,
+    FaSearch,
+    FaTimesCircle,
+    FaTrash,
+} from "react-icons/fa";
 import api from "../../../services/index.js";
 import { normalizeSearchText } from "../../../utils";
 import { useFormModal, useToastFeedback } from "../../../hooks";
 import ConfirmationDialog from "../../common/ConfirmationDialog";
 import SystemButton from "../../common/SystemButton";
 import SystemSelect from "../../common/SystemSelect";
-import DefaultModal, {
-    DefaultModalActions,
-    DefaultModalGrid,
-} from "../../common/DefaultModal";
+import DefaultModal, { DefaultModalActions, DefaultModalGrid } from "../../common/DefaultModal";
 import {
     Card,
     CardBody,
@@ -82,7 +88,7 @@ const STATUS_ALIASES = {
     inativo: "interditado",
     maintenance: "manutencao",
     manutencao: "manutencao",
-    "manutenção": "manutencao",
+    manutenção: "manutencao",
     occupied: "ocupado",
 };
 
@@ -97,27 +103,35 @@ const INITIAL_FORM = {
 const errorStyle = { margin: "6px 0 0", color: "#b42318", fontSize: 12 };
 
 const normalizeType = (value) => {
-    const raw = String(value || "").trim().toLowerCase();
+    const raw = String(value || "")
+        .trim()
+        .toLowerCase();
     if (raw === "individual") return "familiar";
     if (TYPE_OPTIONS.some((item) => item.value === raw)) return raw;
     return "";
 };
 
 const typeLabel = (type) => {
-    const raw = String(type || "").trim().toLowerCase();
+    const raw = String(type || "")
+        .trim()
+        .toLowerCase();
     if (raw === "individual") return "Individual";
     const found = TYPE_OPTIONS.find((option) => option.value === raw);
-    return found ? found.label : (type || "-");
+    return found ? found.label : type || "-";
 };
 
 const statusLabel = (status) => {
-    const normalized = String(status || "").trim().toLowerCase();
+    const normalized = String(status || "")
+        .trim()
+        .toLowerCase();
     const found = STATUS_OPTIONS.find((option) => option.value === normalized);
-    return found ? found.label : (status || "-");
+    return found ? found.label : status || "-";
 };
 
 const normalizeStatus = (status) => {
-    const normalized = String(status || "").trim().toLowerCase();
+    const normalized = String(status || "")
+        .trim()
+        .toLowerCase();
     return STATUS_ALIASES[normalized] || normalized;
 };
 
@@ -150,7 +164,6 @@ export default function OssariosComponent() {
         openCreate,
         openEdit,
         closeModal,
-
     } = useFormModal({ initialForm: INITIAL_FORM });
 
     const loadItems = useCallback(async () => {
@@ -171,20 +184,29 @@ export default function OssariosComponent() {
         loadItems();
     }, [loadItems]);
 
-    const normalizedItems = useMemo(() => items.map((item) => ({
-        ...item,
-        tipo: normalizeType(item.tipo) || item.tipo,
-        active: isOssarioActive(item),
-    })), [items]);
+    const normalizedItems = useMemo(
+        () =>
+            items.map((item) => ({
+                ...item,
+                tipo: normalizeType(item.tipo) || item.tipo,
+                active: isOssarioActive(item),
+            })),
+        [items]
+    );
 
     const filteredItems = useMemo(() => {
         const q = normalizeSearchText(query);
 
         return normalizedItems.filter((item) => {
-            const matchesSearch = !q || [item.numero, item.tipo, item.status, item.capacidade, item.obs].some((field) => normalizeSearchText(field).includes(q));
-            const matchesStatus = statusFilter === "all"
-                || (statusFilter === "active" && item.active)
-                || (statusFilter === "inactive" && !item.active);
+            const matchesSearch =
+                !q ||
+                [item.numero, item.tipo, item.status, item.capacidade, item.obs].some((field) =>
+                    normalizeSearchText(field).includes(q)
+                );
+            const matchesStatus =
+                statusFilter === "all" ||
+                (statusFilter === "active" && item.active) ||
+                (statusFilter === "inactive" && !item.active);
             return matchesSearch && matchesStatus;
         });
     }, [normalizedItems, query, statusFilter]);
@@ -228,7 +250,11 @@ export default function OssariosComponent() {
 
         const numeroNormalizado = form.numero.trim().toLowerCase();
         const duplicated = items.some(
-            (item) => item.id !== editingId && String(item.numero || "").trim().toLowerCase() === numeroNormalizado
+            (item) =>
+                item.id !== editingId &&
+                String(item.numero || "")
+                    .trim()
+                    .toLowerCase() === numeroNormalizado
         );
         if (duplicated) {
             nextErrors.numero = "Já existe um ossário com esse número";
@@ -242,7 +268,7 @@ export default function OssariosComponent() {
         event.preventDefault();
         if (isSubmitting) return;
         if (!validateForm()) return;
- 
+
         setIsSubmitting(true);
         try {
             const payload = {
@@ -345,7 +371,11 @@ export default function OssariosComponent() {
                 title="Excluir ossário"
                 alertSeverity="error"
                 alertMessage="Esta ação removerá o ossário do sistema."
-                description={pendingDeleteItem ? `Deseja realmente excluir o ossário ${pendingDeleteItem.numero || pendingDeleteItem.id}?` : "Confirme a exclusão do ossário."}
+                description={
+                    pendingDeleteItem
+                        ? `Deseja realmente excluir o ossário ${pendingDeleteItem.numero || pendingDeleteItem.id}?`
+                        : "Confirme a exclusão do ossário."
+                }
                 confirmLabel="Excluir"
                 confirmTone="delete"
                 confirmDisabled={!pendingDeleteItem}
@@ -356,7 +386,9 @@ export default function OssariosComponent() {
                 <PageHeader>
                     <HeaderCopy>
                         <Title>Controle de Ossários</Title>
-                        <Subtitle>Gerencie os ossários cadastrados e acompanhe a distribuição entre coletivos e familiares.</Subtitle>
+                        <Subtitle>
+                            Gerencie os ossários cadastrados e acompanhe a distribuição entre coletivos e familiares.
+                        </Subtitle>
                     </HeaderCopy>
 
                     <HeaderActions>
@@ -380,7 +412,10 @@ export default function OssariosComponent() {
                                 />
                             </SearchWrapper>
 
-                            <FilterSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                            <FilterSelect
+                                value={statusFilter}
+                                onChange={(event) => setStatusFilter(event.target.value)}
+                            >
                                 <option value="all">Situação: Todas</option>
                                 <option value="active">Situação: Ativos</option>
                                 <option value="inactive">Situação: Inativos</option>
@@ -392,13 +427,17 @@ export default function OssariosComponent() {
                         </FilterGrid>
 
                         {isLoading ? <p style={{ margin: 0, color: "#6c7293" }}>Carregando dados...</p> : null}
-                        {stats.total === 0 && !isLoading ? <p style={{ margin: 0, color: "#8a5a00" }}>Nenhum ossário cadastrado.</p> : null}
+                        {stats.total === 0 && !isLoading ? (
+                            <p style={{ margin: 0, color: "#8a5a00" }}>Nenhum ossário cadastrado.</p>
+                        ) : null}
                     </FormStyled>
                 </FiltersPanel>
 
                 <StatsGrid>
                     <StatCard>
-                        <StatIcon $tone="success"><RiArchiveDrawerFill /></StatIcon>
+                        <StatIcon $tone="success">
+                            <RiArchiveDrawerFill />
+                        </StatIcon>
                         <StatCopy>
                             <StatLabel>Ossários cadastrados</StatLabel>
                             <StatValue>{stats.total}</StatValue>
@@ -407,7 +446,9 @@ export default function OssariosComponent() {
                     </StatCard>
 
                     <StatCard>
-                        <StatIcon $tone="success"><FaCheckCircle /></StatIcon>
+                        <StatIcon $tone="success">
+                            <FaCheckCircle />
+                        </StatIcon>
                         <StatCopy>
                             <StatLabel>Ossários ativos</StatLabel>
                             <StatValue>{stats.active}</StatValue>
@@ -416,7 +457,9 @@ export default function OssariosComponent() {
                     </StatCard>
 
                     <StatCard>
-                        <StatIcon $tone="success"><FaTimesCircle /></StatIcon>
+                        <StatIcon $tone="success">
+                            <FaTimesCircle />
+                        </StatIcon>
                         <StatCopy>
                             <StatLabel>Ossários inativos</StatLabel>
                             <StatValue>{stats.inactive}</StatValue>
@@ -425,10 +468,14 @@ export default function OssariosComponent() {
                     </StatCard>
 
                     <StatCard>
-                        <StatIcon $tone="success"><FaChartPie /></StatIcon>
+                        <StatIcon $tone="success">
+                            <FaChartPie />
+                        </StatIcon>
                         <StatCopy>
                             <StatLabel>Coletivos x familiares</StatLabel>
-                            <StatValue>{stats.collective} / {stats.familiar}</StatValue>
+                            <StatValue>
+                                {stats.collective} / {stats.familiar}
+                            </StatValue>
                             <StatHint>Distribuição por tipo</StatHint>
                         </StatCopy>
                     </StatCard>
@@ -465,10 +512,18 @@ export default function OssariosComponent() {
                                                     <Td>{item.obs || "-"}</Td>
                                                     <Td>
                                                         <Actions>
-                                                            <IconBtn type="button" onClick={() => handleEdit(item)} disabled={isSubmitting}>
+                                                            <IconBtn
+                                                                type="button"
+                                                                onClick={() => handleEdit(item)}
+                                                                disabled={isSubmitting}
+                                                            >
                                                                 <FaRegEdit />
                                                             </IconBtn>
-                                                            <IconBtn type="button" onClick={() => handleDelete(item.id)} disabled={isSubmitting}>
+                                                            <IconBtn
+                                                                type="button"
+                                                                onClick={() => handleDelete(item.id)}
+                                                                disabled={isSubmitting}
+                                                            >
                                                                 <FaTrash />
                                                             </IconBtn>
                                                         </Actions>
@@ -489,8 +544,7 @@ export default function OssariosComponent() {
 
                 <DefaultModal
                     open={modalOpen}
-                    title={editingId ? (isEditing ? "Editar ossário" : "Detalhes do ossário")
-                        : "Novo ossário"}
+                    title={editingId ? (isEditing ? "Editar ossário" : "Detalhes do ossário") : "Novo ossário"}
                     subtitle={"Visualização completa dos cemitérios cadastrados."}
                     fields={isViewingExisting ? ossarioViewFields : []}
                     onClose={handleCloseModal}
@@ -586,7 +640,12 @@ export default function OssariosComponent() {
                                     {isSubmitting ? "Salvando..." : "Salvar"}
                                 </SystemButton>
                             )}
-                            <SystemButton type="button" tone="cancel" onClick={handleCloseModal} disabled={isSubmitting}>
+                            <SystemButton
+                                type="button"
+                                tone="cancel"
+                                onClick={handleCloseModal}
+                                disabled={isSubmitting}
+                            >
                                 {editingId ? "Fechar" : "Cancelar"}
                             </SystemButton>
                         </DefaultModalActions>

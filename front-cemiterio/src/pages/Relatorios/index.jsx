@@ -5,7 +5,6 @@ export default function Relatorios() {
     return (
         <>
             <RelatoriosComponent />
-
         </>
-    )
+    );
 }

@@ -60,7 +60,6 @@ export default function Login() {
                 </BrandWrap>
             </BrandSide>
 
-
             <FormSide>
                 <Card onSubmit={handleSubmit}>
                     <Title>LOGIN</Title>
@@ -86,10 +85,7 @@ export default function Login() {
 
                     <Field>
                         <Label>Cargo/Função</Label>
-                        <Select
-                            value={form.role}
-                            onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
-                        >
+                        <Select value={form.role} onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}>
                             <option value="">Selecione seu cargo/função</option>
                             <option value="ADMIN">Administrador</option>
                             <option value="USER">Operador</option>
@@ -100,11 +96,17 @@ export default function Login() {
 
                     {error ? <ErrorText>{error}</ErrorText> : null}
 
-                    <SystemButton type="submit" disabled={isLoading} sx={{ width: "100%", minHeight: 46, marginBottom:1 }}>
+                    <SystemButton
+                        type="submit"
+                        disabled={isLoading}
+                        sx={{ width: "100%", minHeight: 46, marginBottom: 1 }}
+                    >
                         {isLoading ? "ENTRANDO..." : "ENTRAR"}
                     </SystemButton>
 
-                    <SystemButton type="button" tone="cancel" sx={{ width: "100%", minHeight: 46 }}>CRIAR CONTA</SystemButton>
+                    <SystemButton type="button" tone="cancel" sx={{ width: "100%", minHeight: 46 }}>
+                        CRIAR CONTA
+                    </SystemButton>
                 </Card>
             </FormSide>
         </Page>

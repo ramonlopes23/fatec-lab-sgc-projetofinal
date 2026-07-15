@@ -59,15 +59,23 @@ import { getBlocks } from "../../../services/blockService.js";
 import { getGrave } from "../../../services/graveService.js";
 import { getSepultamentos } from "../../../services/sepultamentoService.js";
 import { getExumacoes } from "../../../services/exumacaoService.js";
-import { formatDateDMY, formatDateTimeDMY, getCemiterioFoundation, getCemiterioId, getCemiterioName, getSepulturaCapacity, isCemiterioActive, normalizeCemiterio, normalizeSearchText, parseDateValue } from "../../../utils";
+import {
+    formatDateDMY,
+    formatDateTimeDMY,
+    getCemiterioFoundation,
+    getCemiterioId,
+    getCemiterioName,
+    getSepulturaCapacity,
+    isCemiterioActive,
+    normalizeCemiterio,
+    normalizeSearchText,
+    parseDateValue,
+} from "../../../utils";
 import { useFormModal, useToastFeedback } from "../../../hooks";
 import ConfirmationDialog from "../../common/ConfirmationDialog";
 import SystemButton from "../../common/SystemButton";
 import SystemSelect from "../../common/SystemSelect";
-import DefaultModal, {
-    DefaultModalActions,
-    DefaultModalGrid,
-} from "../../common/DefaultModal";
+import DefaultModal, { DefaultModalActions, DefaultModalGrid } from "../../common/DefaultModal";
 
 const INITIAL_FORM = {
     name: "",
@@ -108,23 +116,27 @@ const filterTextFieldSx = {
     "& .MuiOutlinedInput-input": { fontSize: "14px" },
 };
 
-const getBlockId = (record) => String(record?.quadra_sep ?? record?.blockId ?? record?.block ?? record?.id ?? "").trim();
+const getBlockId = (record) =>
+    String(record?.quadra_sep ?? record?.blockId ?? record?.block ?? record?.id ?? "").trim();
 
 const isCompletedSepultamento = (sepultamento) => {
     if (!sepultamento || sepultamento.foi_exumado) return false;
     const confirmed = sepultamento.confirmado === true || String(sepultamento.confirmado).toLowerCase() === "true";
-    const concluded = String(sepultamento.status ?? "").toLowerCase().includes("concl");
+    const concluded = String(sepultamento.status ?? "")
+        .toLowerCase()
+        .includes("concl");
     return confirmed || concluded;
 };
 
-const getMovementDate = (record) => parseDateValue(
-    record?.dh_exu
-    || record?.dh_sep
-    || record?.updated_at
-    || record?.created_at
-    || record?.updatedAt
-    || record?.createdAt
-);
+const getMovementDate = (record) =>
+    parseDateValue(
+        record?.dh_exu ||
+            record?.dh_sep ||
+            record?.updated_at ||
+            record?.created_at ||
+            record?.updatedAt ||
+            record?.createdAt
+    );
 
 const formatMovementLabel = (movement) => {
     if (!movement) return "Sem movimentação registrada";
@@ -157,22 +169,23 @@ export default function CemiteriosComponent() {
         openCreate,
         openEdit,
         closeModal,
-
     } = useFormModal({ initialForm: INITIAL_FORM });
     const { showSuccess, showError, ToastElement } = useToastFeedback();
 
     const loadItems = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [cemeteriesResult, blocksResult, gravesResult, sepultamentosResult, exumacoesResult] = await Promise.allSettled([
-                getCemeteries(),
-                getBlocks(),
-                getGrave(),
-                getSepultamentos(),
-                getExumacoes(),
-            ]);
+            const [cemeteriesResult, blocksResult, gravesResult, sepultamentosResult, exumacoesResult] =
+                await Promise.allSettled([
+                    getCemeteries(),
+                    getBlocks(),
+                    getGrave(),
+                    getSepultamentos(),
+                    getExumacoes(),
+                ]);
 
-            const normalizeResult = (result) => (result.status === "fulfilled" && Array.isArray(result.value) ? result.value : []);
+            const normalizeResult = (result) =>
+                result.status === "fulfilled" && Array.isArray(result.value) ? result.value : [];
 
             setCemeteries(normalizeResult(cemeteriesResult));
             setBlocks(normalizeResult(blocksResult));
@@ -202,16 +215,23 @@ export default function CemiteriosComponent() {
         const q = normalizeSearchText(query);
 
         return normalizedCemeteries.filter((item) => {
-            const matchesSearch = !q || [getCemiterioName(item), getCemiterioFoundation(item)].some((field) => normalizeSearchText(field).includes(q));
-            const matchesStatus = statusFilter === "all"
-                || (statusFilter === "active" && item.active)
-                || (statusFilter === "inactive" && !item.active);
+            const matchesSearch =
+                !q ||
+                [getCemiterioName(item), getCemiterioFoundation(item)].some((field) =>
+                    normalizeSearchText(field).includes(q)
+                );
+            const matchesStatus =
+                statusFilter === "all" ||
+                (statusFilter === "active" && item.active) ||
+                (statusFilter === "inactive" && !item.active);
             return matchesSearch && matchesStatus;
         });
     }, [normalizedCemeteries, query, statusFilter]);
 
     const stats = useMemo(() => {
-        const cemeteriesById = new Map(normalizedCemeteries.map((cemetery) => [String(getCemiterioId(cemetery)), cemetery]));
+        const cemeteriesById = new Map(
+            normalizedCemeteries.map((cemetery) => [String(getCemiterioId(cemetery)), cemetery])
+        );
         const blockToCemeteryId = new Map(blocks.map((block) => [String(block.id), String(block.cemeteryId ?? "")]));
         const gravesByBlockId = new Map();
 
@@ -250,55 +270,62 @@ export default function CemiteriosComponent() {
 
         movements.sort((a, b) => b.date.getTime() - a.date.getTime());
 
-        const totals = normalizedCemeteries.reduce((acc, cemetery) => {
-            const cemeteryId = String(getCemiterioId(cemetery));
-            const cemeteryBlocks = blocks.filter((block) => String(block.cemeteryId ?? "") === cemeteryId);
-            const blockIds = new Set(cemeteryBlocks.map((block) => String(block.id)));
-            const cemeteryGraves = graves.filter((grave) => blockIds.has(String(grave.blockId ?? grave.block ?? "")));
+        const totals = normalizedCemeteries.reduce(
+            (acc, cemetery) => {
+                const cemeteryId = String(getCemiterioId(cemetery));
+                const cemeteryBlocks = blocks.filter((block) => String(block.cemeteryId ?? "") === cemeteryId);
+                const blockIds = new Set(cemeteryBlocks.map((block) => String(block.id)));
+                const cemeteryGraves = graves.filter((grave) =>
+                    blockIds.has(String(grave.blockId ?? grave.block ?? ""))
+                );
 
-            const totalCapacity = cemeteryGraves.reduce((sum, grave) => {
-                const capacity = Number(getSepulturaCapacity(grave));
-                return sum + (Number.isFinite(capacity) && capacity > 0 ? capacity : 0);
-            }, 0);
+                const totalCapacity = cemeteryGraves.reduce((sum, grave) => {
+                    const capacity = Number(getSepulturaCapacity(grave));
+                    return sum + (Number.isFinite(capacity) && capacity > 0 ? capacity : 0);
+                }, 0);
 
-            const occupiedSpaces = sepultamentos.filter((sepultamento) => {
-                if (!isCompletedSepultamento(sepultamento)) return false;
-                const blockId = getBlockId(sepultamento);
-                return blockIds.has(blockId);
-            }).length;
+                const occupiedSpaces = sepultamentos.filter((sepultamento) => {
+                    if (!isCompletedSepultamento(sepultamento)) return false;
+                    const blockId = getBlockId(sepultamento);
+                    return blockIds.has(blockId);
+                }).length;
 
-            const occupancyRate = totalCapacity > 0 ? (occupiedSpaces / totalCapacity) * 100 : 0;
+                const occupancyRate = totalCapacity > 0 ? (occupiedSpaces / totalCapacity) * 100 : 0;
 
-            const isActive = isCemiterioActive(cemetery);
-            acc.activeCemeteries += isActive ? 1 : 0;
-            acc.inactiveCemeteries += isActive ? 0 : 1;
-            acc.totalCapacity += totalCapacity;
-            acc.occupiedSpaces += occupiedSpaces;
-            acc.cemeterySummaries.push({
-                id: getCemiterioId(cemetery),
-                name: getCemiterioName(cemetery) || "-",
-                foundation: getCemiterioFoundation(cemetery),
-                active: isActive,
-                blocksCount: cemeteryBlocks.length,
-                gravesCount: cemeteryGraves.length,
-                totalCapacity,
-                occupiedSpaces,
-                occupancyRate,
-            });
-            return acc;
-        }, {
-            totalCemeteries: normalizedCemeteries.length,
-            activeCemeteries: 0,
-            inactiveCemeteries: 0,
-            totalCapacity: 0,
-            occupiedSpaces: 0,
-            cemeterySummaries: [],
-        });
+                const isActive = isCemiterioActive(cemetery);
+                acc.activeCemeteries += isActive ? 1 : 0;
+                acc.inactiveCemeteries += isActive ? 0 : 1;
+                acc.totalCapacity += totalCapacity;
+                acc.occupiedSpaces += occupiedSpaces;
+                acc.cemeterySummaries.push({
+                    id: getCemiterioId(cemetery),
+                    name: getCemiterioName(cemetery) || "-",
+                    foundation: getCemiterioFoundation(cemetery),
+                    active: isActive,
+                    blocksCount: cemeteryBlocks.length,
+                    gravesCount: cemeteryGraves.length,
+                    totalCapacity,
+                    occupiedSpaces,
+                    occupancyRate,
+                });
+                return acc;
+            },
+            {
+                totalCemeteries: normalizedCemeteries.length,
+                activeCemeteries: 0,
+                inactiveCemeteries: 0,
+                totalCapacity: 0,
+                occupiedSpaces: 0,
+                cemeterySummaries: [],
+            }
+        );
 
-        const latestMovement = movements[0] ? {
-            ...movements[0],
-            cemeteryName: getCemiterioName(cemeteriesById.get(String(movements[0].cemeteryId))) || "-",
-        } : null;
+        const latestMovement = movements[0]
+            ? {
+                  ...movements[0],
+                  cemeteryName: getCemiterioName(cemeteriesById.get(String(movements[0].cemeteryId))) || "-",
+              }
+            : null;
 
         const utilization = totals.totalCapacity > 0 ? (totals.occupiedSpaces / totals.totalCapacity) * 100 : 0;
 
@@ -329,11 +356,15 @@ export default function CemiteriosComponent() {
 
         if (!form.name.trim()) nextErrors.name = "Informe o nome do cemitério";
         if (!form.foundation.trim()) nextErrors.foundation = "Informe a data de fundação";
-        if (form.foundation && !parseDateValue(form.foundation)) nextErrors.foundation = "Data de fundação em formato inválido";
+        if (form.foundation && !parseDateValue(form.foundation))
+            nextErrors.foundation = "Data de fundação em formato inválido";
 
         const normalizedName = normalizeSearchText(form.name);
         const duplicated = normalizedCemeteries.some(
-            (cemetery) => getCemiterioId(cemetery) !== editingId && normalizedName && normalizeSearchText(getCemiterioName(cemetery)) === normalizedName
+            (cemetery) =>
+                getCemiterioId(cemetery) !== editingId &&
+                normalizedName &&
+                normalizeSearchText(getCemiterioName(cemetery)) === normalizedName
         );
         if (duplicated) {
             nextErrors.name = "Já existe um cemitério com esse nome";
@@ -426,7 +457,9 @@ export default function CemiteriosComponent() {
             closeToggleDialog();
         } catch (error) {
             console.error("Erro ao alterar status do cemitério", error);
-            showError(error?.response?.data?.message || error?.message || "Não foi possível alterar o status do cemitério");
+            showError(
+                error?.response?.data?.message || error?.message || "Não foi possível alterar o status do cemitério"
+            );
         } finally {
             setIsSubmitting(false);
         }
@@ -441,8 +474,16 @@ export default function CemiteriosComponent() {
                 onConfirm={confirmToggleStatus}
                 title={isCemiterioActive(pendingToggleCemetery) ? "Inativar cemitério" : "Ativar cemitério"}
                 alertSeverity={isCemiterioActive(pendingToggleCemetery) ? "warning" : "success"}
-                alertMessage={isCemiterioActive(pendingToggleCemetery) ? "O cemitério ficará indisponível para novos registros." : "O cemitério voltará a ficar disponível para uso."}
-                description={pendingToggleCemetery ? `Deseja ${isCemiterioActive(pendingToggleCemetery) ? "inativar" : "ativar"} o cemitério ${getCemiterioName(pendingToggleCemetery)}?` : "Confirme a alteração de status do cemitério."}
+                alertMessage={
+                    isCemiterioActive(pendingToggleCemetery)
+                        ? "O cemitério ficará indisponível para novos registros."
+                        : "O cemitério voltará a ficar disponível para uso."
+                }
+                description={
+                    pendingToggleCemetery
+                        ? `Deseja ${isCemiterioActive(pendingToggleCemetery) ? "inativar" : "ativar"} o cemitério ${getCemiterioName(pendingToggleCemetery)}?`
+                        : "Confirme a alteração de status do cemitério."
+                }
                 confirmLabel={isCemiterioActive(pendingToggleCemetery) ? "Inativar" : "Ativar"}
                 confirmTone={isCemiterioActive(pendingToggleCemetery) ? "delete" : "confirm"}
                 confirmDisabled={!pendingToggleCemetery}
@@ -453,7 +494,10 @@ export default function CemiteriosComponent() {
                 <PageHeader>
                     <HeaderCopy>
                         <Title>Controle de Cemitérios</Title>
-                        <Subtitle>Gerencie os cemitérios cadastrados e acompanhe a capacidade disponível e a última movimentação.</Subtitle>
+                        <Subtitle>
+                            Gerencie os cemitérios cadastrados e acompanhe a capacidade disponível e a última
+                            movimentação.
+                        </Subtitle>
                     </HeaderCopy>
 
                     <HeaderActions>
@@ -486,7 +530,12 @@ export default function CemiteriosComponent() {
 
                             <FormControl fullWidth size="medium">
                                 <InputLabel sx={filterLabelSx}>Situação</InputLabel>
-                                <Select value={statusFilter} label="Situação" onChange={(event) => setStatusFilter(event.target.value)} sx={filterSelectSx}>
+                                <Select
+                                    value={statusFilter}
+                                    label="Situação"
+                                    onChange={(event) => setStatusFilter(event.target.value)}
+                                    sx={filterSelectSx}
+                                >
                                     <MenuItem value="all">Todas</MenuItem>
                                     <MenuItem value="active">Ativos</MenuItem>
                                     <MenuItem value="inactive">Inativos</MenuItem>
@@ -499,13 +548,17 @@ export default function CemiteriosComponent() {
                         </FilterGrid>
 
                         {isLoading ? <p style={{ margin: 0, color: "#6c7293" }}>Carregando dados...</p> : null}
-                        {stats.totalCemeteries === 0 && !isLoading ? <p style={{ margin: 0, color: "#8a5a00" }}>Nenhum cemitério cadastrado.</p> : null}
+                        {stats.totalCemeteries === 0 && !isLoading ? (
+                            <p style={{ margin: 0, color: "#8a5a00" }}>Nenhum cemitério cadastrado.</p>
+                        ) : null}
                     </FormStyled>
                 </FiltersPanel>
 
                 <StatsGrid>
                     <StatCard>
-                        <StatIcon $tone="success"><FaMapMarkerAlt /></StatIcon>
+                        <StatIcon $tone="success">
+                            <FaMapMarkerAlt />
+                        </StatIcon>
                         <StatCopy>
                             <StatLabel>Cemitérios cadastrados</StatLabel>
                             <StatValue>{stats.totalCemeteries}</StatValue>
@@ -514,7 +567,9 @@ export default function CemiteriosComponent() {
                     </StatCard>
 
                     <StatCard>
-                        <StatIcon $tone="success"><FaCheckCircle /></StatIcon>
+                        <StatIcon $tone="success">
+                            <FaCheckCircle />
+                        </StatIcon>
                         <StatCopy>
                             <StatLabel>Cemitérios ativos</StatLabel>
                             <StatValue>{stats.activeCemeteries}</StatValue>
@@ -523,7 +578,9 @@ export default function CemiteriosComponent() {
                     </StatCard>
 
                     <StatCard>
-                        <StatIcon $tone="success"><FaTimesCircle /></StatIcon>
+                        <StatIcon $tone="success">
+                            <FaTimesCircle />
+                        </StatIcon>
                         <StatCopy>
                             <StatLabel>Cemitérios inativos</StatLabel>
                             <StatValue>{stats.inactiveCemeteries}</StatValue>
@@ -532,16 +589,22 @@ export default function CemiteriosComponent() {
                     </StatCard>
 
                     <StatCard>
-                        <StatIcon $tone="success"><FaChartPie /></StatIcon>
+                        <StatIcon $tone="success">
+                            <FaChartPie />
+                        </StatIcon>
                         <StatCopy>
                             <StatLabel>Capacidade x ocupação</StatLabel>
                             <StatValue>{stats.utilization.toFixed(1).replace(".", ",")}%</StatValue>
-                            <StatHint>{stats.occupiedSpaces} ocupados de {stats.totalCapacity} vagas</StatHint>
+                            <StatHint>
+                                {stats.occupiedSpaces} ocupados de {stats.totalCapacity} vagas
+                            </StatHint>
                         </StatCopy>
                     </StatCard>
 
                     <StatCard>
-                        <StatIcon $tone="success"><FaClock /></StatIcon>
+                        <StatIcon $tone="success">
+                            <FaClock />
+                        </StatIcon>
                         <StatCopy>
                             <StatLabel>Última movimentação</StatLabel>
                             <StatValue>{stats.latestMovement?.cemeteryName || "Sem registro"}</StatValue>
@@ -568,8 +631,8 @@ export default function CemiteriosComponent() {
                                         {filteredItems.length > 0 ? (
                                             filteredItems.map((item, index) => (
                                                 <Tr key={item.id} index={index}>
-                                                        <Td>{getCemiterioName(item)}</Td>
-                                                        <Td>{formatDateDMY(getCemiterioFoundation(item), "-")}</Td>
+                                                    <Td>{getCemiterioName(item)}</Td>
+                                                    <Td>{formatDateDMY(getCemiterioFoundation(item), "-")}</Td>
                                                     <TdStatus>
                                                         <StatusBadge $status={item.active ? "ativo" : "inativo"}>
                                                             {item.active ? "Ativo" : "Inativo"}
@@ -577,7 +640,11 @@ export default function CemiteriosComponent() {
                                                     </TdStatus>
                                                     <Td>
                                                         <Actions>
-                                                            <IconBtn type="button" onClick={() => handleEdit(item)} disabled={isSubmitting}>
+                                                            <IconBtn
+                                                                type="button"
+                                                                onClick={() => handleEdit(item)}
+                                                                disabled={isSubmitting}
+                                                            >
                                                                 <FaRegEdit />
                                                             </IconBtn>
                                                             <IconBtn
@@ -668,7 +735,12 @@ export default function CemiteriosComponent() {
                                     {isSubmitting ? "Salvando..." : "Salvar"}
                                 </SystemButton>
                             )}
-                            <SystemButton type="button" tone="cancel" onClick={handleCloseModal} disabled={isSubmitting}>
+                            <SystemButton
+                                type="button"
+                                tone="cancel"
+                                onClick={handleCloseModal}
+                                disabled={isSubmitting}
+                            >
                                 {editingId ? "Fechar" : "Cancelar"}
                             </SystemButton>
                         </DefaultModalActions>

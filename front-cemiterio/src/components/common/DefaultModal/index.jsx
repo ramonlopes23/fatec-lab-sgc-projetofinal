@@ -1,68 +1,65 @@
 import React from "react";
 import {
-  ModalContent,
-  ModalActions,
-  ModalField,
-  ModalFieldLabel,
-  ModalFieldValue,
-  ModalGrid,
-  ModalOverlay,
-  ModalSubtitle,
-  ModalTitle,
-  ModalViewGrid,
+    ModalContent,
+    ModalActions,
+    ModalField,
+    ModalFieldLabel,
+    ModalFieldValue,
+    ModalGrid,
+    ModalOverlay,
+    ModalSubtitle,
+    ModalTitle,
+    ModalViewGrid,
 } from "./styles";
 
 function DefaultModalInfoField({ label, value, emptyValue = "-", children }) {
-  const content = children ?? value;
-  const displayValue = content === undefined || content === null || content === "" ? emptyValue : content;
+    const content = children ?? value;
+    const displayValue = content === undefined || content === null || content === "" ? emptyValue : content;
 
-  return (
-    <ModalField>
-      <ModalFieldLabel>{label}</ModalFieldLabel>
-      <ModalFieldValue>{displayValue}</ModalFieldValue>
-    </ModalField>
-  );
+    return (
+        <ModalField>
+            <ModalFieldLabel>{label}</ModalFieldLabel>
+            <ModalFieldValue>{displayValue}</ModalFieldValue>
+        </ModalField>
+    );
 }
 
 export default function DefaultModal({
-  open,
-  title,
-  subtitle,
-  fields = [],
-  children,
-  onClose,
-  width,
-  columns = 2,
-  closeOnOverlay = true,
+    open,
+    title,
+    subtitle,
+    fields = [],
+    children,
+    onClose,
+    width,
+    columns = 2,
+    closeOnOverlay = true,
 }) {
-  if (!open) return null;
+    if (!open) return null;
 
-  const handleOverlayClick = (event) => {
-    if (event.target !== event.currentTarget) return;
-    if (closeOnOverlay && onClose) onClose();
-  };
+    const handleOverlayClick = (event) => {
+        if (event.target !== event.currentTarget) return;
+        if (closeOnOverlay && onClose) onClose();
+    };
 
-  return (
-    <ModalOverlay onClick={handleOverlayClick}>
-      <ModalContent $width={width} onClick={(event) => event.stopPropagation()}>
-        {title && <ModalTitle>{title}</ModalTitle>}
-        {subtitle && <ModalSubtitle>{subtitle}</ModalSubtitle>}
+    return (
+        <ModalOverlay onClick={handleOverlayClick}>
+            <ModalContent $width={width} onClick={(event) => event.stopPropagation()}>
+                {title && <ModalTitle>{title}</ModalTitle>}
+                {subtitle && <ModalSubtitle>{subtitle}</ModalSubtitle>}
 
-        {fields.length > 0 && (
-          <ModalViewGrid $columns={columns}>
-            {fields.map(([label, value]) => (
-              <DefaultModalInfoField key={label} label={label} value={value} />
-            ))}
-          </ModalViewGrid>
-        )}
+                {fields.length > 0 && (
+                    <ModalViewGrid $columns={columns}>
+                        {fields.map(([label, value]) => (
+                            <DefaultModalInfoField key={label} label={label} value={value} />
+                        ))}
+                    </ModalViewGrid>
+                )}
 
-        {children}
-      </ModalContent>
-    </ModalOverlay>
-  );
+                {children}
+            </ModalContent>
+        </ModalOverlay>
+    );
 }
 
-export {
-  ModalActions as DefaultModalActions,
-  ModalGrid as DefaultModalGrid,
-};
+export { ModalActions as DefaultModalActions, ModalGrid as DefaultModalGrid };

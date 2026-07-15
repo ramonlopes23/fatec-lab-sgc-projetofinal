@@ -85,11 +85,12 @@ export default function SidebarMenu({ isCollapsed = false }) {
             ],
         },
         {
-            name: "Administração", icon: <MdManageAccounts size={20} />, children: [
+            name: "Administração",
+            icon: <MdManageAccounts size={20} />,
+            children: [
                 { name: "Logs do Sistema", icon: <LuLogs size={20} />, path: "/protocolos" },
                 { name: "Taxas", icon: <FaMoneyBillWave size={20} />, path: "/taxas" },
-
-            ]
+            ],
         },
         { name: "Sair", icon: <CgLogOut size={20} />, action: handleLogout },
     ];
@@ -107,7 +108,6 @@ export default function SidebarMenu({ isCollapsed = false }) {
             <LogoContainer>
                 <LogoImage src={sgclogo1} alt="Logo Memo" $isCollapsed={isCollapsed} />
                 {!isCollapsed && <Title>SISTEMA DE GERENCIAMENTO DE CEMITÉRIOS</Title>}
-
             </LogoContainer>
 
             <NavContainer>
@@ -123,7 +123,10 @@ export default function SidebarMenu({ isCollapsed = false }) {
                                     <MenuIconSlot>{item.icon}</MenuIconSlot>
                                     <MenuLabel $isCollapsed={isCollapsed}>{item.name}</MenuLabel>
                                     {item.children && (
-                                        <ChevronIcon $direction={expandedItems[item.name] ? "left" : "right"} $compact={isCollapsed}>
+                                        <ChevronIcon
+                                            $direction={expandedItems[item.name] ? "left" : "right"}
+                                            $compact={isCollapsed}
+                                        >
                                             <LuChevronRight size={18} />
                                         </ChevronIcon>
                                     )}
@@ -148,7 +151,11 @@ export default function SidebarMenu({ isCollapsed = false }) {
                                 >
                                     {item.children.map((child) => (
                                         <NavItem key={child.name}>
-                                            <CompactChildLink to={child.path} title={child.name} $isCollapsed={isCollapsed}>
+                                            <CompactChildLink
+                                                to={child.path}
+                                                title={child.name}
+                                                $isCollapsed={isCollapsed}
+                                            >
                                                 <MenuIconSlot>{child.icon}</MenuIconSlot>
                                                 <MenuLabel $isCollapsed={isCollapsed}>{child.name}</MenuLabel>
                                             </CompactChildLink>

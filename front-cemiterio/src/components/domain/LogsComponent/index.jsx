@@ -77,17 +77,7 @@ import {
     Title,
     Subtitle,
 } from "./styles.js";
-import {
-    Table,
-    TableCard,
-    TableScroller,
-    TableTitle,
-    TBody,
-    Td,
-    Th,
-    THead,
-    Tr,
-} from "../../common/DefaultTable";
+import { Table, TableCard, TableScroller, TableTitle, TBody, Td, Th, THead, Tr } from "../../common/DefaultTable";
 
 const filterLabelSx = {
     fontSize: "14px",
@@ -131,9 +121,10 @@ const getStatusMeta = (status) => LOG_STATUS_META[status] || { label: status, to
 
 const formatListValue = (value) => (value == null || value === "" ? "—" : String(value));
 
-const formatFieldLabel = (value) => String(value || "")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (match) => match.toUpperCase());
+const formatFieldLabel = (value) =>
+    String(value || "")
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (match) => match.toUpperCase());
 
 const buildPaginationItems = (currentPage, totalPages) => {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -191,7 +182,10 @@ const buildLogExportPayload = (logs = []) => ({
             valorNovo: formatListValue(change.after),
         })),
         informacoesAdicionais: Object.fromEntries(
-            Object.entries(log.additionalInfo || {}).map(([key, value]) => [formatFieldLabel(key), formatListValue(value)])
+            Object.entries(log.additionalInfo || {}).map(([key, value]) => [
+                formatFieldLabel(key),
+                formatListValue(value),
+            ])
         ),
     })),
 });
@@ -290,7 +284,10 @@ export default function LogsComponent() {
             <PageHeader>
                 <HeaderCopy>
                     <Title>Logs do sistema</Title>
-                    <Subtitle>Acompanhe as ações realizadas pelos usuários com rastreabilidade detalhada, antes/depois e trilha de compliance.</Subtitle>
+                    <Subtitle>
+                        Acompanhe as ações realizadas pelos usuários com rastreabilidade detalhada, antes/depois e
+                        trilha de compliance.
+                    </Subtitle>
                 </HeaderCopy>
 
                 <HeaderActions>
@@ -338,7 +335,6 @@ export default function LogsComponent() {
                         <FaFilter />
                         Limpar filtros
                     </SystemButton>
-
                 </FilterTopRow>
 
                 {advancedOpen ? (
@@ -365,7 +361,12 @@ export default function LogsComponent() {
                         />
                         <FormControl fullWidth size="medium">
                             <InputLabel sx={filterLabelSx}>Usuário</InputLabel>
-                            <Select value={filters.user} label="Usuário" onChange={(event) => updateFilter("user", event.target.value)} sx={filterSelectSx}>
+                            <Select
+                                value={filters.user}
+                                label="Usuário"
+                                onChange={(event) => updateFilter("user", event.target.value)}
+                                sx={filterSelectSx}
+                            >
                                 <MenuItem value="all">Todos</MenuItem>
                                 {availableUsers.map((item) => (
                                     <MenuItem key={item} value={item}>
@@ -376,7 +377,12 @@ export default function LogsComponent() {
                         </FormControl>
                         <FormControl fullWidth size="medium">
                             <InputLabel sx={filterLabelSx}>Módulo</InputLabel>
-                            <Select value={filters.module} label="Módulo" onChange={(event) => updateFilter("module", event.target.value)} sx={filterSelectSx}>
+                            <Select
+                                value={filters.module}
+                                label="Módulo"
+                                onChange={(event) => updateFilter("module", event.target.value)}
+                                sx={filterSelectSx}
+                            >
                                 <MenuItem value="all">Todos</MenuItem>
                                 {availableModules.map((item) => (
                                     <MenuItem key={item} value={item}>
@@ -387,7 +393,12 @@ export default function LogsComponent() {
                         </FormControl>
                         <FormControl fullWidth size="medium">
                             <InputLabel sx={filterLabelSx}>Tipo de evento</InputLabel>
-                            <Select value={filters.eventType} label="Tipo de evento" onChange={(event) => updateFilter("eventType", event.target.value)} sx={filterSelectSx}>
+                            <Select
+                                value={filters.eventType}
+                                label="Tipo de evento"
+                                onChange={(event) => updateFilter("eventType", event.target.value)}
+                                sx={filterSelectSx}
+                            >
                                 <MenuItem value="all">Todos</MenuItem>
                                 {availableEventTypes.map((item) => (
                                     <MenuItem key={item} value={item}>
@@ -398,7 +409,12 @@ export default function LogsComponent() {
                         </FormControl>
                         <FormControl fullWidth size="medium">
                             <InputLabel sx={filterLabelSx}>Status</InputLabel>
-                            <Select value={filters.status} label="Status" onChange={(event) => updateFilter("status", event.target.value)} sx={filterSelectSx}>
+                            <Select
+                                value={filters.status}
+                                label="Status"
+                                onChange={(event) => updateFilter("status", event.target.value)}
+                                sx={filterSelectSx}
+                            >
                                 <MenuItem value="all">Todos</MenuItem>
                                 <MenuItem value="success">Sucesso</MenuItem>
                                 <MenuItem value="warning">Alerta</MenuItem>
@@ -407,7 +423,6 @@ export default function LogsComponent() {
                         </FormControl>
                     </FilterGrid>
                 ) : null}
-
             </FiltersPanel>
 
             <TableCard>
@@ -415,7 +430,6 @@ export default function LogsComponent() {
                     <TableTitle>Logs registrados</TableTitle>
 
                     <Table $minWidth="1220px">
-
                         <THead>
                             <tr>
                                 <Th>Data/Hora</Th>
@@ -490,18 +504,24 @@ export default function LogsComponent() {
                     <EmptyState>
                         <EmptyTitle>Nenhum log encontrado</EmptyTitle>
                         <EmptyText>
-                            Ajuste os filtros para visualizar outro recorte de auditoria ou limpe a busca para voltar ao histórico completo.
+                            Ajuste os filtros para visualizar outro recorte de auditoria ou limpe a busca para voltar ao
+                            histórico completo.
                         </EmptyText>
                     </EmptyState>
                 ) : null}
 
                 <PaginationBar>
                     <PaginationSummary>
-                        Exibindo {paginatedLogs.length.toLocaleString("pt-BR")} de {filteredLogs.length.toLocaleString("pt-BR")} eventos.
+                        Exibindo {paginatedLogs.length.toLocaleString("pt-BR")} de{" "}
+                        {filteredLogs.length.toLocaleString("pt-BR")} eventos.
                     </PaginationSummary>
 
                     <PaginationButtons>
-                        <PaginationButton type="button" onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1}>
+                        <PaginationButton
+                            type="button"
+                            onClick={() => setPage(Math.max(1, page - 1))}
+                            disabled={page <= 1}
+                        >
                             <FaChevronLeft size={12} />
                         </PaginationButton>
 
@@ -517,7 +537,11 @@ export default function LogsComponent() {
                             </PaginationButton>
                         ))}
 
-                        <PaginationButton type="button" onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages}>
+                        <PaginationButton
+                            type="button"
+                            onClick={() => setPage(Math.min(totalPages, page + 1))}
+                            disabled={page >= totalPages}
+                        >
                             <FaChevronRight size={12} />
                         </PaginationButton>
                     </PaginationButtons>
@@ -531,95 +555,97 @@ export default function LogsComponent() {
                     subtitle={`${selectedLog.eventCode} · ${selectedRelative || formatRelative(selectedLog.timestamp)}`}
                     onClose={closeLog}
                 >
-                            <SectionCard>
-                                <SectionHeader>
-                                    <div>
-                                        <SectionTitle>Status do evento</SectionTitle>
-                                        <SectionHint>Badge visual do estado de auditoria.</SectionHint>
-                                    </div>
-                                    <Badge $tone={getStatusMeta(selectedLog.status).tone}>{getStatusMeta(selectedLog.status).label}</Badge>
-                                </SectionHeader>
-                                <InfoGrid>
-                                    <InfoTile>
-                                        <InfoLabel>ID do evento</InfoLabel>
-                                        <InfoValue>{selectedLog.id}</InfoValue>
-                                    </InfoTile>
-                                    <InfoTile>
-                                        <InfoLabel>Timestamp completo</InfoLabel>
-                                        <InfoValue>{formatDateTimeDMY(selectedLog.timestamp, "-")}</InfoValue>
-                                    </InfoTile>
-                                    <InfoTile>
-                                        <InfoLabel>Data/hora relativa</InfoLabel>
-                                        <InfoValue>{selectedRelative || formatRelative(selectedLog.timestamp)}</InfoValue>
-                                    </InfoTile>
-                                    <InfoTile>
-                                        <InfoLabel>Código do evento</InfoLabel>
-                                        <InfoValue>{selectedLog.eventCode}</InfoValue>
-                                    </InfoTile>
-                                </InfoGrid>
-                            </SectionCard>
+                    <SectionCard>
+                        <SectionHeader>
+                            <div>
+                                <SectionTitle>Status do evento</SectionTitle>
+                                <SectionHint>Badge visual do estado de auditoria.</SectionHint>
+                            </div>
+                            <Badge $tone={getStatusMeta(selectedLog.status).tone}>
+                                {getStatusMeta(selectedLog.status).label}
+                            </Badge>
+                        </SectionHeader>
+                        <InfoGrid>
+                            <InfoTile>
+                                <InfoLabel>ID do evento</InfoLabel>
+                                <InfoValue>{selectedLog.id}</InfoValue>
+                            </InfoTile>
+                            <InfoTile>
+                                <InfoLabel>Timestamp completo</InfoLabel>
+                                <InfoValue>{formatDateTimeDMY(selectedLog.timestamp, "-")}</InfoValue>
+                            </InfoTile>
+                            <InfoTile>
+                                <InfoLabel>Data/hora relativa</InfoLabel>
+                                <InfoValue>{selectedRelative || formatRelative(selectedLog.timestamp)}</InfoValue>
+                            </InfoTile>
+                            <InfoTile>
+                                <InfoLabel>Código do evento</InfoLabel>
+                                <InfoValue>{selectedLog.eventCode}</InfoValue>
+                            </InfoTile>
+                        </InfoGrid>
+                    </SectionCard>
 
-                            <SectionCard>
-                                <SectionHeader>
-                                    <div>
-                                        <SectionTitle>Informações gerais</SectionTitle>
-                                        <SectionHint>Contexto rastreável apenas com dados presentes no db.json.</SectionHint>
-                                    </div>
-                                </SectionHeader>
-                                <InfoGrid>
-                                    <InfoTile>
-                                        <InfoLabel>Responsável rastreável</InfoLabel>
-                                        <InfoValue>{"-"}</InfoValue>
-                                    </InfoTile>
-                                    {/* <InfoTile>
+                    <SectionCard>
+                        <SectionHeader>
+                            <div>
+                                <SectionTitle>Informações gerais</SectionTitle>
+                                <SectionHint>Contexto rastreável apenas com dados presentes no db.json.</SectionHint>
+                            </div>
+                        </SectionHeader>
+                        <InfoGrid>
+                            <InfoTile>
+                                <InfoLabel>Responsável rastreável</InfoLabel>
+                                <InfoValue>{"-"}</InfoValue>
+                            </InfoTile>
+                            {/* <InfoTile>
                                         <InfoLabel>Fonte do responsável</InfoLabel>
                                         <InfoValue>{ "-"}</InfoValue>
                                     </InfoTile> */}
-                                    <InfoTile>
-                                        <InfoLabel>Módulo</InfoLabel>
-                                        <InfoValue>{"-"}</InfoValue>
-                                    </InfoTile>
-                                    <InfoTile>
-                                        <InfoLabel>Ação realizada</InfoLabel>
-                                        <InfoValue>{getActionMeta(selectedLog.action).label}</InfoValue>
-                                    </InfoTile>
-                                    {/* <InfoTile>
+                            <InfoTile>
+                                <InfoLabel>Módulo</InfoLabel>
+                                <InfoValue>{"-"}</InfoValue>
+                            </InfoTile>
+                            <InfoTile>
+                                <InfoLabel>Ação realizada</InfoLabel>
+                                <InfoValue>{getActionMeta(selectedLog.action).label}</InfoValue>
+                            </InfoTile>
+                            {/* <InfoTile>
                                         <InfoLabel>Coleção de origem</InfoLabel>
                                         <InfoValue>{selectedLog.sourceCollection || "-"}</InfoValue>
                                     </InfoTile> */}
-                                    {/* <InfoTile>
+                            {/* <InfoTile>
                                         <InfoLabel>Registro de origem</InfoLabel>
                                         <InfoValue>{selectedLog.sourceRecordId || selectedLog.entity?.id || "-"}</InfoValue>
                                     </InfoTile> */}
-                                    <InfoTile>
-                                        <InfoLabel>Tipo de entidade</InfoLabel>
-                                        <InfoValue>{selectedLog.entity?.label || "-"}</InfoValue>
-                                    </InfoTile>
-                                    {/* <InfoTile>
+                            <InfoTile>
+                                <InfoLabel>Tipo de entidade</InfoLabel>
+                                <InfoValue>{selectedLog.entity?.label || "-"}</InfoValue>
+                            </InfoTile>
+                            {/* <InfoTile>
                                         <InfoLabel>Rota de visualização</InfoLabel>
                                         <InfoValue>{selectedLog.entity?.route || "-"}</InfoValue>
                                     </InfoTile> */}
-                                    <InfoTile>
-                                        <InfoLabel>Status rastreado</InfoLabel>
-                                        <InfoValue>{selectedLog.statusLabel || "-"}</InfoValue>
-                                    </InfoTile>
-                                </InfoGrid>
-                            </SectionCard>
+                            <InfoTile>
+                                <InfoLabel>Status rastreado</InfoLabel>
+                                <InfoValue>{selectedLog.statusLabel || "-"}</InfoValue>
+                            </InfoTile>
+                        </InfoGrid>
+                    </SectionCard>
 
-                            <SectionCard>
-                                <SectionHeader>
-                                    <div>
-                                        <SectionTitle>Descrição</SectionTitle>
-                                        <SectionHint>Resumo textual da ação registrada.</SectionHint>
-                                    </div>
-                                </SectionHeader>
-                                <InfoTile>
-                                    <InfoLabel>Resumo</InfoLabel>
-                                    <InfoValue>{selectedLog.description || "-"}</InfoValue>
-                                </InfoTile>
-                            </SectionCard>
+                    <SectionCard>
+                        <SectionHeader>
+                            <div>
+                                <SectionTitle>Descrição</SectionTitle>
+                                <SectionHint>Resumo textual da ação registrada.</SectionHint>
+                            </div>
+                        </SectionHeader>
+                        <InfoTile>
+                            <InfoLabel>Resumo</InfoLabel>
+                            <InfoValue>{selectedLog.description || "-"}</InfoValue>
+                        </InfoTile>
+                    </SectionCard>
 
-                            {/* <SectionCard>
+                    {/* <SectionCard>
                                 <SectionHeader>
                                     <div>
                                         <SectionTitle>Entidade afetada</SectionTitle>
@@ -644,7 +670,7 @@ export default function LogsComponent() {
                                 </DrawerActionRow>
                             </SectionCard> */}
 
-                            {/* <SectionCard>
+                    {/* <SectionCard>
                                 <SectionHeader>
                                     <div>
                                         <SectionTitle>Detalhes da alteração</SectionTitle>
@@ -681,57 +707,60 @@ export default function LogsComponent() {
                                 )}
                             </SectionCard> */}
 
-                            <SectionCard>
-                                <SectionHeader>
-                                    <div>
-                                        <SectionTitle>Informações adicionais</SectionTitle>
-                                        <SectionHint>Dados relacionados à entidade ou ao processo auditado.</SectionHint>
-                                    </div>
-                                </SectionHeader>
-                                <InfoGrid>
-                                    {Object.entries(selectedLog.additionalInfo || {}).map(([key, value]) => (
-                                        <InfoTile key={key}>
-                                            <InfoLabel>{formatFieldLabel(key)}</InfoLabel>
-                                            <InfoValue>{formatListValue(value)}</InfoValue>
-                                        </InfoTile>
-                                    ))}
-                                </InfoGrid>
-                            </SectionCard>
+                    <SectionCard>
+                        <SectionHeader>
+                            <div>
+                                <SectionTitle>Informações adicionais</SectionTitle>
+                                <SectionHint>Dados relacionados à entidade ou ao processo auditado.</SectionHint>
+                            </div>
+                        </SectionHeader>
+                        <InfoGrid>
+                            {Object.entries(selectedLog.additionalInfo || {}).map(([key, value]) => (
+                                <InfoTile key={key}>
+                                    <InfoLabel>{formatFieldLabel(key)}</InfoLabel>
+                                    <InfoValue>{formatListValue(value)}</InfoValue>
+                                </InfoTile>
+                            ))}
+                        </InfoGrid>
+                    </SectionCard>
 
-                            <SectionCard>
-                                <SectionHeader>
-                                    <div>
-                                        <SectionTitle>Timeline do evento</SectionTitle>
-                                        <SectionHint>Sequência resumida da captura, persistência e resultado.</SectionHint>
-                                    </div>
-                                </SectionHeader>
+                    <SectionCard>
+                        <SectionHeader>
+                            <div>
+                                <SectionTitle>Timeline do evento</SectionTitle>
+                                <SectionHint>Sequência resumida da captura, persistência e resultado.</SectionHint>
+                            </div>
+                        </SectionHeader>
 
-                                <EventTimeline items={selectedTimelineItems} emptyText="Nenhum evento registrado para este log." />
-                            </SectionCard>
+                        <EventTimeline
+                            items={selectedTimelineItems}
+                            emptyText="Nenhum evento registrado para este log."
+                        />
+                    </SectionCard>
 
-                            <SectionCard>
-                                <SectionHeader>
-                                    <div>
-                                        <SectionTitle>Ações</SectionTitle>
-                                        <SectionHint>Operações rápidas sobre o log atual.</SectionHint>
-                                    </div>
-                                </SectionHeader>
+                    <SectionCard>
+                        <SectionHeader>
+                            <div>
+                                <SectionTitle>Ações</SectionTitle>
+                                <SectionHint>Operações rápidas sobre o log atual.</SectionHint>
+                            </div>
+                        </SectionHeader>
 
-                                <DrawerActionRow>
-                                    <SystemButton type="button" onClick={exportEvent}>
-                                        <FaDownload size={14} />
-                                        Exportar evento
-                                    </SystemButton>
-                                    <SystemButton type="button" onClick={copyEventId}>
-                                        <FaCopy size={14} />
-                                        Copiar ID
-                                    </SystemButton>
-                                    <SystemButton type="button" onClick={viewEntity} disabled={!selectedLog.entity?.route}>
-                                        <FaExternalLinkAlt size={14} />
-                                        Visualizar entidade
-                                    </SystemButton>
-                                </DrawerActionRow>
-                            </SectionCard>
+                        <DrawerActionRow>
+                            <SystemButton type="button" onClick={exportEvent}>
+                                <FaDownload size={14} />
+                                Exportar evento
+                            </SystemButton>
+                            <SystemButton type="button" onClick={copyEventId}>
+                                <FaCopy size={14} />
+                                Copiar ID
+                            </SystemButton>
+                            <SystemButton type="button" onClick={viewEntity} disabled={!selectedLog.entity?.route}>
+                                <FaExternalLinkAlt size={14} />
+                                Visualizar entidade
+                            </SystemButton>
+                        </DrawerActionRow>
+                    </SectionCard>
                 </DrawerComponent>
             ) : null}
         </Container>

@@ -9,7 +9,6 @@ const clone = (value) => {
 
 const database = clone(seedDb);
 
-
 const resolveCollectionName = (name) => name;
 
 for (const collectionName of [
@@ -95,13 +94,10 @@ const applyFilters = (items, searchParams) => {
     });
 };
 
-const findIndexById = (collection, id) =>
-    collection.findIndex((item) => String(item.id) === String(id));
+const findIndexById = (collection, id) => collection.findIndex((item) => String(item.id) === String(id));
 
 const makeId = (collection) => {
-    const numericIds = collection
-        .map((item) => Number(item.id))
-        .filter((id) => Number.isFinite(id));
+    const numericIds = collection.map((item) => Number(item.id)).filter((id) => Number.isFinite(id));
 
     if (numericIds.length === collection.length && collection.length > 0) {
         return String(Math.max(...numericIds) + 1);

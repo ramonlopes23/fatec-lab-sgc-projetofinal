@@ -10,17 +10,12 @@ const normalizeValue = (value) => {
     return String(value).trim();
 };
 
-export const getTaxaId = (taxa = {}) => normalizeValue(
-    taxa?.id ?? taxa?._id ?? taxa?.taxa_id ?? taxa?.codigo ?? ""
-);
+export const getTaxaId = (taxa = {}) => normalizeValue(taxa?.id ?? taxa?._id ?? taxa?.taxa_id ?? taxa?.codigo ?? "");
 
-export const getTaxaCodigo = (taxa = {}) => normalizeValue(
-    taxa?.codigo ?? taxa?.code ?? taxa?.value ?? ""
-);
+export const getTaxaCodigo = (taxa = {}) => normalizeValue(taxa?.codigo ?? taxa?.code ?? taxa?.value ?? "");
 
-export const getTaxaDescricao = (taxa = {}) => normalizeValue(
-    taxa?.descricao ?? taxa?.description ?? taxa?.label ?? taxa?.codigo ?? ""
-);
+export const getTaxaDescricao = (taxa = {}) =>
+    normalizeValue(taxa?.descricao ?? taxa?.description ?? taxa?.label ?? taxa?.codigo ?? "");
 
 export const getTaxaValor = (taxa = {}) => {
     const value = taxa?.valor ?? taxa?.taxa_valor ?? taxa?.amount ?? 0;
@@ -28,30 +23,26 @@ export const getTaxaValor = (taxa = {}) => {
     return Number.isFinite(number) ? number : 0;
 };
 
-export const getTaxaTipo = (taxa = {}) => normalizeValue(
-    taxa?.tipo ?? taxa?.type ?? "sepultamento"
-) || "sepultamento";
+export const getTaxaTipo = (taxa = {}) => normalizeValue(taxa?.tipo ?? taxa?.type ?? "sepultamento") || "sepultamento";
 
-export const isTaxaActive = (taxa = {}) => (
+export const isTaxaActive = (taxa = {}) =>
     taxa?.active !== false &&
     taxa?.ativo !== false &&
     normalizeValue(taxa?.status || "active").toLowerCase() !== "inactive" &&
-    normalizeValue(taxa?.status || "active").toLowerCase() !== "inativo"
-);
+    normalizeValue(taxa?.status || "active").toLowerCase() !== "inativo";
 
 export const isTaxaIsencao = (taxa = {}) => Boolean(taxa?.isencao) || getTaxaValor(taxa) === 0;
 
 export const getTaxaVigenciaInicio = (taxa = {}) => normalizeValue(taxa?.vigencia_inicio ?? taxa?.data_inicio ?? "");
 
-export const getTaxaVigenciaFim = (taxa = {}) => normalizeValue(taxa?.vigencia_fim ?? taxa?.data_fim ?? taxa?.validade ?? "");
+export const getTaxaVigenciaFim = (taxa = {}) =>
+    normalizeValue(taxa?.vigencia_fim ?? taxa?.data_fim ?? taxa?.validade ?? "");
 
-export const getTaxaCodigoFromRecord = (record = {}) => normalizeValue(
-    record?.taxa ?? record?.taxa_codigo ?? record?.codigo_taxa ?? record?.codigo ?? ""
-);
+export const getTaxaCodigoFromRecord = (record = {}) =>
+    normalizeValue(record?.taxa ?? record?.taxa_codigo ?? record?.codigo_taxa ?? record?.codigo ?? "");
 
-export const getTaxaLabelFromRecord = (record = {}) => normalizeValue(
-    record?.taxa_label ?? record?.taxa_descricao ?? record?.descricao_taxa ?? record?.label ?? ""
-);
+export const getTaxaLabelFromRecord = (record = {}) =>
+    normalizeValue(record?.taxa_label ?? record?.taxa_descricao ?? record?.descricao_taxa ?? record?.label ?? "");
 
 export const getTaxaValorFromRecord = (record = {}) => {
     const value = record?.taxa_valor ?? record?.valor_taxa ?? record?.valor ?? 0;
@@ -65,7 +56,14 @@ export const classifyTaxaRecord = (record = {}, normalize = (value) => normalize
     const type = normalize(record?.tipo ?? record?.taxa_tipo ?? "");
 
     if (code.includes("indig") || label.includes("indig") || type.includes("indig")) return "indigente";
-    if (code.includes("crianca") || label.includes("crianca") || label.includes("criança") || type.includes("crianca") || type.includes("criança")) return "crianca";
+    if (
+        code.includes("crianca") ||
+        label.includes("crianca") ||
+        label.includes("criança") ||
+        type.includes("crianca") ||
+        type.includes("criança")
+    )
+        return "crianca";
     if (code.includes("adult") || label.includes("adult") || type.includes("adult")) return "adulto";
     return "outros";
 };

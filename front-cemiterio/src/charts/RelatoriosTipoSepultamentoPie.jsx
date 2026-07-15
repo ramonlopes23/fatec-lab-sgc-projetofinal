@@ -27,7 +27,10 @@ export default function RelatoriosTipoSepultamentoPie({ data = [], loading = fal
                     stroke="none"
                 >
                     {data.map((entry, index) => (
-                        <Cell key={`cell-${entry.key || index}`} fill={entry.color || DEFAULT_COLORS[index % DEFAULT_COLORS.length]} />
+                        <Cell
+                            key={`cell-${entry.key || index}`}
+                            fill={entry.color || DEFAULT_COLORS[index % DEFAULT_COLORS.length]}
+                        />
                     ))}
                 </Pie>
                 <Tooltip
@@ -35,7 +38,11 @@ export default function RelatoriosTipoSepultamentoPie({ data = [], loading = fal
                         `${value} (${total ? ((Number(value) / total) * 100).toFixed(1) : 0}%)`,
                         name,
                     ]}
-                    contentStyle={{ borderRadius: 12, border: "1px solid #dbe1f2", boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)" }}
+                    contentStyle={{
+                        borderRadius: 12,
+                        border: "1px solid #dbe1f2",
+                        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
+                    }}
                 />
                 <Legend verticalAlign="bottom" height={40} iconType="circle" />
             </PieChart>

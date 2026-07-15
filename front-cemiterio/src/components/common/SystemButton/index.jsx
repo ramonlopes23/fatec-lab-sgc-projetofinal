@@ -99,26 +99,14 @@ function getToneSx(tone) {
     };
 }
 
-export default function SystemButton({
-    children,
-    tone = "confirm",
-    variant,
-    sx,
-    type = "button",
-    ...props
-}) {
-    const buttonVariant =
-        variant || (tone === "cancel" ? "outlined" : "contained");
+export default function SystemButton({ children, tone = "confirm", variant, sx, type = "button", ...props }) {
+    const buttonVariant = variant || (tone === "cancel" ? "outlined" : "contained");
 
     return (
         <MuiButton
             type={type}
             variant={buttonVariant}
-            sx={[
-                baseSx,
-                getToneSx(tone),
-                ...(Array.isArray(sx) ? sx : [sx]),
-            ]}
+            sx={[baseSx, getToneSx(tone), ...(Array.isArray(sx) ? sx : [sx])]}
             {...props}
         >
             {children}

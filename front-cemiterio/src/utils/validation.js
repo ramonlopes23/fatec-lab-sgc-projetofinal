@@ -2,7 +2,7 @@ import { parseDateValue } from "./date";
 
 export const isEmpty = (value) => {
     return value === undefined || value === null || (typeof value === "string" && value.trim() === "");
-}
+};
 
 export const isValidCPF = (value) => {
     const cpf = String(value || "").replace(/\D/g, "");
@@ -11,7 +11,7 @@ export const isValidCPF = (value) => {
 
     let soma = 0;
     for (let i = 0; i < 9; i++) {
-        soma += parseInt(cpf[i]) * (10 - i)
+        soma += parseInt(cpf[i]) * (10 - i);
     }
     let resto = (soma * 10) % 11;
     if (resto === 10) resto = 0;
@@ -51,14 +51,21 @@ export const isValidPhone = (value) => {
 
 export const getFieldError = (fieldName, value, rule = {}) => {
     if (rule.required && isEmpty(value)) {
-        return `${rule.label || fieldName} é obrigatório`
+        return `${rule.label || fieldName} é obrigatório`;
     }
 
     if ((fieldName === "cpf" || fieldName === "doc_resp") && !isEmpty(value)) {
         if (!isValidCPF(value)) return "CPF inválido";
     }
 
-    if ((fieldName === "data_nasc" || fieldName === "dh_falec" || fieldName === "dh_sep" || fieldName === "dh_inicio_velorio" || fieldName === "dh_fim_velorio") && !isEmpty(value)) {
+    if (
+        (fieldName === "data_nasc" ||
+            fieldName === "dh_falec" ||
+            fieldName === "dh_sep" ||
+            fieldName === "dh_inicio_velorio" ||
+            fieldName === "dh_fim_velorio") &&
+        !isEmpty(value)
+    ) {
         if (!isValidDate(value)) return "Data inválida";
     }
 

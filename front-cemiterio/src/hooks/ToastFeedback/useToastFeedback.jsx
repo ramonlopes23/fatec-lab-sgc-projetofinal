@@ -23,21 +23,33 @@ export function useToastFeedback() {
         });
     }, []);
 
-    const showSuccess = useCallback((message) => {
-        showToast({ severity: "success", message });
-    }, [showToast]);
+    const showSuccess = useCallback(
+        (message) => {
+            showToast({ severity: "success", message });
+        },
+        [showToast]
+    );
 
-    const showInfo = useCallback((message) => {
-        showToast({ severity: "info", message });
-    }, [showToast]);
+    const showInfo = useCallback(
+        (message) => {
+            showToast({ severity: "info", message });
+        },
+        [showToast]
+    );
 
-    const showWarning = useCallback((message) => {
-        showToast({ severity: "warning", message });
-    }, [showToast]);
+    const showWarning = useCallback(
+        (message) => {
+            showToast({ severity: "warning", message });
+        },
+        [showToast]
+    );
 
-    const showError = useCallback((message) => {
-        showToast({ severity: "error", message });
-    }, [showToast]);
+    const showError = useCallback(
+        (message) => {
+            showToast({ severity: "error", message });
+        },
+        [showToast]
+    );
 
     const ToastElement = (
         <Snackbar
@@ -46,23 +58,18 @@ export function useToastFeedback() {
             anchorOrigin={{ vertical: "top", horizontal: "center" }}
             onClose={closeToast}
         >
-            <Alert
-                onClose={closeToast}
-                severity={toastState.severity}
-                variant="filled"
-                sx={{ width: "100%" }}
-            >
+            <Alert onClose={closeToast} severity={toastState.severity} variant="filled" sx={{ width: "100%" }}>
                 {toastState.message}
             </Alert>
         </Snackbar>
     );
 
-    return{
+    return {
         showToast,
         showSuccess,
         showInfo,
         showWarning,
         showError,
         ToastElement,
-    }
+    };
 }

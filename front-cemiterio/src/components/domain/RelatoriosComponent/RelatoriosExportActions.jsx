@@ -1,18 +1,11 @@
 import React from "react";
 import { FaFileCsv, FaFileExcel, FaFilePdf, FaPrint } from "react-icons/fa";
 import SystemButton from "../../common/SystemButton";
-import {
-    ExportActionsGrid,
-    ExportCard,
-    ExportCopy,
-    ExportError,
-    ExportHint,
-    ExportTitle,
-} from "./styles";
+import { ExportActionsGrid, ExportCard, ExportCopy, ExportError, ExportHint, ExportTitle } from "./styles";
 
 const EXPORT_ACTIONS = [
-/*     { format: "pdf", label: "Exportar PDF", icon: <FaFilePdf />, tone: "pdf" },
- */    { format: "xlsx", label: "Exportar Excel", icon: <FaFileExcel />, tone: "excel" },
+    /*     { format: "pdf", label: "Exportar PDF", icon: <FaFilePdf />, tone: "pdf" },
+     */ { format: "xlsx", label: "Exportar Excel", icon: <FaFileExcel />, tone: "excel" },
     { format: "csv", label: "Exportar CSV", icon: <FaFileCsv />, tone: "csv" },
 ];
 
@@ -23,7 +16,9 @@ export default function RelatoriosExportActions({ loadingFormat, error, onExport
         <ExportCard>
             <ExportCopy>
                 <ExportTitle>Exportar relatório</ExportTitle>
-                <ExportHint>Gere arquivos com os filtros, indicadores, graficos e dados detalhados do recorte atual.</ExportHint>
+                <ExportHint>
+                    Gere arquivos com os filtros, indicadores, graficos e dados detalhados do recorte atual.
+                </ExportHint>
                 {error ? <ExportError>{error}</ExportError> : null}
             </ExportCopy>
 

@@ -7,20 +7,14 @@ const getDateKey = (value) => {
     return Number.isNaN(time) ? null : time;
 };
 
-export default function StableDateTimePicker({
-    value,
-    onAccept,
-    onChange,
-    onClose,
-    ...props
-}) {
+export default function StableDateTimePicker({ value, onAccept, onChange, onClose, ...props }) {
     const [draftValue, setDraftValue] = useState(value ?? null);
     const committedKeyRef = useRef(getDateKey(value));
 
     useEffect(() => {
         const nextKey = getDateKey(value);
         committedKeyRef.current = nextKey;
-        setDraftValue((current) => (getDateKey(current) === nextKey ? current : value ?? null));
+        setDraftValue((current) => (getDateKey(current) === nextKey ? current : (value ?? null)));
     }, [value]);
 
     const commitValue = (nextValue, context) => {

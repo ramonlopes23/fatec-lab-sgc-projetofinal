@@ -1,10 +1,10 @@
 :root {
---app-font-scale: 1;
---app-bg: #f8f9f9;
---app-surface: #ffffff;
---app-text: #191970;
---app-muted: #6b6f85;
---app-border: rgba(25, 25, 112, 0.1);
+    --app-font-scale: 1;
+    --app-bg: #f8f9f9;
+    --app-surface: #ffffff;
+    --app-text: #191970;
+    --app-muted: #6b6f85;
+    --app-border: rgba(25, 25, 112, 0.1);
 }
 
 body,
@@ -12,24 +12,25 @@ button,
 input,
 select,
 textarea {
-font-family: "Satoshi", sans-serif;
-
+    font-family: "Satoshi", sans-serif;
 }
 
 html {
-font-size: calc(16px * var(--app-font-scale));
+    font-size: calc(16px * var(--app-font-scale));
 }
 
 body {
-background: var(--app-bg);
-color: var(--app-text);
-transition: background-color 0.2s ease, color 0.2s ease;
+    background: var(--app-bg);
+    color: var(--app-text);
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
 }
 
 body[data-theme="dark"] {
---app-bg: #111319;
---app-surface: #1a1e27;
---app-text: #e9ecff;
---app-muted: #a5adc8;
---app-border: rgba(233, 236, 255, 0.18);
+    --app-bg: #111319;
+    --app-surface: #1a1e27;
+    --app-text: #e9ecff;
+    --app-muted: #a5adc8;
+    --app-border: rgba(233, 236, 255, 0.18);
 }

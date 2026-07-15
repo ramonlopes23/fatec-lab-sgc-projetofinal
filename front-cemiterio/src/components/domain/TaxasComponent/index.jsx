@@ -58,12 +58,24 @@ import { createTaxa, patchTaxaStatus, updateTaxa } from "../../../services/taxaS
 import ConfirmationDialog from "../../common/ConfirmationDialog";
 import SystemButton from "../../common/SystemButton";
 import SystemSelect from "../../common/SystemSelect";
-import DefaultModal, {
-    DefaultModalActions,
-    DefaultModalGrid,
-} from "../../common/DefaultModal";
+import DefaultModal, { DefaultModalActions, DefaultModalGrid } from "../../common/DefaultModal";
 import { useFormModal, useTaxas, useToastFeedback } from "../../../hooks";
-import { formatCurrencyBRL, formatDateDMY, formatTaxaLabel, getTaxaCodigo, getTaxaDescricao, getTaxaId, getTaxaTipo, getTaxaValor, getTaxaVigenciaFim, getTaxaVigenciaInicio, isDateWithinNextDays, isTaxaActive, normalizeSearchText, normalizeTaxa } from "../../../utils";
+import {
+    formatCurrencyBRL,
+    formatDateDMY,
+    formatTaxaLabel,
+    getTaxaCodigo,
+    getTaxaDescricao,
+    getTaxaId,
+    getTaxaTipo,
+    getTaxaValor,
+    getTaxaVigenciaFim,
+    getTaxaVigenciaInicio,
+    isDateWithinNextDays,
+    isTaxaActive,
+    normalizeSearchText,
+    normalizeTaxa,
+} from "../../../utils";
 
 const INITIAL_FORM = {
     codigo: "",
@@ -107,16 +119,19 @@ const filterTextFieldSx = {
     "& .MuiOutlinedInput-input": { fontSize: "14px" },
 };
 
-const normalizeCode = (value) => String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
+const normalizeCode = (value) =>
+    String(value || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
 
 const formatTaxaTypeLabel = (value) => {
-    const label = String(value || "").trim().replace(/[_-]+/g, " ");
+    const label = String(value || "")
+        .trim()
+        .replace(/[_-]+/g, " ");
     if (!label) return "-";
     return label.charAt(0).toUpperCase() + label.slice(1);
 };
@@ -155,7 +170,6 @@ function TaxasComponent() {
         openCreate,
         openEdit,
         closeModal,
-
     } = useFormModal({ initialForm: INITIAL_FORM });
 
     useEffect(() => {
@@ -178,21 +192,24 @@ function TaxasComponent() {
         const term = normalizeSearchText(search);
 
         return normalizedTaxas.filter((taxa) => {
-            const matchesSearch = !term || [
-                getTaxaCodigo(taxa),
-                getTaxaDescricao(taxa),
-                getTaxaTipo(taxa),
-                String(getTaxaValor(taxa)),
-                formatCurrencyBRL(getTaxaValor(taxa)),
-                formatTaxaLabel(taxa),
-            ].some((field) => normalizeSearchText(field).includes(term));
+            const matchesSearch =
+                !term ||
+                [
+                    getTaxaCodigo(taxa),
+                    getTaxaDescricao(taxa),
+                    getTaxaTipo(taxa),
+                    String(getTaxaValor(taxa)),
+                    formatCurrencyBRL(getTaxaValor(taxa)),
+                    formatTaxaLabel(taxa),
+                ].some((field) => normalizeSearchText(field).includes(term));
 
-            const matchesStatus = statusFilter === "all"
-                || (statusFilter === "active" && isTaxaActive(taxa))
-                || (statusFilter === "inactive" && !isTaxaActive(taxa));
+            const matchesStatus =
+                statusFilter === "all" ||
+                (statusFilter === "active" && isTaxaActive(taxa)) ||
+                (statusFilter === "inactive" && !isTaxaActive(taxa));
 
-            const matchesType = typeFilter === "all"
-                || normalizeSearchText(getTaxaTipo(taxa)) === normalizeSearchText(typeFilter);
+            const matchesType =
+                typeFilter === "all" || normalizeSearchText(getTaxaTipo(taxa)) === normalizeSearchText(typeFilter);
 
             return matchesSearch && matchesStatus && matchesType;
         });
@@ -238,7 +255,9 @@ function TaxasComponent() {
             nextErrors.vigencia_fim = "Vigencia final deve ser posterior ao inicio";
         }
 
-        const duplicated = taxas.some((taxa) => getTaxaId(taxa) !== editingId && normalizeCode(getTaxaCodigo(taxa)) === codigo);
+        const duplicated = taxas.some(
+            (taxa) => getTaxaId(taxa) !== editingId && normalizeCode(getTaxaCodigo(taxa)) === codigo
+        );
         if (duplicated) nextErrors.codigo = "Ja existe uma taxa com esse codigo";
 
         setErrors(nextErrors);
@@ -338,11 +357,13 @@ function TaxasComponent() {
         setIsSubmitting(true);
         try {
             await patchTaxaStatus(pendingId, nextActive);
-            setTaxas((prev) => prev.map((item) => (
-                String(getTaxaId(item)) === String(pendingId)
-                    ? { ...item, active: nextActive, status: nextActive ? "active" : "inactive" }
-                    : item
-            )));
+            setTaxas((prev) =>
+                prev.map((item) =>
+                    String(getTaxaId(item)) === String(pendingId)
+                        ? { ...item, active: nextActive, status: nextActive ? "active" : "inactive" }
+                        : item
+                )
+            );
             await loadTaxas();
             setConfirmDialogOpen(false);
             setPendingStatusTaxa(null);
@@ -395,7 +416,12 @@ function TaxasComponent() {
 
                             <FormControl fullWidth size="medium">
                                 <InputLabel sx={filterLabelSx}>Tipo</InputLabel>
-                                <Select value={typeFilter} label="Tipo" onChange={(event) => setTypeFilter(event.target.value)} sx={filterSelectSx}>
+                                <Select
+                                    value={typeFilter}
+                                    label="Tipo"
+                                    onChange={(event) => setTypeFilter(event.target.value)}
+                                    sx={filterSelectSx}
+                                >
                                     <MenuItem value="all">Todos</MenuItem>
                                     {typeOptions.map((type) => (
                                         <MenuItem key={type} value={type}>
@@ -407,7 +433,12 @@ function TaxasComponent() {
 
                             <FormControl fullWidth size="medium">
                                 <InputLabel sx={filterLabelSx}>Situação</InputLabel>
-                                <Select value={statusFilter} label="Situação" onChange={(event) => setStatusFilter(event.target.value)} sx={filterSelectSx}>
+                                <Select
+                                    value={statusFilter}
+                                    label="Situação"
+                                    onChange={(event) => setStatusFilter(event.target.value)}
+                                    sx={filterSelectSx}
+                                >
                                     <MenuItem value="all">Todas</MenuItem>
                                     <MenuItem value="active">Ativas</MenuItem>
                                     <MenuItem value="inactive">Inativas</MenuItem>
@@ -425,7 +456,9 @@ function TaxasComponent() {
 
                 <StatsGrid>
                     <StatCard>
-                        <StatIcon $tone="success"><FaDollarSign /></StatIcon>
+                        <StatIcon $tone="success">
+                            <FaDollarSign />
+                        </StatIcon>
                         <StatCopy>
                             <StatLabel>Total de Taxas</StatLabel>
                             <StatValue>{totalTaxas}</StatValue>
@@ -434,7 +467,9 @@ function TaxasComponent() {
                     </StatCard>
 
                     <StatCard>
-                        <StatIcon $tone="success"><FaCheckCircle /></StatIcon>
+                        <StatIcon $tone="success">
+                            <FaCheckCircle />
+                        </StatIcon>
                         <StatCopy>
                             <StatLabel>Ativas</StatLabel>
                             <StatValue>{activeTaxas}</StatValue>
@@ -443,7 +478,9 @@ function TaxasComponent() {
                     </StatCard>
 
                     <StatCard>
-                        <StatIcon $tone="success"><FaClock /></StatIcon>
+                        <StatIcon $tone="success">
+                            <FaClock />
+                        </StatIcon>
                         <StatCopy>
                             <StatLabel>A vencer</StatLabel>
                             <StatValue>{vencerTaxas}</StatValue>
@@ -452,7 +489,9 @@ function TaxasComponent() {
                     </StatCard>
 
                     <StatCard>
-                        <StatIcon $tone="success"><FaTimesCircle /></StatIcon>
+                        <StatIcon $tone="success">
+                            <FaTimesCircle />
+                        </StatIcon>
                         <StatCopy>
                             <StatLabel>Inativas</StatLabel>
                             <StatValue>{inactiveTaxas}</StatValue>
@@ -480,37 +519,55 @@ function TaxasComponent() {
                                     </THead>
                                     <TBody>
                                         {loading ? (
-                                            <Tr><Td colSpan={7}>Carregando taxas...</Td></Tr>
+                                            <Tr>
+                                                <Td colSpan={7}>Carregando taxas...</Td>
+                                            </Tr>
                                         ) : filteredTaxas.length === 0 ? (
-                                            <Tr><Td colSpan={7}>Nenhuma taxa encontrada.</Td></Tr>
-                                        ) : filteredTaxas.map((taxa, index) => {
-                                            const normalized = normalizeTaxa(taxa);
-                                            const taxaActive = isTaxaActive(normalized);
-                                            return (
-                                                <Tr key={getTaxaId(normalized) || getTaxaCodigo(normalized)} index={index}>
-                                                    <Td>{getTaxaCodigo(normalized)}</Td>
-                                                    <Td>{getTaxaDescricao(normalized)}</Td>
-                                                    <Td>{formatTaxaTypeLabel(getTaxaTipo(normalized))}</Td>
-                                                    <Td>{formatCurrencyBRL(getTaxaValor(normalized))}</Td>
-                                                    <Td>{formatVigencia(normalized)}</Td>
-                                                    <TdStatus>
-                                                        <StatusBadge $status={taxaActive ? "ativo" : "inativo"}>
-                                                            {taxaActive ? "Ativa" : "Inativa"}
-                                                        </StatusBadge>
-                                                    </TdStatus>
-                                                    <Td>
-                                                        <Actions>
-                                                            <IconBtn type="button" onClick={() => handleEdit(normalized)} disabled={isSubmitting}>
-                                                                <FaRegEdit />
-                                                            </IconBtn>
-                                                            <IconBtn type="button" onClick={() => requestToggleStatus(normalized)} disabled={isSubmitting} data-danger={taxaActive ? "true" : undefined}>
-                                                                <FaPowerOff />
-                                                            </IconBtn>
-                                                        </Actions>
-                                                    </Td>
-                                                </Tr>
-                                            );
-                                        })}
+                                            <Tr>
+                                                <Td colSpan={7}>Nenhuma taxa encontrada.</Td>
+                                            </Tr>
+                                        ) : (
+                                            filteredTaxas.map((taxa, index) => {
+                                                const normalized = normalizeTaxa(taxa);
+                                                const taxaActive = isTaxaActive(normalized);
+                                                return (
+                                                    <Tr
+                                                        key={getTaxaId(normalized) || getTaxaCodigo(normalized)}
+                                                        index={index}
+                                                    >
+                                                        <Td>{getTaxaCodigo(normalized)}</Td>
+                                                        <Td>{getTaxaDescricao(normalized)}</Td>
+                                                        <Td>{formatTaxaTypeLabel(getTaxaTipo(normalized))}</Td>
+                                                        <Td>{formatCurrencyBRL(getTaxaValor(normalized))}</Td>
+                                                        <Td>{formatVigencia(normalized)}</Td>
+                                                        <TdStatus>
+                                                            <StatusBadge $status={taxaActive ? "ativo" : "inativo"}>
+                                                                {taxaActive ? "Ativa" : "Inativa"}
+                                                            </StatusBadge>
+                                                        </TdStatus>
+                                                        <Td>
+                                                            <Actions>
+                                                                <IconBtn
+                                                                    type="button"
+                                                                    onClick={() => handleEdit(normalized)}
+                                                                    disabled={isSubmitting}
+                                                                >
+                                                                    <FaRegEdit />
+                                                                </IconBtn>
+                                                                <IconBtn
+                                                                    type="button"
+                                                                    onClick={() => requestToggleStatus(normalized)}
+                                                                    disabled={isSubmitting}
+                                                                    data-danger={taxaActive ? "true" : undefined}
+                                                                >
+                                                                    <FaPowerOff />
+                                                                </IconBtn>
+                                                            </Actions>
+                                                        </Td>
+                                                    </Tr>
+                                                );
+                                            })
+                                        )}
                                     </TBody>
                                 </Table>
                             </TableScroller>
@@ -524,8 +581,16 @@ function TaxasComponent() {
                     onConfirm={confirmToggleStatus}
                     title={isTaxaActive(pendingStatusTaxa) ? "Inativar taxa" : "Ativar taxa"}
                     alertSeverity={isTaxaActive(pendingStatusTaxa) ? "warning" : "success"}
-                    alertMessage={isTaxaActive(pendingStatusTaxa) ? "A taxa ficará indisponível para novos lançamentos." : "A taxa voltará a ficar disponível para uso."}
-                    description={pendingStatusTaxa ? `Deseja ${isTaxaActive(pendingStatusTaxa) ? "inativar" : "ativar"} a taxa ${getTaxaDescricao(pendingStatusTaxa)}?` : "Confirme a alteração de status da taxa."}
+                    alertMessage={
+                        isTaxaActive(pendingStatusTaxa)
+                            ? "A taxa ficará indisponível para novos lançamentos."
+                            : "A taxa voltará a ficar disponível para uso."
+                    }
+                    description={
+                        pendingStatusTaxa
+                            ? `Deseja ${isTaxaActive(pendingStatusTaxa) ? "inativar" : "ativar"} a taxa ${getTaxaDescricao(pendingStatusTaxa)}?`
+                            : "Confirme a alteração de status da taxa."
+                    }
                     confirmLabel={isTaxaActive(pendingStatusTaxa) ? "Inativar" : "Ativar"}
                     confirmTone={isTaxaActive(pendingStatusTaxa) ? "delete" : "confirm"}
                     confirmDisabled={!pendingStatusTaxa}
@@ -621,7 +686,7 @@ function TaxasComponent() {
                                             onChange={(event) => updateField("active", event.target.checked)}
                                             disabled={isSubmitting}
                                         />
-                                            Ativa
+                                        Ativa
                                     </CheckboxControl>
                                 </div>
                             </DefaultModalGrid>
@@ -645,7 +710,12 @@ function TaxasComponent() {
                                     {isSubmitting ? "Salvando..." : "Salvar"}
                                 </SystemButton>
                             )}
-                            <SystemButton type="button" tone="cancel" onClick={handleCloseModal} disabled={isSubmitting}>
+                            <SystemButton
+                                type="button"
+                                tone="cancel"
+                                onClick={handleCloseModal}
+                                disabled={isSubmitting}
+                            >
                                 {editingId ? "Fechar" : "Cancelar"}
                             </SystemButton>
                         </DefaultModalActions>

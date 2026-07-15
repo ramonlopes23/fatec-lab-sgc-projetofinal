@@ -38,7 +38,9 @@ export function useCreateCemetery({ onSuccess } = {}) {
                 Array.isArray(existing) &&
                 existing.some(
                     (c) =>
-                        String(c?.name || "").trim().toLowerCase() === normalizedName.toLowerCase() &&
+                        String(c?.name || "")
+                            .trim()
+                            .toLowerCase() === normalizedName.toLowerCase() &&
                         String(c?.foundation || "") === normalizedFoundation
                 );
 
@@ -48,7 +50,7 @@ export function useCreateCemetery({ onSuccess } = {}) {
 
             const payload = {
                 name: normalizedName,
-                foundation: normalizedFoundation, 
+                foundation: normalizedFoundation,
                 active: normalizedActive,
             };
 

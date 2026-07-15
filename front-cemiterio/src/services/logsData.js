@@ -92,7 +92,8 @@ const COLLECTION_META = {
         entityType: "contrato",
         entityLabel: "Contrato",
         route: "/contratos",
-        action: (record) => (record?.update_at && record?.created_at && record.update_at !== record.created_at ? "UPDATE" : "CREATE"),
+        action: (record) =>
+            record?.update_at && record?.created_at && record.update_at !== record.created_at ? "UPDATE" : "CREATE",
         timestampFields: ["update_at", "created_at"],
         actorFields: ["nome_titular", "nome_resp", "holderName"],
         additionalFields: ["quadra", "sepultura", "valor", "status", "vigencia_inicio", "vigencia_fim", "cemiterio"],
@@ -120,11 +121,12 @@ const COLLECTION_META = {
     },
 };
 
-const normalizeText = (value) => String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+const normalizeText = (value) =>
+    String(value || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
 
 const clone = (value) => {
     if (typeof structuredClone === "function") return structuredClone(value);
@@ -148,13 +150,22 @@ const formatTimestampSortKey = (value) => {
     return date ? date.getTime() : null;
 };
 
-const buildEventCode = (collectionName, recordId) => `AUD-${collectionName.slice(0, 3).toUpperCase()}-${String(recordId || "SEM-ID").toUpperCase()}`;
+const buildEventCode = (collectionName, recordId) =>
+    `AUD-${collectionName.slice(0, 3).toUpperCase()}-${String(recordId || "SEM-ID").toUpperCase()}`;
 
 const buildStatus = (record, collectionName) => {
     const raw = normalizeText(record?.status);
 
     if (raw.includes("falh") || raw.includes("cancel") || raw.includes("bloque")) return "failure";
-    if (raw.includes("pend") || raw.includes("aguard") || raw.includes("alert") || raw.includes("inativo") || raw.includes("disponivel") || raw.includes("disponível")) return "warning";
+    if (
+        raw.includes("pend") ||
+        raw.includes("aguard") ||
+        raw.includes("alert") ||
+        raw.includes("inativo") ||
+        raw.includes("disponivel") ||
+        raw.includes("disponível")
+    )
+        return "warning";
     if (collectionName === "contratos" && normalizeText(record?.status).includes("ativo")) return "success";
     if (record?.confirmado === false) return "warning";
     return "success";
@@ -209,7 +220,9 @@ const resolveActor = (record, meta) => {
     const actor = pickFirst(record, meta.actorFields) || "Sistema";
     return {
         name: String(actor),
-        sourceField: meta.actorFields.find((field) => record?.[field] != null && String(record[field]).trim() !== "") || "source",
+        sourceField:
+            meta.actorFields.find((field) => record?.[field] != null && String(record[field]).trim() !== "") ||
+            "source",
     };
 };
 
@@ -223,21 +236,27 @@ const buildEntity = (collectionName, record, meta) => ({
 
 const buildDescription = (collectionName, record, meta) => {
     const name = resolveActor(record, meta).name;
-    if (collectionName === "falecidos") return `Registro de falecimento vinculado a ${getFalecidoName(record) || name}.`;
-    if (collectionName === "sepultamentos") return `Sepultamento registrado para ${getFalecidoName(record) || "registro sem nome"}.`;
-    if (collectionName === "velorios") return `Velório consolidado com status ${formatValue(record?.status).toLowerCase()}.`;
-    if (collectionName === "exumacoes") return `Exumação registrada com destino ${formatValue(record?.destino).toLowerCase()}.`;
-    if (collectionName === "contratos") return `Contrato ${getContratoNumeroTitulo(record) || formatValue(record?.numero_titulo)} persistido para ${name}.`;
+    if (collectionName === "falecidos")
+        return `Registro de falecimento vinculado a ${getFalecidoName(record) || name}.`;
+    if (collectionName === "sepultamentos")
+        return `Sepultamento registrado para ${getFalecidoName(record) || "registro sem nome"}.`;
+    if (collectionName === "velorios")
+        return `Velório consolidado com status ${formatValue(record?.status).toLowerCase()}.`;
+    if (collectionName === "exumacoes")
+        return `Exumação registrada com destino ${formatValue(record?.destino).toLowerCase()}.`;
+    if (collectionName === "contratos")
+        return `Contrato ${getContratoNumeroTitulo(record) || formatValue(record?.numero_titulo)} persistido para ${name}.`;
     if (collectionName === "pets") return `Pet vinculado ao sepultamento ${formatValue(record?.sepultamento_id)}.`;
     return `Evento rastreável derivado da coleção ${collectionName}.`;
 };
 
-const buildChanges = (record, meta) => meta.changeFields.map((change) => ({
-    field: change.field,
-    label: change.label,
-    before: "NÃO DISPONÍVEL NO DB.JSON",
-    after: formatLogFieldValue(change.field, record),
-}));
+const buildChanges = (record, meta) =>
+    meta.changeFields.map((change) => ({
+        field: change.field,
+        label: change.label,
+        before: "NÃO DISPONÍVEL NO DB.JSON",
+        after: formatLogFieldValue(change.field, record),
+    }));
 
 const buildAdditionalInfo = (record, meta) => {
     const info = {};
@@ -303,7 +322,16 @@ const buildLogFromRecord = (collectionName, record, index) => {
 };
 
 const normalizeStoredLog = (log, index) => {
-    const timestamp = resolveTimestamp(log, ["timestamp", "createdAt", "updatedAt", "dh_sep", "dh_exu", "dh_falec", "data_velorio", "dh_sep_pet"]);
+    const timestamp = resolveTimestamp(log, [
+        "timestamp",
+        "createdAt",
+        "updatedAt",
+        "dh_sep",
+        "dh_exu",
+        "dh_falec",
+        "data_velorio",
+        "dh_sep_pet",
+    ]);
     if (!timestamp || !isValidDate(timestamp)) return null;
 
     const action = String(log?.action || log?.actionLabel || "UPDATE").toUpperCase();
@@ -352,15 +380,21 @@ const extractLogsFromDatabase = (db = database) => {
         });
     });
 
-    return derived.sort((left, right) => (formatTimestampSortKey(right.timestamp) || 0) - (formatTimestampSortKey(left.timestamp) || 0));
+    return derived.sort(
+        (left, right) => (formatTimestampSortKey(right.timestamp) || 0) - (formatTimestampSortKey(left.timestamp) || 0)
+    );
 };
 
 export const loadAuditLogsFromDb = (db = database) => extractLogsFromDatabase(db);
 
-export const normalizeAuditLogs = (logs = []) => logs
-    .map((log, index) => normalizeStoredLog(log, index))
-    .filter(Boolean)
-    .sort((left, right) => (formatTimestampSortKey(right.timestamp) || 0) - (formatTimestampSortKey(left.timestamp) || 0));
+export const normalizeAuditLogs = (logs = []) =>
+    logs
+        .map((log, index) => normalizeStoredLog(log, index))
+        .filter(Boolean)
+        .sort(
+            (left, right) =>
+                (formatTimestampSortKey(right.timestamp) || 0) - (formatTimestampSortKey(left.timestamp) || 0)
+        );
 
 export const LOG_STATUS_META = STATUS_META;
 export const LOG_ACTION_META = ACTION_META;

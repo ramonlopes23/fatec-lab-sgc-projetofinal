@@ -4,10 +4,9 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { ptBR } from "date-fns/locale/pt-BR";
 import "../styles.css";
-import AppRoutes from './routes';
+import AppRoutes from "./routes";
 
 export default function App() {
-
     useEffect(() => {
         const raw = localStorage.getItem("sgc-user-preferences");
         if (!raw) return;
@@ -36,4 +35,3 @@ export default function App() {
         </LocalizationProvider>
     );
 }
-

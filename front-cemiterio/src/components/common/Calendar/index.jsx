@@ -23,7 +23,6 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
     const [dataSelecionada, setDataSelecionada] = useState(null);
     const [sepultamentosDia, setSepultamentosDia] = useState([]);
 
-    
     const eventosFonte = useMemo(() => {
         const normalizeSep = (s) => ({
             _type: "Sepultamento",
@@ -33,7 +32,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
             quadraCandidate: s.num_quadra ?? s.quadra_sep,
             cova: s.num_sepultura_sep,
             status: s.status,
-            extra: {}
+            extra: {},
         });
 
         const normalizeExu = (x) => ({
@@ -44,18 +43,13 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
             quadraCandidate: x.quadra_sep ?? x.num_quadra,
             cova: x.num_sepultura_sep,
             status: x.status ?? "",
-            extra: { motivo: x.motivo, destino: x.destino, coveiro: x.coveiro }
-
+            extra: { motivo: x.motivo, destino: x.destino, coveiro: x.coveiro },
         });
 
-        const allNormalized = [
-            ...(sepultamentos || []).map(normalizeSep),
-            ...(exumacoes || []).map(normalizeExu),
-
-        ]
+        const allNormalized = [...(sepultamentos || []).map(normalizeSep), ...(exumacoes || []).map(normalizeExu)];
 
         const mapped = allNormalized
-            .map(item => {
+            .map((item) => {
                 const data = formatDateKey(item.rawDate);
                 const horario = formatTimeLabel(item.rawDate);
                 const dataLabel = formatDateDMY(item.rawDate, "");
@@ -73,10 +67,10 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                     cova: item.cova,
                     status: item.status,
                     tipo: item._type,
-                    ...item.extra
-                }
+                    ...item.extra,
+                };
             })
-            .filter(e => !!e.data)
+            .filter((e) => !!e.data)
             .sort((a, b) => {
                 if (a.data != b.data) return String(a.data).localeCompare(String(b.data));
 
@@ -85,7 +79,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                 const timeCmp = ha.localeCompare(hb);
                 if (timeCmp !== 0) return timeCmp;
 
-                const priority = (tipo) => tipo === "Sepultamento" ? 0 : (tipo === "Exumação" ? 1 : 2);
+                const priority = (tipo) => (tipo === "Sepultamento" ? 0 : tipo === "Exumação" ? 1 : 2);
                 const pa = priority(a.tipo);
                 const pb = priority(b.tipo);
                 if (pa !== pb) return pa - pb;
@@ -94,10 +88,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
             });
 
         return mapped;
-
-    }, [sepultamentos, exumacoes, quadras])
-
-
+    }, [sepultamentos, exumacoes, quadras]);
 
     const eventosPorData = useMemo(() => {
         const map = {};
@@ -106,8 +97,8 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
             map[s.data].push(s);
         });
 
-        const priority = (tipo) => tipo === "Sepultamento" ? 0 : (tipo === "Exumação" ? 1 : 2);
-        Object.keys(map).forEach(k => {
+        const priority = (tipo) => (tipo === "Sepultamento" ? 0 : tipo === "Exumação" ? 1 : 2);
+        Object.keys(map).forEach((k) => {
             map[k].sort((a, b) => {
                 const pa = priority(a.tipo);
                 const pb = priority(b.tipo);
@@ -117,8 +108,8 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                 const timeCmp = ha.localeCompare(hb);
                 if (timeCmp !== 0) return timeCmp;
                 return String(a.nomeFalecido || "").localeCompare(String(b.nomeFalecido || ""));
-            })
-        })
+            });
+        });
         return map;
     }, [eventosFonte]);
 
@@ -144,16 +135,18 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
         setOpen(true);
     };
 
-    const voltarMes = () => setAnoMes(s => {
-        const m = s.month - 1;
-        if (m < 0) return { year: s.year - 1, month: 11 };
-        return { year: s.year, month: m };
-    });
-    const avancarMes = () => setAnoMes(s => {
-        const m = s.month + 1;
-        if (m > 11) return { year: s.year + 1, month: 0 };
-        return { year: s.year, month: m };
-    });
+    const voltarMes = () =>
+        setAnoMes((s) => {
+            const m = s.month - 1;
+            if (m < 0) return { year: s.year - 1, month: 11 };
+            return { year: s.year, month: m };
+        });
+    const avancarMes = () =>
+        setAnoMes((s) => {
+            const m = s.month + 1;
+            if (m > 11) return { year: s.year + 1, month: 0 };
+            return { year: s.year, month: m };
+        });
 
     useEffect(() => {
         if (!open) {
@@ -163,9 +156,20 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
     }, [open]);
 
     const nomesSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-    const nomesMes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-
-
+    const nomesMes = [
+        "Janeiro",
+        "Fevereiro",
+        "Março",
+        "Abril",
+        "Maio",
+        "Junho",
+        "Julho",
+        "Agosto",
+        "Setembro",
+        "Outubro",
+        "Novembro",
+        "Dezembro",
+    ];
 
     return (
         <Card style={{ marginTop: 16 }}>
@@ -174,14 +178,24 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
             <CardBody>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <div style={{ fontWeight: 600 }}>{nomesMes[anoMes.month]} {anoMes.year}</div>
-                        <Btn onClick={voltarMes} aria-label="Mês anterior">◀</Btn>
-                        <Btn onClick={avancarMes} aria-label="Próximo mês">▶</Btn>
+                        <div style={{ fontWeight: 600 }}>
+                            {nomesMes[anoMes.month]} {anoMes.year}
+                        </div>
+                        <Btn onClick={voltarMes} aria-label="Mês anterior">
+                            ◀
+                        </Btn>
+                        <Btn onClick={avancarMes} aria-label="Próximo mês">
+                            ▶
+                        </Btn>
                     </div>
                 </div>
 
                 <CalendarGrid>
-                    {nomesSemana.map((n) => (<div key={n} style={{ textAlign: "center", fontWeight: 600 }}>{n}</div>))}
+                    {nomesSemana.map((n) => (
+                        <div key={n} style={{ textAlign: "center", fontWeight: 600 }}>
+                            {n}
+                        </div>
+                    ))}
                     {semanasDoMes.map((sem, i) => (
                         <React.Fragment key={i}>
                             {sem.map((dia, idx) => {
@@ -190,17 +204,36 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                                 return (
                                     <DayCell key={key ?? `${i}-${idx}`} isCurrentMonth={!!dia}>
                                         {dia ? (
-                                            <DayButton onClick={() => abrirDia(dia)} aria-label={`Abrir ${key ?? `${i}-${idx}`}`}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <DayButton
+                                                onClick={() => abrirDia(dia)}
+                                                aria-label={`Abrir ${key ?? `${i}-${idx}`}`}
+                                            >
+                                                <div style={{ display: "flex", justifyContent: "space-between" }}>
                                                     <div style={{ fontWeight: 600 }}>{dia.getDate()}</div>
                                                 </div>
-                                                <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>
-                                                    {eventos.slice(0, 2).map(e => {
+                                                <div style={{ marginTop: 8, fontSize: 12, color: "#666" }}>
+                                                    {eventos.slice(0, 2).map((e) => {
                                                         const tipoCor = e.tipo === "Exumação" ? "#d97706" : "#191970";
                                                         const labelTipo = e.tipo || "Sepult.";
                                                         return (
-                                                            <div key={e.id} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                                {e.nomeFalecido} <span style={{ color: tipoCor, marginLeft: 6, fontSize: 11 }}>⦿ {labelTipo}</span>
+                                                            <div
+                                                                key={e.id}
+                                                                style={{
+                                                                    whiteSpace: "nowrap",
+                                                                    overflow: "hidden",
+                                                                    textOverflow: "ellipsis",
+                                                                }}
+                                                            >
+                                                                {e.nomeFalecido}{" "}
+                                                                <span
+                                                                    style={{
+                                                                        color: tipoCor,
+                                                                        marginLeft: 6,
+                                                                        fontSize: 11,
+                                                                    }}
+                                                                >
+                                                                    ⦿ {labelTipo}
+                                                                </span>
                                                             </div>
                                                         );
                                                     })}
@@ -222,39 +255,68 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                 >
                     <div style={{ marginTop: 12 }}>
                         {sepultamentosDia.length === 0 ? (
-                            <div style={{ color: '#666' }}>Nenhum sepultamento ou exumação registrado neste dia.</div>
-                        ) : sepultamentosDia.map(s => (
-                            <div key={s.id ?? s._id ?? `${formatDateDMY(dataSelecionada, "-")}-${s.quadra}-${s.cova}`} style={{ marginTop: 8, padding: 8, background: "#f8f9fb", borderRadius: 6 }}>
-                                <div style={{ marginBottom: 12 }}>
-                                    <div style={{ fontWeight: 700 }}>{s.nomeFalecido}</div>
-                                    {s.dataHoraLabel ? (
-                                        <div style={{ color: '#555' }}>
-                                            {s.tipo === "Exumação"
-                                                ? `Data/Hora da exumação: ${s.dataHoraLabel}`
-                                                : `Data/Hora do sepultamento: ${s.dataHoraLabel}`}
-                                        </div>
-                                    ) : null}
-                                </div>
-
-                                <div style={{ color: '#555' }}>Quadra: {s.quadra} • Cova: {s.cova}</div>
-                                <div style={{ marginTop: 6, fontSize: 12, color: '#333' }}>{String(s.status)}{s.reservada ? ' • Particular' : ''}</div>
-
-                                {s.tipo === "Exumação" && (
-                                    <div style={{ marginTop: 8, padding: 8, background: "#fff", borderRadius: 6 }}>
-                                        {s.motivo ? <div><strong>Motivo: </strong>{s.motivo}</div> : null}
-                                        {s.destino ? <div><strong>Destino: </strong>{s.destino}</div> : null}
-                                        {s.coveiro ? <div><strong>Coveiro: </strong>{s.coveiro}</div> : null}
+                            <div style={{ color: "#666" }}>Nenhum sepultamento ou exumação registrado neste dia.</div>
+                        ) : (
+                            sepultamentosDia.map((s) => (
+                                <div
+                                    key={
+                                        s.id ?? s._id ?? `${formatDateDMY(dataSelecionada, "-")}-${s.quadra}-${s.cova}`
+                                    }
+                                    style={{ marginTop: 8, padding: 8, background: "#f8f9fb", borderRadius: 6 }}
+                                >
+                                    <div style={{ marginBottom: 12 }}>
+                                        <div style={{ fontWeight: 700 }}>{s.nomeFalecido}</div>
+                                        {s.dataHoraLabel ? (
+                                            <div style={{ color: "#555" }}>
+                                                {s.tipo === "Exumação"
+                                                    ? `Data/Hora da exumação: ${s.dataHoraLabel}`
+                                                    : `Data/Hora do sepultamento: ${s.dataHoraLabel}`}
+                                            </div>
+                                        ) : null}
                                     </div>
-                                )}
-                            </div>
-                        ))}
+
+                                    <div style={{ color: "#555" }}>
+                                        Quadra: {s.quadra} • Cova: {s.cova}
+                                    </div>
+                                    <div style={{ marginTop: 6, fontSize: 12, color: "#333" }}>
+                                        {String(s.status)}
+                                        {s.reservada ? " • Particular" : ""}
+                                    </div>
+
+                                    {s.tipo === "Exumação" && (
+                                        <div style={{ marginTop: 8, padding: 8, background: "#fff", borderRadius: 6 }}>
+                                            {s.motivo ? (
+                                                <div>
+                                                    <strong>Motivo: </strong>
+                                                    {s.motivo}
+                                                </div>
+                                            ) : null}
+                                            {s.destino ? (
+                                                <div>
+                                                    <strong>Destino: </strong>
+                                                    {s.destino}
+                                                </div>
+                                            ) : null}
+                                            {s.coveiro ? (
+                                                <div>
+                                                    <strong>Coveiro: </strong>
+                                                    {s.coveiro}
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    )}
+                                </div>
+                            ))
+                        )}
                     </div>
 
                     <DefaultModalActions>
-                        <SystemButton type="button" tone="cancel" onClick={() => setOpen(false)}>Fechar</SystemButton>
+                        <SystemButton type="button" tone="cancel" onClick={() => setOpen(false)}>
+                            Fechar
+                        </SystemButton>
                     </DefaultModalActions>
                 </DefaultModal>
             </CardBody>
-        </Card >
+        </Card>
     );
 }

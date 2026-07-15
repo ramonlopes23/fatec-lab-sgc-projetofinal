@@ -45,9 +45,7 @@ export default function ConfirmationDialog({
                         {alertMessage}
                     </Alert>
                 ) : null}
-                <DialogContentText id={ariaDescriptionId}>
-                    {description || "Confirme a operação."}
-                </DialogContentText>
+                <DialogContentText id={ariaDescriptionId}>{description || "Confirme a operação."}</DialogContentText>
             </DialogContent>
             <DialogActions sx={{ padding: 2, paddingTop: 0 }}>
                 <SystemButton onClick={onClose} disabled={isSubmitting} tone="cancel">

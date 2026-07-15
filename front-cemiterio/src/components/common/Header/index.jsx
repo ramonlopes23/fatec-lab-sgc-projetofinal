@@ -2,10 +2,16 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { HiBars4 } from "react-icons/hi2";
 import { FaChevronDown, FaRegUserCircle, FaChevronUp } from "react-icons/fa";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
-import { FiLogOut } from 'react-icons/fi';
+import { FiLogOut } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore, useCemeteryStore } from "../../../stores";
-import { formatDateDMY, getCemiterioFoundation, getCemiterioId, getCemiterioName, isCemiterioActive } from "../../../utils";
+import {
+    formatDateDMY,
+    getCemiterioFoundation,
+    getCemiterioId,
+    getCemiterioName,
+    isCemiterioActive,
+} from "../../../utils";
 import NotificationsDropdown from "../NotificationsDropdown";
 import {
     CemeteryButton,
@@ -32,7 +38,7 @@ import {
     UserDropdownHeader,
     UserDropdownMenu,
     UserDropdownName,
-    UserDropdownNote
+    UserDropdownNote,
 } from "./styles";
 
 export default function Header({ isSidebarOpen }) {
@@ -110,13 +116,10 @@ export default function Header({ isSidebarOpen }) {
         setSelectedCemeteryId(cemeteryId);
         setIsCemeteryDropdownOpen(false);
     };
-    
-    
+
     return (
         <HeaderContainer $isSidebarOpen={isSidebarOpen}>
-            <HeaderLeft>
-                
-            </HeaderLeft>
+            <HeaderLeft></HeaderLeft>
 
             <HeaderCenter ref={cemeteryDropdownRef}>
                 <CemeterySwitcher>
@@ -130,17 +133,18 @@ export default function Header({ isSidebarOpen }) {
                             {selectedCemetery
                                 ? getCemiterioName(selectedCemetery)
                                 : loading
-                                    ? "Carregando cemitérios..."
-                                    : "Selecione um cemitério"}
+                                  ? "Carregando cemitérios..."
+                                  : "Selecione um cemitério"}
                         </span>
-                        {isCemeteryDropdownOpen && selectedCemeteryId ? <FaChevronUp /> : <FaChevronDown />}                    </CemeteryButton>
-
+                        {isCemeteryDropdownOpen && selectedCemeteryId ? <FaChevronUp /> : <FaChevronDown />}{" "}
+                    </CemeteryButton>
 
                     <CemeteryPanel
                         $isOpen={isCemeteryDropdownOpen}
                         role="listbox"
                         aria-label="Selecionar cemitério"
-                        aria-hidden={!isCemeteryDropdownOpen}>
+                        aria-hidden={!isCemeteryDropdownOpen}
+                    >
                         {loading && <CemeteryEmpty>Carregando cemitérios...</CemeteryEmpty>}
                         {!loading && error && <CemeteryError>{error}</CemeteryError>}
                         {!loading && !error && cemeteries.length === 0 && (
@@ -150,8 +154,7 @@ export default function Header({ isSidebarOpen }) {
                         {!loading &&
                             !error &&
                             cemeteries.map((cemetery) => {
-                                const isSelected =
-                                    String(getCemiterioId(cemetery)) === String(selectedCemeteryId);
+                                const isSelected = String(getCemiterioId(cemetery)) === String(selectedCemeteryId);
 
                                 return (
                                     <CemeteryItem
@@ -162,9 +165,15 @@ export default function Header({ isSidebarOpen }) {
                                         data-selected={isSelected}
                                         onClick={() => handleSelectCemetery(getCemiterioId(cemetery))}
                                     >
-                                            <CemeteryMeta>
+                                        <CemeteryMeta>
                                             <CemeteryName>{getCemiterioName(cemetery)}</CemeteryName>
-                                            <span>Fundação: {formatDateDMY(getCemiterioFoundation(cemetery), getCemiterioFoundation(cemetery))}</span>
+                                            <span>
+                                                Fundação:{" "}
+                                                {formatDateDMY(
+                                                    getCemiterioFoundation(cemetery),
+                                                    getCemiterioFoundation(cemetery)
+                                                )}
+                                            </span>
                                         </CemeteryMeta>
                                         <CemeteryStatus data-active={isCemiterioActive(cemetery)}>
                                             {isCemiterioActive(cemetery) ? "Ativo" : "Inativo"}
@@ -173,7 +182,6 @@ export default function Header({ isSidebarOpen }) {
                                 );
                             })}
                     </CemeteryPanel>
-
                 </CemeterySwitcher>
             </HeaderCenter>
 
@@ -207,22 +215,21 @@ export default function Header({ isSidebarOpen }) {
                         </UserContainer>
                     </UserDropdownButton>
 
-                    <UserDropdownMenu $isOpen={isUserDropdownOpen}
+                    <UserDropdownMenu
+                        $isOpen={isUserDropdownOpen}
                         role="menu"
                         aria-label="Conta do usuário"
-                        aria-hidden={!isUserDropdownOpen}>
+                        aria-hidden={!isUserDropdownOpen}
+                    >
                         <UserDropdownHeader>
                             <UserDropdownName>{displayName}</UserDropdownName>
-                            <UserDropdownNote>
-                                {user?.email || user?.username || "Conta ativa"}
-                            </UserDropdownNote>
+                            <UserDropdownNote>{user?.email || user?.username || "Conta ativa"}</UserDropdownNote>
                         </UserDropdownHeader>
 
                         <UserAction type="button" onClick={handleLogout} role="menuitem">
                             <FiLogOut />
                             <span>Sair</span>
                         </UserAction>
-
                     </UserDropdownMenu>
                 </UserDropdown>
             </HeaderRight>

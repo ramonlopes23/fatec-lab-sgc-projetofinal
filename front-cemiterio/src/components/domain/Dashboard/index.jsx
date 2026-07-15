@@ -1,15 +1,35 @@
 import React, { useEffect, useState, useRef } from "react";
-import { DashboardWrapper, Card, CardHeader, CardBody, ProcessItem, ProcessInfo, ProcessAction, ProcessType, EmptyState } from "./styles";
+import {
+    DashboardWrapper,
+    Card,
+    CardHeader,
+    CardBody,
+    ProcessItem,
+    ProcessInfo,
+    ProcessAction,
+    ProcessType,
+    EmptyState,
+} from "./styles";
 import { FaCross } from "react-icons/fa";
 import { FaSkullCrossbones } from "react-icons/fa";
 import { FaTools } from "react-icons/fa";
 import api from "../../../services/index.js";
 import { useToastFeedback } from "../../../hooks";
-import { formatDateNormalized, getFalecidoId, getFalecidoIdFromRecord, getFalecidoName, getSepulturaCapacity, getSepulturaNumber, getSepulturaQuadraRef, normalizeFalecido, parseDateValue, resolveQuadraDisplay } from "../../../utils";
+import {
+    formatDateNormalized,
+    getFalecidoId,
+    getFalecidoIdFromRecord,
+    getFalecidoName,
+    getSepulturaCapacity,
+    getSepulturaNumber,
+    getSepulturaQuadraRef,
+    normalizeFalecido,
+    parseDateValue,
+    resolveQuadraDisplay,
+} from "../../../utils";
 import SystemButton from "../../common/SystemButton";
 
 export default function Dashboard() {
-
     const [processos, setProcessos] = useState([]);
     const mountedRef = useRef(true);
     const { showSuccess, showError, ToastElement } = useToastFeedback();
@@ -17,12 +37,14 @@ export default function Dashboard() {
     const icones = {
         Sepultamento: <FaCross />,
         Exumação: <FaSkullCrossbones />,
-        Manutenção: <FaTools />
+        Manutenção: <FaTools />,
     };
 
     const isConfirmedSepultamento = (sep) => {
         const confirmed = sep?.confirmado === true || String(sep?.confirmado).toLowerCase() === "true";
-        const concluded = String(sep?.status ?? "").toLowerCase().includes("concl");
+        const concluded = String(sep?.status ?? "")
+            .toLowerCase()
+            .includes("concl");
         return confirmed || concluded;
     };
 
@@ -32,8 +54,12 @@ export default function Dashboard() {
 
         const fallback = await api.get("/covas").catch(() => null);
         const allGraves = Array.isArray(fallback?.data) ? fallback.data : [];
-        return allGraves.find((g) => String(getSepulturaQuadraRef(g)) === String(quadra)
-            && String(getSepulturaNumber(g)) === String(num)) ?? null;
+        return (
+            allGraves.find(
+                (g) =>
+                    String(getSepulturaQuadraRef(g)) === String(quadra) && String(getSepulturaNumber(g)) === String(num)
+            ) ?? null
+        );
     };
 
     const getActiveConfirmedSepsCount = async (quadra, num) => {
@@ -59,23 +85,24 @@ export default function Dashboard() {
 
             const loadedFalecidos = Array.isArray(rFalecidos.data) ? rFalecidos.data.map(normalizeFalecido) : [];
             const loadedSepultamentos = rSep.data || [];
-            const sep = loadedSepultamentos.map(s => ({ ...s, _type: "Sepultamento" }));
-            const vel = (rVel.data || []).map(v => ({ ...v, _type: "Velório" }));
-            const exu = (rExu.data || []).map(x => ({ ...x, _type: "Exumação" }));
+            const sep = loadedSepultamentos.map((s) => ({ ...s, _type: "Sepultamento" }));
+            const vel = (rVel.data || []).map((v) => ({ ...v, _type: "Velório" }));
+            const exu = (rExu.data || []).map((x) => ({ ...x, _type: "Exumação" }));
             const quadras = rQuadras.data || [];
 
-            const all = [...vel, ...sep, ...exu].map(item => {
+            const all = [...vel, ...sep, ...exu].map((item) => {
                 const fk = getFalecidoIdFromRecord(item);
-                const f = loadedFalecidos.find(fr => getFalecidoId(fr) === String(fk));
+                const f = loadedFalecidos.find((fr) => getFalecidoId(fr) === String(fk));
 
                 let quadra_num = null;
                 if (item._type === "Sepultamento") {
                     const qKey = item.quadra_sep ?? item.quadra ?? item.quadra_cova ?? null;
-                    const qObj = quadras.find((qt) =>
-                        String(qt.id) === String(qKey)
-                        || String(qt.num_quadra) === String(qKey)
-                        || String(qt.number) === String(qKey)
-                        || (qt.nome && String(qt.nome).endsWith(String(qKey)))
+                    const qObj = quadras.find(
+                        (qt) =>
+                            String(qt.id) === String(qKey) ||
+                            String(qt.num_quadra) === String(qKey) ||
+                            String(qt.number) === String(qKey) ||
+                            (qt.nome && String(qt.nome).endsWith(String(qKey)))
                     );
                     quadra_num = resolveQuadraDisplay(qObj ?? qKey, quadras, "");
                 }
@@ -91,16 +118,22 @@ export default function Dashboard() {
                     num_sepultura,
                     local: item.local_velorio || item.local || "",
                     velorio_inicio,
-                }
-            })
+                };
+            });
 
             if (!mountedRef.current) return;
-            const active = all.filter(it => {
+            const active = all.filter((it) => {
                 const st = String(it.status ?? "").toLowerCase();
                 const confirmed = it.confirmado === true || it.confirmado === "true";
                 return !(st === "concluído" || confirmed || st.includes("aguardando velorio"));
-            })
-            setProcessos(active.sort((a, b) => (a.dh_inicio_velorio || a.data_velorio || a.dh_sep || a.dh_exu || "").localeCompare(b.dh_inicio_velorio || b.data_velorio || b.dh_sep || b.dh_exu || "")));
+            });
+            setProcessos(
+                active.sort((a, b) =>
+                    (a.dh_inicio_velorio || a.data_velorio || a.dh_sep || a.dh_exu || "").localeCompare(
+                        b.dh_inicio_velorio || b.data_velorio || b.dh_sep || b.dh_exu || ""
+                    )
+                )
+            );
         } catch (err) {
             console.error("Erro ao carregar dashboard", err);
         }
@@ -114,18 +147,17 @@ export default function Dashboard() {
         try {
             const saved = JSON.parse(localStorage.getItem("local_processos") || "[]");
             if (Array.isArray(saved) && saved.length) {
-                setProcessos(prev => [...saved, ...prev]);
+                setProcessos((prev) => [...saved, ...prev]);
             }
         } catch (e) {
-            console.warn("Erro ao ler local_processos", e)
+            console.warn("Erro ao ler local_processos", e);
         }
 
         const onCreated = (ev) => {
             const item = ev?.detail;
             if (!item) return;
             loadProcessos();
-
-        }
+        };
 
         const onLocal = (ev) => {
             const item = ev?.detail;
@@ -138,16 +170,15 @@ export default function Dashboard() {
 
         return () => {
             mountedRef.current = false;
-            window.removeEventListener("processoCriado", onCreated)
-            window.removeEventListener("processoCriadoLocal", onLocal)
-        }
+            window.removeEventListener("processoCriado", onCreated);
+            window.removeEventListener("processoCriadoLocal", onLocal);
+        };
     }, []);
-  
 
-
-    const getScheduledDate = (item) => parseDateValue(
-        item.dh_inicio_velorio || item.dh_sep || item.data_velorio || item.dh_exu || item.data || item.horario || ""
-    );
+    const getScheduledDate = (item) =>
+        parseDateValue(
+            item.dh_inicio_velorio || item.dh_sep || item.data_velorio || item.dh_exu || item.data || item.horario || ""
+        );
 
     const processosPendentes = [...processos].sort((a, b) => {
         const da = getScheduledDate(a);
@@ -160,25 +191,35 @@ export default function Dashboard() {
     const handleConfirm = async (item) => {
         let sepId = null;
         try {
-            setProcessos(prev => prev.filter(p => !(p._type === item._type && p.id === item.id)));
+            setProcessos((prev) => prev.filter((p) => !(p._type === item._type && p.id === item.id)));
             if (item._type === "Velório") {
-                await api.patch(`/velorios/${item.id}`, { status: "Concluído", confirmado: true }).catch(() => { });
+                await api.patch(`/velorios/${item.id}`, { status: "Concluído", confirmado: true }).catch(() => {});
 
                 const linkedSepultamentoId = item.sepultamento_id ?? item.sepultamentoId ?? null;
                 if (linkedSepultamentoId) {
                     try {
-                        await api.patch(`/sepultamentos/${linkedSepultamentoId}`, { status: "Pendente", confirmado: false, liberado_por_velorio: true }).catch(() => { });
+                        await api
+                            .patch(`/sepultamentos/${linkedSepultamentoId}`, {
+                                status: "Pendente",
+                                confirmado: false,
+                                liberado_por_velorio: true,
+                            })
+                            .catch(() => {});
                         const rSep = await api.get(`/sepultamentos/${linkedSepultamentoId}`).catch(() => null);
                         const sepultamento = rSep?.data ?? null;
                         if (sepultamento) {
-                            window.dispatchEvent(new CustomEvent("processoCriado", { detail: { ...sepultamento, _type: "Sepultamento" } }));
+                            window.dispatchEvent(
+                                new CustomEvent("processoCriado", {
+                                    detail: { ...sepultamento, _type: "Sepultamento" },
+                                })
+                            );
                         }
                     } catch (libErr) {
                         console.warn("Erro ao liberar sepultamento após velório:", libErr);
                     }
                 }
             } else if (item._type === "Sepultamento") {
-                await api.patch(`/sepultamentos/${item.id}`, { status: "Concluído", confirmado: true }).catch(() => { });
+                await api.patch(`/sepultamentos/${item.id}`, { status: "Concluído", confirmado: true }).catch(() => {});
                 sepId = item.id;
 
                 try {
@@ -195,22 +236,31 @@ export default function Dashboard() {
                                 const activeConfirmedSeps = await getActiveConfirmedSepsCount(quadra, num);
                                 const newStatus = activeConfirmedSeps > 0 ? "OCCUPIED" : "AVAILABLE";
 
-                                await api.patch(`/covas/${found.id}`, { bodyCapacity: newCap, status: newStatus }).catch(() => { });
-                                try { window.dispatchEvent(new CustomEvent("covaCapacidadeAlterada", { detail: { covaId: found.id, capacidade: newCap } })); } catch (e) { e }
+                                await api
+                                    .patch(`/covas/${found.id}`, { bodyCapacity: newCap, status: newStatus })
+                                    .catch(() => {});
+                                try {
+                                    window.dispatchEvent(
+                                        new CustomEvent("covaCapacidadeAlterada", {
+                                            detail: { covaId: found.id, capacidade: newCap },
+                                        })
+                                    );
+                                } catch (e) {
+                                    e;
+                                }
                             }
                         }
                     }
                 } catch (capErr) {
-                    console.warn("Erro ao decrementar capacidade de cova ao confirmar sepultamento:", capErr)
+                    console.warn("Erro ao decrementar capacidade de cova ao confirmar sepultamento:", capErr);
                 }
-
             } else if (item._type === "Exumação") {
-                await api.patch(`/exumacoes/${item.id}`, { status: "Concluído", confirmado: true }).catch(() => { });
+                await api.patch(`/exumacoes/${item.id}`, { status: "Concluído", confirmado: true }).catch(() => {});
 
                 sepId = item.sepultamentoId ?? item.sepultamento ?? item.falecido_id ?? null;
                 if (sepId) {
                     try {
-                        await api.patch(`/sepultamentos/${sepId}`, { foi_exumado: true }).catch(() => { });
+                        await api.patch(`/sepultamentos/${sepId}`, { foi_exumado: true }).catch(() => {});
                     } catch (patchErr) {
                         console.warn("Erro ao marcar sepultamento como exumado:", patchErr);
                     }
@@ -230,8 +280,18 @@ export default function Dashboard() {
                                     const activeConfirmedSeps = await getActiveConfirmedSepsCount(quadra, num);
                                     const newStatus = activeConfirmedSeps > 0 ? "OCCUPIED" : "AVAILABLE";
 
-                                    await api.patch(`/covas/${found.id}`, { bodyCapacity: newCap, status: newStatus }).catch(() => { });
-                                    try { window.dispatchEvent(new CustomEvent("covaCapacidadeAlterada", { detail: { covaId: found.id, capacidade: newCap } })); } catch (e) { e }
+                                    await api
+                                        .patch(`/covas/${found.id}`, { bodyCapacity: newCap, status: newStatus })
+                                        .catch(() => {});
+                                    try {
+                                        window.dispatchEvent(
+                                            new CustomEvent("covaCapacidadeAlterada", {
+                                                detail: { covaId: found.id, capacidade: newCap },
+                                            })
+                                        );
+                                    } catch (e) {
+                                        e;
+                                    }
                                 }
                             }
                         }
@@ -244,50 +304,65 @@ export default function Dashboard() {
             await loadProcessos();
 
             try {
-                window.dispatchEvent(new CustomEvent("processoConfirmado", { detail: { id: item.id, type: item._type } }))
+                window.dispatchEvent(
+                    new CustomEvent("processoConfirmado", { detail: { id: item.id, type: item._type } })
+                );
             } catch (e) {
-                console.error("Erro ao dispatch evento processoConfirmado", e)
+                console.error("Erro ao dispatch evento processoConfirmado", e);
             }
             showSuccess("Processo confirmado.");
         } catch (err) {
             console.error("Erro ao confirmar processo", err);
             showError("Erro ao confirmar processo");
         }
-
-
-    }
+    };
     return (
         <DashboardWrapper>
             {ToastElement}
             <Card>
                 <CardHeader>Próximos processos</CardHeader>
                 <CardBody>
-                    {processosPendentes.length ? processosPendentes.map((p) => (
-                        <ProcessItem key={`${p._type}-${p.id}`}>
-                            <ProcessInfo>
-                                <strong>{getFalecidoName(p) || p.nome}</strong>
-                                {p._type === "Velório" && (p.dh_inicio_velorio || p.data_velorio) && <span>Velório: {formatDateNormalized(p.dh_inicio_velorio || p.data_velorio, "-")}{p.dh_fim_velorio ? ` até ${formatDateNormalized(p.dh_fim_velorio, "-")}` : ""}</span>}
-                                {p._type === "Exumação" && p.dh_exu && <span>Exumação: {formatDateNormalized(p.dh_exu, "-")}</span>}
-                                {p._type === "Sepultamento" && p.dh_sep && (
-                                    <span>
-                                        Sepultamento: {formatDateNormalized(p.dh_sep, "-")}
-                                        {p.quadra_num ? ` — Quadra: ${p.quadra_num}` : ""}
-                                        {p.num_sepultura ? ` — Sepultura: ${p.num_sepultura}` : ""}
-                                    </span>
-                                )}
-                            </ProcessInfo>
-                            <ProcessAction>
-                                <ProcessType>
-                                    {icones[p._type] || null}
-                                    {p._type}
-                                </ProcessType>
-                                {p.local && <span> {p.local} </span>}
-                                <SystemButton type="button" onClick={() => handleConfirm(p)}>Confirmar conclusão</SystemButton>
-                            </ProcessAction>
-                        </ProcessItem>
-                    )) : <EmptyState>Nenhum processo pendente.</EmptyState>}                </CardBody>
+                    {processosPendentes.length ? (
+                        processosPendentes.map((p) => (
+                            <ProcessItem key={`${p._type}-${p.id}`}>
+                                <ProcessInfo>
+                                    <strong>{getFalecidoName(p) || p.nome}</strong>
+                                    {p._type === "Velório" && (p.dh_inicio_velorio || p.data_velorio) && (
+                                        <span>
+                                            Velório: {formatDateNormalized(p.dh_inicio_velorio || p.data_velorio, "-")}
+                                            {p.dh_fim_velorio
+                                                ? ` até ${formatDateNormalized(p.dh_fim_velorio, "-")}`
+                                                : ""}
+                                        </span>
+                                    )}
+                                    {p._type === "Exumação" && p.dh_exu && (
+                                        <span>Exumação: {formatDateNormalized(p.dh_exu, "-")}</span>
+                                    )}
+                                    {p._type === "Sepultamento" && p.dh_sep && (
+                                        <span>
+                                            Sepultamento: {formatDateNormalized(p.dh_sep, "-")}
+                                            {p.quadra_num ? ` — Quadra: ${p.quadra_num}` : ""}
+                                            {p.num_sepultura ? ` — Sepultura: ${p.num_sepultura}` : ""}
+                                        </span>
+                                    )}
+                                </ProcessInfo>
+                                <ProcessAction>
+                                    <ProcessType>
+                                        {icones[p._type] || null}
+                                        {p._type}
+                                    </ProcessType>
+                                    {p.local && <span> {p.local} </span>}
+                                    <SystemButton type="button" onClick={() => handleConfirm(p)}>
+                                        Confirmar conclusão
+                                    </SystemButton>
+                                </ProcessAction>
+                            </ProcessItem>
+                        ))
+                    ) : (
+                        <EmptyState>Nenhum processo pendente.</EmptyState>
+                    )}{" "}
+                </CardBody>
             </Card>
         </DashboardWrapper>
-
-    )
+    );
 }

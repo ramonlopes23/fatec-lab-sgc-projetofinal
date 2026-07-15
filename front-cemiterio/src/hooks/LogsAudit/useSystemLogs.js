@@ -14,11 +14,12 @@ const initialFilters = {
     status: "all",
 };
 
-const normalizeText = (value) => String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+const normalizeText = (value) =>
+    String(value || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
 
 const toDate = (value) => {
     if (!value) return null;
@@ -111,24 +112,45 @@ const useSystemLogs = () => {
                 log.sourceRecordId,
                 log.user?.sourceField,
                 log.statusLabel,
-            ].map(normalizeText).join(" ");
+            ]
+                .map(normalizeText)
+                .join(" ");
 
             const logDate = toDate(log.timestamp);
             const matchesSearch = !searchTerm || searchable.includes(searchTerm);
             const matchesUser = filters.user === "all" || normalizeText(log.user?.name) === normalizeText(filters.user);
-            const matchesModule = filters.module === "all" || normalizeText(log.module) === normalizeText(filters.module);
-            const matchesEvent = filters.eventType === "all" || normalizeText(log.action) === normalizeText(filters.eventType);
-            const matchesStatus = filters.status === "all" || normalizeText(log.status) === normalizeText(filters.status);
+            const matchesModule =
+                filters.module === "all" || normalizeText(log.module) === normalizeText(filters.module);
+            const matchesEvent =
+                filters.eventType === "all" || normalizeText(log.action) === normalizeText(filters.eventType);
+            const matchesStatus =
+                filters.status === "all" || normalizeText(log.status) === normalizeText(filters.status);
             const matchesStart = !startDate || (logDate ? !isBefore(logDate, startDate) : true);
             const matchesEnd = !endDate || (logDate ? !isAfter(logDate, endDate) : true);
 
-            return matchesSearch && matchesUser && matchesModule && matchesEvent && matchesStatus && matchesStart && matchesEnd;
+            return (
+                matchesSearch &&
+                matchesUser &&
+                matchesModule &&
+                matchesEvent &&
+                matchesStatus &&
+                matchesStart &&
+                matchesEnd
+            );
         });
     }, [filters, logs]);
 
     useEffect(() => {
         setPage(1);
-    }, [filters.search, filters.periodStart, filters.periodEnd, filters.user, filters.module, filters.eventType, filters.status]);
+    }, [
+        filters.search,
+        filters.periodStart,
+        filters.periodEnd,
+        filters.user,
+        filters.module,
+        filters.eventType,
+        filters.status,
+    ]);
 
     const totalPages = Math.max(1, Math.ceil(filteredLogs.length / LOG_PAGE_SIZE));
     const currentPage = Math.min(page, totalPages);
@@ -139,14 +161,32 @@ const useSystemLogs = () => {
 
     const selectedLog = useMemo(
         () => logs.find((item) => String(item.id) === String(selectedLogId)) || null,
-        [logs, selectedLogId],
+        [logs, selectedLogId]
     );
 
     const stats = useMemo(() => buildStats(filteredLogs), [filteredLogs]);
 
-    const availableUsers = useMemo(() => Array.from(new Set(logs.map((item) => item.user?.name).filter(Boolean))).sort((left, right) => left.localeCompare(right)), [logs]);
-    const availableModules = useMemo(() => Array.from(new Set(logs.map((item) => item.module).filter(Boolean))).sort((left, right) => left.localeCompare(right)), [logs]);
-    const availableEventTypes = useMemo(() => Array.from(new Set(logs.map((item) => item.action).filter(Boolean))).sort((left, right) => left.localeCompare(right)), [logs]);
+    const availableUsers = useMemo(
+        () =>
+            Array.from(new Set(logs.map((item) => item.user?.name).filter(Boolean))).sort((left, right) =>
+                left.localeCompare(right)
+            ),
+        [logs]
+    );
+    const availableModules = useMemo(
+        () =>
+            Array.from(new Set(logs.map((item) => item.module).filter(Boolean))).sort((left, right) =>
+                left.localeCompare(right)
+            ),
+        [logs]
+    );
+    const availableEventTypes = useMemo(
+        () =>
+            Array.from(new Set(logs.map((item) => item.action).filter(Boolean))).sort((left, right) =>
+                left.localeCompare(right)
+            ),
+        [logs]
+    );
 
     const updateFilter = (key, value) => {
         setFilters((current) => ({ ...current, [key]: value }));

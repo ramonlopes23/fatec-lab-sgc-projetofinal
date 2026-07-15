@@ -38,7 +38,7 @@ export default function AddressMapbox({
                     country ? `&country=${encodeURIComponent(country)}` : "",
                     proximity ? `&proximity=${proximity.lng},${proximity.lat}` : "",
                     `&types=address,place,locality,neighborhood,postcode`,
-                    `&access_token=${encodeURIComponent(token)}`
+                    `&access_token=${encodeURIComponent(token)}`,
                 ].join("");
 
                 const res = await fetch(url, { signal: abortRef.current.signal });
@@ -61,7 +61,6 @@ export default function AddressMapbox({
         const onDoc = (ev) => {
             if (!containerRef.current) return;
             if (!containerRef.current.contains(ev.target)) setOpen(false);
-
         };
 
         document.addEventListener("mousedown", onDoc);
@@ -69,16 +68,18 @@ export default function AddressMapbox({
     }, []);
 
     const parseFeature = (f) => {
-        const ctx = (f.context || []);
+        const ctx = f.context || [];
         const findCtx = (prefix) => {
-            const c = ctx.find(x => String(x.id).startsWith(prefix + "."));
+            const c = ctx.find((x) => String(x.id).startsWith(prefix + "."));
             return c ? c.text : null;
         };
         const rua = f.text || "";
-        const numero = f.address || (() => {
-            const m = (f.place_name || "").match(/(?:,|\s)(\d{1,6})(?:\b|$)/);
-            return m ? m[1] : "";
-        })();
+        const numero =
+            f.address ||
+            (() => {
+                const m = (f.place_name || "").match(/(?:,|\s)(\d{1,6})(?:\b|$)/);
+                return m ? m[1] : "";
+            })();
         const bairro = findCtx("neighborhood") || findCtx("locality") || "";
         const cidade = findCtx("place") || findCtx("locality") || "";
         const uf = findCtx("region") || "";
@@ -98,16 +99,16 @@ export default function AddressMapbox({
             uf: uf || "",
             cep: cep || "",
             lat,
-            lng
-        }
-    }
+            lng,
+        };
+    };
 
     const handlePick = (f) => {
         const parsed = parseFeature(f);
         setQ(parsed.formatted || parsed.logradouro || "");
-        setOpen(false)
-        setItems([])
-        setActiveIndex(-1)
+        setOpen(false);
+        setItems([]);
+        setActiveIndex(-1);
         onSelect && onSelect(parsed);
     };
 
@@ -115,10 +116,10 @@ export default function AddressMapbox({
         if (!open) return;
         if (e.key === "ArrowDown") {
             e.preventDefault();
-            setActiveIndex(i => Math.min(i + 1, items.length - 1));
+            setActiveIndex((i) => Math.min(i + 1, items.length - 1));
         } else if (e.key === "ArrowUp") {
             e.preventDefault();
-            setActiveIndex(i => Math.max(i - 1, 0));
+            setActiveIndex((i) => Math.max(i - 1, 0));
         } else if (e.key === "Enter") {
             e.preventDefault();
             if (activeIndex >= 0 && items[activeIndex]) handlePick(items[activeIndex]);
@@ -129,7 +130,6 @@ export default function AddressMapbox({
     };
 
     return (
-
         <div ref={containerRef} style={{ position: "relative", width: "100%", maxWidth: 720 }}>
             <input
                 aria-autocomplete="list"
@@ -144,7 +144,7 @@ export default function AddressMapbox({
                     padding: "10px 12px",
                     borderRadius: 8,
                     border: "1px solid #d6d9e6",
-                    boxSizing: "border-box"
+                    boxSizing: "border-box",
                 }}
             />
             {open && items.length > 0 && (
@@ -163,7 +163,7 @@ export default function AddressMapbox({
                         overflow: "auto",
                         padding: 0,
                         listStyle: "none",
-                        boxShadow: "0 10px 30px rgba(24,24,80,0.06)"
+                        boxShadow: "0 10px 30px rgba(24,24,80,0.06)",
                     }}
                 >
                     {items.map((it, idx) => (
@@ -178,18 +178,19 @@ export default function AddressMapbox({
                                 padding: "10px 12px",
                                 cursor: "pointer",
                                 background: activeIndex === idx ? "#f4f6ff" : "transparent",
-                                borderBottom: "1px solid rgba(0,0,0,0.03)"
-                            }} >
+                                borderBottom: "1px solid rgba(0,0,0,0.03)",
+                            }}
+                        >
                             <div style={{ fontSize: 14, fontWeight: 600 }}>{it.place_name}</div>
-                            <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>{it.properties?.category || ""}</div>
+                            <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+                                {it.properties?.category || ""}
+                            </div>
                         </li>
                     ))}
                 </ul>
             )}
-        </div >
-    )
-
-
+        </div>
+    );
 }
 
 AddressMapbox.propTypes = {

@@ -1,7 +1,15 @@
 import { useState } from "react";
 import api from "../../services/index.js";
 import { PROCESS_TYPES } from "../../pages/Cadastros/constants.js";
-import { findTaxaByCodigo, formatDateKey, formatDateTimeKey, formatTaxaLabel, getSepulturaCapacity, getTaxaId, getTaxaValor } from "../../utils";
+import {
+    findTaxaByCodigo,
+    formatDateKey,
+    formatDateTimeKey,
+    formatTaxaLabel,
+    getSepulturaCapacity,
+    getTaxaId,
+    getTaxaValor,
+} from "../../utils";
 
 export default function useCadastrosSubmit({
     form,
@@ -57,7 +65,11 @@ export default function useCadastrosSubmit({
                 confirmado: false,
             };
 
-            const rCheck = await api.get("/covas", { params: { blockId: sepultamentoPayload.quadra_sep, number: sepultamentoPayload.num_sepultura_sep } }).catch(() => null);
+            const rCheck = await api
+                .get("/covas", {
+                    params: { blockId: sepultamentoPayload.quadra_sep, number: sepultamentoPayload.num_sepultura_sep },
+                })
+                .catch(() => null);
             const foundCheck = rCheck && Array.isArray(rCheck.data) && rCheck.data.length ? rCheck.data[0] : null;
 
             if (!foundCheck?.id) {
@@ -67,7 +79,7 @@ export default function useCadastrosSubmit({
 
             const cap = Number(getSepulturaCapacity(foundCheck));
             if (cap <= 0) {
-                await api.patch(`/covas/${foundCheck.id}`, { status: "OCCUPIED", bodyCapacity: 0 }).catch(() => { });
+                await api.patch(`/covas/${foundCheck.id}`, { status: "OCCUPIED", bodyCapacity: 0 }).catch(() => {});
                 showError("A sepultura selecionada esta lotada. Escolha outra sepultura.");
                 return;
             }
@@ -102,15 +114,25 @@ export default function useCadastrosSubmit({
             const created = res?.data ?? null;
 
             if (createdVelorio?.id && created?.id) {
-                await api.patch(`/velorios/${createdVelorio.id}`, { sepultamento_id: created.id }).catch(() => { });
+                await api.patch(`/velorios/${createdVelorio.id}`, { sepultamento_id: created.id }).catch(() => {});
                 createdVelorio = { ...createdVelorio, sepultamento_id: created.id };
             }
 
-            if (createdVelorio) window.dispatchEvent(new CustomEvent("processoCriado", { detail: { ...createdVelorio, _type: "Velório" } }));
-            if (created) window.dispatchEvent(new CustomEvent("processoCriado", { detail: { ...created, _type: "Sepultamento" } }));
+            if (createdVelorio)
+                window.dispatchEvent(
+                    new CustomEvent("processoCriado", { detail: { ...createdVelorio, _type: "Velório" } })
+                );
+            if (created)
+                window.dispatchEvent(
+                    new CustomEvent("processoCriado", { detail: { ...created, _type: "Sepultamento" } })
+                );
 
-            setRegistros((prev) => ([...prev, { processType, data: sepultamentoPayload }]));
-            showSuccess(form.com_velorio ? "Velório e sepultamento cadastrados. Confirme o velório na Dashboard para liberar o sepultamento." : "Sepultamento cadastrado (pendente). Confirme na Dashboard para concluir.");
+            setRegistros((prev) => [...prev, { processType, data: sepultamentoPayload }]);
+            showSuccess(
+                form.com_velorio
+                    ? "Velório e sepultamento cadastrados. Confirme o velório na Dashboard para liberar o sepultamento."
+                    : "Sepultamento cadastrado (pendente). Confirme na Dashboard para concluir."
+            );
             clearSaved();
             clearSepultamento();
         } catch (err) {

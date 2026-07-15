@@ -3,8 +3,40 @@ import { useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
 import api from "../../services/index.js";
 import ConfirmationDialog from "../../components/common/ConfirmationDialog";
-import { useApiInitDataCad, useAvailableCovas, useCidadeBusca, useFalecidoSearch, useFileUpload, useFormClear, useFormValidation, useLocalStorage, useTaxas, useToastFeedback, useViacepLookup, useCadastrosSubmit } from "../../hooks";
-import { applyMaskByFieldName, capitalizeWords, findContratoByReference, findFalecidoByReference, findTaxaByCodigo, getContratoId, getContratoNumeroTitulo, getContratoQuadraRef, getContratoSepulturaRef, getContratoTitularNome, getFalecidoCpf, getFalecidoDeathDate, getFalecidoId, getFalecidoName, getTaxaId, getTaxaValor, isTituloPosseSim, normalizeContrato } from "../../utils";
+import {
+    useApiInitDataCad,
+    useAvailableCovas,
+    useCidadeBusca,
+    useFalecidoSearch,
+    useFileUpload,
+    useFormClear,
+    useFormValidation,
+    useLocalStorage,
+    useTaxas,
+    useToastFeedback,
+    useViacepLookup,
+    useCadastrosSubmit,
+} from "../../hooks";
+import {
+    applyMaskByFieldName,
+    capitalizeWords,
+    findContratoByReference,
+    findFalecidoByReference,
+    findTaxaByCodigo,
+    getContratoId,
+    getContratoNumeroTitulo,
+    getContratoQuadraRef,
+    getContratoSepulturaRef,
+    getContratoTitularNome,
+    getFalecidoCpf,
+    getFalecidoDeathDate,
+    getFalecidoId,
+    getFalecidoName,
+    getTaxaId,
+    getTaxaValor,
+    isTituloPosseSim,
+    normalizeContrato,
+} from "../../utils";
 import SepultamentoProcess from "../../components/domain/SepultamentoProcess";
 import FalecidoProcess from "../../components/domain/FalecidoProcess";
 import {
@@ -20,53 +52,56 @@ import {
     VELORIO_FIELDS,
     normalizeProcessType,
 } from "./constants";
-import {
-    CheckboxInput,
-    CheckboxLabel,
-    CheckboxWrapper,
-    Container,
-    FormStyled,
-    Title,
-    Subtitle,
-} from "./styles";
+import { CheckboxInput, CheckboxLabel, CheckboxWrapper, Container, FormStyled, Title, Subtitle } from "./styles";
 
-const processFromPath = (pathname) => (
-    pathname.includes("/sepultamento")
-        ? PROCESS_TYPES.sepultamento
-        : PROCESS_TYPES.falecido
-);
+const processFromPath = (pathname) =>
+    pathname.includes("/sepultamento") ? PROCESS_TYPES.sepultamento : PROCESS_TYPES.falecido;
 
 export default function Cadastros() {
-
-    
     const location = useLocation();
     const routeProcessType = processFromPath(location.pathname);
     const [saved, setSaved, clearSaved] = useLocalStorage(STORAGE_KEY);
     const savedProcessType = normalizeProcessType(saved?.processType);
     const { showSuccess, showWarning, showError, ToastElement } = useToastFeedback();
 
-    const [form, setForm] = useState(() => (
+    const [form, setForm] = useState(() =>
         savedProcessType === routeProcessType
             ? saved?.form
             : routeProcessType === PROCESS_TYPES.sepultamento
-                ? INITIAL_SEPULTAMENTO_FORM
-                : INITIAL_FALECIDO_FORM
-    ));
+              ? INITIAL_SEPULTAMENTO_FORM
+              : INITIAL_FALECIDO_FORM
+    );
     const [processType, setProcessType] = useState(() => routeProcessType);
     const [activeStep, setActiveStep] = useState(0);
     const [, setRegistros] = useState([]);
     const [showFalList, setShowFalList] = useState(false);
     const [contratos, setContratos] = useState([]);
     const [isIndigente, setIsIndigente] = useState(false);
-    const { cep: cepResp, setCep: setCepResp, endereco: enderecoResp, setEndereco: setEnderecoResp, loading: loadingCep, notFound: cepRespNotFound, handleCepChange, handleCepBlur } = useViacepLookup();
+    const {
+        cep: cepResp,
+        setCep: setCepResp,
+        endereco: enderecoResp,
+        setEndereco: setEnderecoResp,
+        loading: loadingCep,
+        notFound: cepRespNotFound,
+        handleCepChange,
+        handleCepBlur,
+    } = useViacepLookup();
     const { cidades, quadras, covas, falecidos, setFalecidos } = useApiInitDataCad();
     const { availableCovas, tipoCovaSelecionada, handleQuadraSepChange } = useAvailableCovas(covas, form, setForm);
-    
+
     const [confirmOpen, setConfirmOpen] = useState(false);
-    const { busca, setBusca, resultados } = useCidadeBusca(cidades);
+    const { setBusca, resultados } = useCidadeBusca(cidades);
     const { searchFal, setSearchFal, filteredFalecidos } = useFalecidoSearch(falecidos, processType, saved, setForm);
     const { taxas, taxaOptions } = useTaxas({ onlyActive: true });
-    const { fieldErrors, validateFieldOnChange, validateBeforeSubmit, clearAllErrors, clearErrorsExcept, clearFieldError } = useFormValidation(form, processType, isIndigente, searchFal);
+    const {
+        fieldErrors,
+        validateFieldOnChange,
+        validateBeforeSubmit,
+        clearAllErrors,
+        clearErrorsExcept,
+        clearFieldError,
+    } = useFormValidation(form, processType, isIndigente, searchFal);
     const { handleFileChange } = useFileUpload(setForm);
     const { clearFalecido, clearSepultamento, resetToSepultamento } = useFormClear({
         clearAllErrors,
@@ -100,36 +135,45 @@ export default function Cadastros() {
         clearSepultamento,
     });
 
-    const fieldSxStyle = useMemo(() => ({
-        "& .MuiInputBase-root": { borderRadius: "4px" },
-        "& .MuiOutlinedInput-root": { borderRadius: "4px" },
-        "& .MuiOutlinedInput-notchedOutline": { borderRadius: "4px" },
-        "& .MuiOutlinedInput-input": { fontSize: "14px" },
-        "& .MuiInputBase-input::placeholder": { opacity: 1 },
-        "& .Mui-disabled": {
-            opacity: isIndigente ? 0.5 : 1,
-            transition: "opacity 0.3s ease",
-        },
-    }), [isIndigente]);
+    const fieldSxStyle = useMemo(
+        () => ({
+            "& .MuiInputBase-root": { borderRadius: "4px" },
+            "& .MuiOutlinedInput-root": { borderRadius: "4px" },
+            "& .MuiOutlinedInput-notchedOutline": { borderRadius: "4px" },
+            "& .MuiOutlinedInput-input": { fontSize: "14px" },
+            "& .MuiInputBase-input::placeholder": { opacity: 1 },
+            "& .Mui-disabled": {
+                opacity: isIndigente ? 0.5 : 1,
+                transition: "opacity 0.3s ease",
+            },
+        }),
+        [isIndigente]
+    );
 
-    const labelSxStyle = useMemo(() => ({
-        fontSize: "14px",
-        backgroundColor: "white",
-        paddingX: "4px",
-        marginLeft: "-4px"
-    }), []);
+    const labelSxStyle = useMemo(
+        () => ({
+            fontSize: "14px",
+            backgroundColor: "white",
+            paddingX: "4px",
+            marginLeft: "-4px",
+        }),
+        []
+    );
 
-    const selectSxStyle = useMemo(() => ({
-        borderRadius: "4px",
-        fontSize: "14px",
-        "& .MuiOutlinedInput-notchedOutline": {
-            top: "0px"
-        },
-        "& .Mui-disabled": {
-            opacity: isIndigente ? 0.5 : 1,
-            transition: "opacity 0.3s ease",
-        },
-    }), [isIndigente]);
+    const selectSxStyle = useMemo(
+        () => ({
+            borderRadius: "4px",
+            fontSize: "14px",
+            "& .MuiOutlinedInput-notchedOutline": {
+                top: "0px",
+            },
+            "& .Mui-disabled": {
+                opacity: isIndigente ? 0.5 : 1,
+                transition: "opacity 0.3s ease",
+            },
+        }),
+        [isIndigente]
+    );
 
     useEffect(() => {
         if (routeProcessType === processType) return;
@@ -190,37 +234,40 @@ export default function Cadastros() {
         });
     }, []);
 
-    const handleChange = useCallback((event) => {
-        const { name, value, type, checked } = event.target;
-        const incoming = type === "checkbox" ? checked : value;
-        let maskedValue = applyMaskByFieldName(name, incoming);
+    const handleChange = useCallback(
+        (event) => {
+            const { name, value, type, checked } = event.target;
+            const incoming = type === "checkbox" ? checked : value;
+            let maskedValue = applyMaskByFieldName(name, incoming);
 
-        if (NAME_CASE_FIELDS.has(name)) maskedValue = capitalizeWords(maskedValue);
-        if (name === "certidao_obito") maskedValue = String(maskedValue || "").slice(0, 32);
+            if (NAME_CASE_FIELDS.has(name)) maskedValue = capitalizeWords(maskedValue);
+            if (name === "certidao_obito") maskedValue = String(maskedValue || "").slice(0, 32);
 
-        updateFieldByName(name, maskedValue);
-        validateFieldOnChange(name, maskedValue);
+            updateFieldByName(name, maskedValue);
+            validateFieldOnChange(name, maskedValue);
 
-        if (name === "titulo_posse" && !isTituloPosseSim(maskedValue)) {
-            updateFieldByName("contrato_id", "");
-            updateFieldByName("numero_titulo", "");
-            updateFieldByName("nome_titular", "");
-            updateFieldByName("quadra_sep", "");
-            updateFieldByName("num_sepultura_sep", "");
-            updateFieldByName("coveiro_sep", "");
-            clearFieldError("contrato_id");
-            clearFieldError("numero_titulo");
-            clearFieldError("nome_titular");
-            clearFieldError("quadra_sep");
-            clearFieldError("num_sepultura_sep");
-        }
+            if (name === "titulo_posse" && !isTituloPosseSim(maskedValue)) {
+                updateFieldByName("contrato_id", "");
+                updateFieldByName("numero_titulo", "");
+                updateFieldByName("nome_titular", "");
+                updateFieldByName("quadra_sep", "");
+                updateFieldByName("num_sepultura_sep", "");
+                updateFieldByName("coveiro_sep", "");
+                clearFieldError("contrato_id");
+                clearFieldError("numero_titulo");
+                clearFieldError("nome_titular");
+                clearFieldError("quadra_sep");
+                clearFieldError("num_sepultura_sep");
+            }
 
-        if (name === "taxa") {
-            const selectedTaxa = findTaxaByCodigo(taxas, maskedValue);
-            updateFieldByName("taxa_valor", selectedTaxa ? getTaxaValor(selectedTaxa) : 0);
-            updateFieldByName("taxa_id", getTaxaId(selectedTaxa));
-        }
-    }, [taxas, updateFieldByName, validateFieldOnChange, clearFieldError]);
+            if (name === "taxa") {
+                const selectedTaxa = findTaxaByCodigo(taxas, maskedValue);
+                updateFieldByName("taxa_valor", selectedTaxa ? getTaxaValor(selectedTaxa) : 0);
+                updateFieldByName("taxa_id", getTaxaId(selectedTaxa));
+            }
+        },
+        [taxas, updateFieldByName, validateFieldOnChange, clearFieldError]
+    );
 
     const handleSelectFalecido = (val) => {
         const raw = val === undefined || val === null ? "" : String(val).trim();
@@ -240,36 +287,39 @@ export default function Cadastros() {
         }));
     };
 
-    const handleSelectContrato = useCallback((contractIdOrNumber) => {
-        const raw = String(contractIdOrNumber ?? "").trim();
-        if (!raw) {
-            updateFieldByName("contrato_id", "");
-            updateFieldByName("numero_titulo", "");
-            updateFieldByName("nome_titular", "");
-            updateFieldByName("quadra_sep", "");
-            updateFieldByName("num_sepultura_sep", "");
+    const handleSelectContrato = useCallback(
+        (contractIdOrNumber) => {
+            const raw = String(contractIdOrNumber ?? "").trim();
+            if (!raw) {
+                updateFieldByName("contrato_id", "");
+                updateFieldByName("numero_titulo", "");
+                updateFieldByName("nome_titular", "");
+                updateFieldByName("quadra_sep", "");
+                updateFieldByName("num_sepultura_sep", "");
+                clearFieldError("numero_titulo");
+                clearFieldError("nome_titular");
+                clearFieldError("quadra_sep");
+                clearFieldError("num_sepultura_sep");
+                return;
+            }
+
+            const contract = findContratoByReference(raw, contratos);
+            if (!contract) return;
+
+            updateFieldByName("titulo_posse", "Sim");
+            updateFieldByName("contrato_id", getContratoId(contract));
+            updateFieldByName("numero_titulo", getContratoNumeroTitulo(contract));
+            updateFieldByName("nome_titular", getContratoTitularNome(contract));
+            updateFieldByName("quadra_sep", getContratoQuadraRef(contract));
+            updateFieldByName("num_sepultura_sep", getContratoSepulturaRef(contract));
+            updateFieldByName("coveiro_sep", "");
             clearFieldError("numero_titulo");
             clearFieldError("nome_titular");
             clearFieldError("quadra_sep");
             clearFieldError("num_sepultura_sep");
-            return;
-        }
-
-        const contract = findContratoByReference(raw, contratos);
-        if (!contract) return;
-
-        updateFieldByName("titulo_posse", "Sim");
-        updateFieldByName("contrato_id", getContratoId(contract));
-        updateFieldByName("numero_titulo", getContratoNumeroTitulo(contract));
-        updateFieldByName("nome_titular", getContratoTitularNome(contract));
-        updateFieldByName("quadra_sep", getContratoQuadraRef(contract));
-        updateFieldByName("num_sepultura_sep", getContratoSepulturaRef(contract));
-        updateFieldByName("coveiro_sep", "");
-        clearFieldError("numero_titulo");
-        clearFieldError("nome_titular");
-        clearFieldError("quadra_sep");
-        clearFieldError("num_sepultura_sep");
-    }, [clearFieldError, contratos, updateFieldByName]);
+        },
+        [clearFieldError, contratos, updateFieldByName]
+    );
 
     const clearVelorioFields = useCallback(() => {
         VELORIO_FIELDS.forEach((fieldName) => {
@@ -278,12 +328,15 @@ export default function Cadastros() {
         });
     }, [clearFieldError, updateFieldByName]);
 
-    const handleVelorioToggle = useCallback((enabled) => {
-        updateFieldByName("com_velorio", enabled);
-        if (!enabled) {
-            clearVelorioFields();
-        }
-    }, [clearVelorioFields, updateFieldByName]);
+    const handleVelorioToggle = useCallback(
+        (enabled) => {
+            updateFieldByName("com_velorio", enabled);
+            if (!enabled) {
+                clearVelorioFields();
+            }
+        },
+        [clearVelorioFields, updateFieldByName]
+    );
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -294,9 +347,8 @@ export default function Cadastros() {
         setConfirmOpen(true);
     };
 
-    
-
-    const disabledFor = (name) => isSubmitting || (processType === PROCESS_TYPES.falecido && isIndigente && !ALLOWED_FAL_INDI.has(name));
+    const disabledFor = (name) =>
+        isSubmitting || (processType === PROCESS_TYPES.falecido && isIndigente && !ALLOWED_FAL_INDI.has(name));
 
     const handleToggleIndigente = () => {
         setIsIndigente((prev) => {
@@ -336,7 +388,11 @@ export default function Cadastros() {
                 <FormStyled onSubmit={handleSubmit}>
                     {isFalecidoProcess && (
                         <CheckboxWrapper>
-                            <CheckboxInput checked={isIndigente} onChange={handleToggleIndigente} disabled={isSubmitting} />
+                            <CheckboxInput
+                                checked={isIndigente}
+                                onChange={handleToggleIndigente}
+                                disabled={isSubmitting}
+                            />
                             <CheckboxLabel>Não identificado</CheckboxLabel>
                         </CheckboxWrapper>
                     )}
@@ -362,7 +418,6 @@ export default function Cadastros() {
                                 isIndigente={isIndigente}
                                 disabledFor={disabledFor}
                                 resultados={resultados}
-                                busca={busca}
                                 setBusca={setBusca}
                                 validateFieldOnChange={validateFieldOnChange}
                                 isSubmitting={isSubmitting}
@@ -408,7 +463,10 @@ export default function Cadastros() {
                 <ConfirmationDialog
                     open={confirmOpen}
                     onClose={() => setConfirmOpen(false)}
-                    onConfirm={() => { setConfirmOpen(false); handleConfirmSubmit(); }}
+                    onConfirm={() => {
+                        setConfirmOpen(false);
+                        handleConfirmSubmit();
+                    }}
                     title="Confirmar envio"
                     alertSeverity="info"
                     alertMessage="Revise os dados antes de enviar o cadastro."

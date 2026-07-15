@@ -17,15 +17,20 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LuChevronDown } from "react-icons/lu";
 import { formatDateKey, formatDateTimeKey, parseDateValue } from "../../../utils/date";
-import { formatQuadraDisplay, getContratoId, getContratoNumeroTitulo, getFalecidoId, getFalecidoName, getSepulturaNumber, getTaxaCodigo, getTaxaId, isTituloPosseSim, normalizeSepulturaStatus } from "../../../utils";
-import { hasErrors } from "../../../utils/validation"
 import {
-    SearchFieldWrapper,
-    SearchResults,
-    SearchResultItem,
-    StepHeader,
-    ChevronIcon,
-} from "./styles";
+    formatQuadraDisplay,
+    getContratoId,
+    getContratoNumeroTitulo,
+    getFalecidoId,
+    getFalecidoName,
+    getSepulturaNumber,
+    getTaxaCodigo,
+    getTaxaId,
+    isTituloPosseSim,
+    normalizeSepulturaStatus,
+} from "../../../utils";
+import { hasErrors } from "../../../utils/validation";
+import { SearchFieldWrapper, SearchResults, SearchResultItem, StepHeader, ChevronIcon } from "./styles";
 import SystemButton from "../../common/SystemButton";
 
 function SepultamentoProcess({
@@ -78,12 +83,12 @@ function SepultamentoProcess({
                 <StepContent sx={{ display: expandedSteps[0] ? "block" : "none" }}>
                     <Box sx={{ mb: 2 }}>
                         <FormControlLabel
-                            control={(
+                            control={
                                 <Checkbox
                                     checked={!!form.com_velorio}
                                     onChange={(event) => handleVelorioToggle(event.target.checked)}
                                 />
-                            )}
+                            }
                             label="Adicionar velório antes do sepultamento"
                         />
                     </Box>
@@ -155,12 +160,21 @@ function SepultamentoProcess({
                             <Grid size={{ xs: 12, md: 6 }}>
                                 <FormControl fullWidth error={!!fieldErrors.tipo_velorio}>
                                     <InputLabel sx={labelSxStyle}>Tipo</InputLabel>
-                                    <Select label="Tipo" name="tipo_velorio" value={form.tipo_velorio || ""} onChange={handleChange} disabled={isSubmitting} sx={selectSxStyle}>
+                                    <Select
+                                        label="Tipo"
+                                        name="tipo_velorio"
+                                        value={form.tipo_velorio || ""}
+                                        onChange={handleChange}
+                                        disabled={isSubmitting}
+                                        sx={selectSxStyle}
+                                    >
                                         <MenuItem value="">Selecione o tipo</MenuItem>
                                         <MenuItem value="Publico">Público</MenuItem>
                                         <MenuItem value="Privado">Privado</MenuItem>
                                     </Select>
-                                    {fieldErrors.tipo_velorio && <FormHelperText>{fieldErrors.tipo_velorio}</FormHelperText>}
+                                    {fieldErrors.tipo_velorio && (
+                                        <FormHelperText>{fieldErrors.tipo_velorio}</FormHelperText>
+                                    )}
                                 </FormControl>
                             </Grid>
 
@@ -215,7 +229,7 @@ function SepultamentoProcess({
                 </StepLabel>
                 <StepContent sx={{ display: (expandedSteps[1] ?? true) ? "block" : "none" }}>
                     <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, md:6 }}>
+                        <Grid size={{ xs: 12, md: 6 }}>
                             <SearchFieldWrapper>
                                 <TextField
                                     fullWidth
@@ -273,7 +287,9 @@ function SepultamentoProcess({
                                 label="Data do falecimento"
                                 format="dd/MM/yyyy"
                                 value={parseDateValue(form.data_obito_sep)}
-                                onChange={(newVal) => updateFieldByName("data_obito_sep", newVal ? formatDateKey(newVal) : "")}
+                                onChange={(newVal) =>
+                                    updateFieldByName("data_obito_sep", newVal ? formatDateKey(newVal) : "")
+                                }
                                 disabled={isSubmitting}
                                 slotProps={{
                                     textField: {
@@ -293,7 +309,9 @@ function SepultamentoProcess({
                                 label="Data e hora do sepultamento"
                                 format="dd/MM/yyyy HH:mm"
                                 value={parseDateValue(form.dh_sep)}
-                                onChange={(newVal) => updateFieldByName("dh_sep", newVal ? formatDateTimeKey(newVal) : "")}
+                                onChange={(newVal) =>
+                                    updateFieldByName("dh_sep", newVal ? formatDateTimeKey(newVal) : "")
+                                }
                                 disabled={isSubmitting}
                                 slotProps={{
                                     textField: {
@@ -310,17 +328,29 @@ function SepultamentoProcess({
                         <Grid size={{ xs: 12, md: 6 }}>
                             <FormControl fullWidth error={!!fieldErrors.titulo_posse}>
                                 <InputLabel sx={labelSxStyle}>Possui título de posse?</InputLabel>
-                                <Select label="Possui titulo de posse?" name="titulo_posse" value={form.titulo_posse} onChange={handleChange} sx={selectSxStyle}>
+                                <Select
+                                    label="Possui titulo de posse?"
+                                    name="titulo_posse"
+                                    value={form.titulo_posse}
+                                    onChange={handleChange}
+                                    sx={selectSxStyle}
+                                >
                                     <MenuItem value="">Selecione a opcao</MenuItem>
                                     <MenuItem value="Sim">Sim</MenuItem>
                                     <MenuItem value="Nao">Nao</MenuItem>
                                 </Select>
-                                {fieldErrors.titulo_posse && <FormHelperText>{fieldErrors.titulo_posse}</FormHelperText>}
+                                {fieldErrors.titulo_posse && (
+                                    <FormHelperText>{fieldErrors.titulo_posse}</FormHelperText>
+                                )}
                             </FormControl>
                         </Grid>
 
                         <Grid size={{ xs: 12, md: 6 }}>
-                            <FormControl fullWidth error={!!fieldErrors.numero_titulo} disabled={!isTituloPosse || isSubmitting}>
+                            <FormControl
+                                fullWidth
+                                error={!!fieldErrors.numero_titulo}
+                                disabled={!isTituloPosse || isSubmitting}
+                            >
                                 <InputLabel sx={labelSxStyle}>Nº do título</InputLabel>
                                 <Select
                                     label="Nº do título"
@@ -337,7 +367,9 @@ function SepultamentoProcess({
                                         </MenuItem>
                                     ))}
                                 </Select>
-                                {fieldErrors.numero_titulo && <FormHelperText>{fieldErrors.numero_titulo}</FormHelperText>}
+                                {fieldErrors.numero_titulo && (
+                                    <FormHelperText>{fieldErrors.numero_titulo}</FormHelperText>
+                                )}
                             </FormControl>
                         </Grid>
 
@@ -394,27 +426,51 @@ function SepultamentoProcess({
                                         const val = getSepulturaNumber(cova);
                                         const isReserved = normalizeSepulturaStatus(cova) === "reservada";
                                         return (
-                                            <MenuItem key={String(cova.id ?? `${cova.quadra_cova}-${cova.num_cova}`)} value={val}>
-                                                {val}{isReserved ? " (Particular)" : ""}
+                                            <MenuItem
+                                                key={String(cova.id ?? `${cova.quadra_cova}-${cova.num_cova}`)}
+                                                value={val}
+                                            >
+                                                {val}
+                                                {isReserved ? " (Particular)" : ""}
                                             </MenuItem>
                                         );
                                     })}
                                 </Select>
-                                {fieldErrors.num_sepultura_sep && <FormHelperText>{fieldErrors.num_sepultura_sep}</FormHelperText>}
+                                {fieldErrors.num_sepultura_sep && (
+                                    <FormHelperText>{fieldErrors.num_sepultura_sep}</FormHelperText>
+                                )}
                             </FormControl>
                         </Grid>
 
                         <Grid size={{ xs: 12, md: 4 }}>
-                            <TextField fullWidth variant="outlined" label="Tipo de sepultura" value={tipoCovaSelecionada || "-"} disabled sx={fieldSxStyle} slotProps={{ inputLabel: { sx: labelSxStyle } }} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Tipo de sepultura"
+                                value={tipoCovaSelecionada || "-"}
+                                disabled
+                                sx={fieldSxStyle}
+                                slotProps={{ inputLabel: { sx: labelSxStyle } }}
+                            />
                         </Grid>
 
                         <Grid size={{ xs: 12, md: 4 }}>
                             <FormControl fullWidth error={!!fieldErrors.taxa}>
                                 <InputLabel sx={labelSxStyle}>Taxa de sepultamento</InputLabel>
-                                <Select label="Taxa de sepultamento" name="taxa" value={form.taxa} onChange={handleChange} disabled={isSubmitting} sx={selectSxStyle}>
+                                <Select
+                                    label="Taxa de sepultamento"
+                                    name="taxa"
+                                    value={form.taxa}
+                                    onChange={handleChange}
+                                    disabled={isSubmitting}
+                                    sx={selectSxStyle}
+                                >
                                     <MenuItem value="">Selecione o tipo de taxa</MenuItem>
                                     {(taxaOptions || []).map((taxa) => (
-                                        <MenuItem key={getTaxaId(taxa) || getTaxaCodigo(taxa)} value={getTaxaCodigo(taxa)}>
+                                        <MenuItem
+                                            key={getTaxaId(taxa) || getTaxaCodigo(taxa)}
+                                            value={getTaxaCodigo(taxa)}
+                                        >
                                             {taxa.label}
                                         </MenuItem>
                                     ))}
@@ -440,8 +496,17 @@ function SepultamentoProcess({
                     </Grid>
 
                     <Box sx={{ mb: 2, mt: 3, display: "flex", gap: 1 }}>
-                        <SystemButton type="button" tone="cancel" onClick={handleClearSepultamento} disabled={isSubmitting}>Limpar</SystemButton>
-                        <SystemButton type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>Salvar</SystemButton>
+                        <SystemButton
+                            type="button"
+                            tone="cancel"
+                            onClick={handleClearSepultamento}
+                            disabled={isSubmitting}
+                        >
+                            Limpar
+                        </SystemButton>
+                        <SystemButton type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>
+                            Salvar
+                        </SystemButton>
                     </Box>
                 </StepContent>
             </Step>

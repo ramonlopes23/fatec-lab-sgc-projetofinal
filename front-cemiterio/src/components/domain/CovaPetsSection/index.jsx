@@ -4,10 +4,7 @@ import { useToastFeedback } from "../../../hooks";
 import ConfirmationDialog from "../../common/ConfirmationDialog";
 import SystemButton from "../../common/SystemButton";
 import SystemSelect from "../../common/SystemSelect";
-import DefaultModal, {
-    DefaultModalActions,
-    DefaultModalGrid,
-} from "../../common/DefaultModal";
+import DefaultModal, { DefaultModalActions, DefaultModalGrid } from "../../common/DefaultModal";
 import {
     BtnDelete,
     BtnUpdate,
@@ -61,9 +58,9 @@ export default function CovaPetsSection({
     const { showSuccess, showError, ToastElement } = useToastFeedback();
 
     const resetPetForm = () => {
-        setFormPet(makeInitialForm(sepultamentos[0] ?? null))
+        setFormPet(makeInitialForm(sepultamentos[0] ?? null));
         setEditingPetId(null);
-    }
+    };
 
     const quadraKey = useMemo(() => getSepulturaQuadraRef(selectedCova), [selectedCova]);
 
@@ -80,8 +77,8 @@ export default function CovaPetsSection({
     }, [petsAll, quadraKey, numero]);
 
     useEffect(() => {
-        setActiveTab("sepultamentos")
-    }, [quadraKey, numero])
+        setActiveTab("sepultamentos");
+    }, [quadraKey, numero]);
 
     useEffect(() => {
         if (activeTab === "pets" && modalPetList.length === 0) {
@@ -94,7 +91,7 @@ export default function CovaPetsSection({
             const next = { ...prev, [name]: value };
             if (name === "sepultamento_id") {
                 const sep = (sepultamentos || []).find((s) => String(s.id) === String(value));
-                next.falecido_id = getFalecidoIdFromRecord(sep)
+                next.falecido_id = getFalecidoIdFromRecord(sep);
             }
             return next;
         });
@@ -104,7 +101,7 @@ export default function CovaPetsSection({
         resetPetForm();
         setIsEditingPet(true);
         setModalAddPetOpen(true);
-    }
+    };
 
     const handleEditPetId = (pet) => {
         if (!pet) return;
@@ -124,7 +121,7 @@ export default function CovaPetsSection({
             falecido_id: pet.falecido_id ?? "",
         });
         setModalAddPetOpen(true);
-    }
+    };
 
     const handleClosePetModal = () => {
         setModalAddPetOpen(false);
@@ -162,9 +159,7 @@ export default function CovaPetsSection({
         if (!formPet.especie?.trim()) return showError("Informe a espécie do pet.");
         if (!formPet.sepultamento_id) return showError("Selecione o sepultamento para vincular o pet.");
 
-        const sep = (sepultamentos || []).find(
-            (s) => String(s.id) === String(formPet.sepultamento_id)
-        );
+        const sep = (sepultamentos || []).find((s) => String(s.id) === String(formPet.sepultamento_id));
 
         if (!sep) return showError("Sepultamento selecionado é inválido.");
 
@@ -248,7 +243,11 @@ export default function CovaPetsSection({
                 title="Excluir pet"
                 alertSeverity="error"
                 alertMessage="Esta ação removerá o pet do sistema."
-                description={pendingDeletePet ? `Deseja excluir o pet ${pendingDeletePet.nome_pet || "sem nome"}?` : "Confirme a exclusão do pet."}
+                description={
+                    pendingDeletePet
+                        ? `Deseja excluir o pet ${pendingDeletePet.nome_pet || "sem nome"}?`
+                        : "Confirme a exclusão do pet."
+                }
                 confirmLabel="Excluir"
                 confirmTone="delete"
                 confirmDisabled={!pendingDeletePet}
@@ -264,12 +263,9 @@ export default function CovaPetsSection({
                 </TabButton>
 
                 {modalPetList.length > 0 && (
-                    <TabButton
-                        type="button"
-                        $active={activeTab === "pets"}
-                        onClick={() => setActiveTab("pets")}
-                    >
-                        <MdPets />Pets ({modalPetList.length})
+                    <TabButton type="button" $active={activeTab === "pets"} onClick={() => setActiveTab("pets")}>
+                        <MdPets />
+                        Pets ({modalPetList.length})
                     </TabButton>
                 )}
 
@@ -300,11 +296,15 @@ export default function CovaPetsSection({
                                     <PetName>{pet.nome_pet || "Pet sem nome"}</PetName>
                                     <PetMeta>Espécie: {pet.especie || "-"}</PetMeta>
                                     <PetMeta>Raça: {pet.raca || "-"}</PetMeta>
-                                    <PetMeta>Data do óbito: {pet.data_obito_pet ? formatDateDMY(pet.data_obito_pet) : "-"}</PetMeta>
-                                    <PetMeta>Data/Hora do sepultamento: {pet.dh_sep_pet ? formatDateTimeDMY(pet.dh_sep_pet) : "-"}</PetMeta>
+                                    <PetMeta>
+                                        Data do óbito: {pet.data_obito_pet ? formatDateDMY(pet.data_obito_pet) : "-"}
+                                    </PetMeta>
+                                    <PetMeta>
+                                        Data/Hora do sepultamento:{" "}
+                                        {pet.dh_sep_pet ? formatDateTimeDMY(pet.dh_sep_pet) : "-"}
+                                    </PetMeta>
                                     <PetMeta>Observações: {pet.obs_pet || "-"}</PetMeta>
                                     <PetMeta>Falecido(a)/família vinculado(a): {pet.nome_sep || "-"}</PetMeta>
-
                                 </PetCard>
                             ))}
                         </PetList>
@@ -319,8 +319,8 @@ export default function CovaPetsSection({
                 fields={isViewingExistingPet ? petViewFields : []}
                 onClose={handleClosePetModal}
             >
-                    <form onSubmit={submitPet}>
-                        {!isViewingExistingPet ? (
+                <form onSubmit={submitPet}>
+                    {!isViewingExistingPet ? (
                         <DefaultModalGrid>
                             <Field>
                                 <Label>Nome do pet</Label>
@@ -388,33 +388,32 @@ export default function CovaPetsSection({
                                 />
                             </Field>
                         </DefaultModalGrid>
-                        ) : null}
+                    ) : null}
 
-                        <DefaultModalActions>
-                            {isViewingExistingPet ? (
-                                <SystemButton
-                                    type="button"
-                                    onClick={(event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        setIsEditingPet(true);
-                                    }}
-                                    disabled={saving}
-                                >
-                                    Editar
-                                </SystemButton>
-                            ) : (
-                                <SystemButton type="submit" disabled={saving}>
-                                    {saving ? "Salvando..." : "Salvar"}
-                                </SystemButton>
-                            )}
-                            <SystemButton type="button" tone="cancel" onClick={handleClosePetModal}>
-                                {editingPetId ? "Fechar" : "Cancelar"}
+                    <DefaultModalActions>
+                        {isViewingExistingPet ? (
+                            <SystemButton
+                                type="button"
+                                onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    setIsEditingPet(true);
+                                }}
+                                disabled={saving}
+                            >
+                                Editar
                             </SystemButton>
-                        </DefaultModalActions>
-                    </form>
+                        ) : (
+                            <SystemButton type="submit" disabled={saving}>
+                                {saving ? "Salvando..." : "Salvar"}
+                            </SystemButton>
+                        )}
+                        <SystemButton type="button" tone="cancel" onClick={handleClosePetModal}>
+                            {editingPetId ? "Fechar" : "Cancelar"}
+                        </SystemButton>
+                    </DefaultModalActions>
+                </form>
             </DefaultModal>
         </>
     );
 }
-

@@ -3,33 +3,21 @@ const normalizeQuadraValue = (value) => {
     return String(value).trim();
 };
 
-const normalizeQuadraDisplayValue = (value) => (
-    normalizeQuadraValue(value).replace(/^quadra\s+/i, "").trim()
-);
+const normalizeQuadraDisplayValue = (value) =>
+    normalizeQuadraValue(value)
+        .replace(/^quadra\s+/i, "")
+        .trim();
 
 const getQuadraDisplayCandidates = (value) => {
     if (!value || typeof value !== "object") return [];
 
-    return [
-        value.num_quadra,
-        value.number,
-        value.numero,
-        value.nome,
-    ]
-        .map(normalizeQuadraDisplayValue)
-        .filter(Boolean);
+    return [value.num_quadra, value.number, value.numero, value.nome].map(normalizeQuadraDisplayValue).filter(Boolean);
 };
 
 const getQuadraLookupCandidates = (value) => {
     if (!value || typeof value !== "object") return [];
 
-    return [
-        value.id,
-        value.num_quadra,
-        value.number,
-        value.numero,
-        value.nome,
-    ]
+    return [value.id, value.num_quadra, value.number, value.numero, value.nome]
         .map(normalizeQuadraValue)
         .filter(Boolean);
 };

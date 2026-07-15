@@ -2,7 +2,6 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Sector } from "recha
 import api from "../../../services/index.js";
 import { useEffect, useState, useRef, useMemo } from "react";
 
-
 const PIE_SERIES = [
     { key: "disponivel", label: "Disponível", color: "#9e9e9e" },
     { key: "ocupada", label: "Ocupada", color: "#000" },
@@ -36,7 +35,6 @@ function normalizeBackendStatus(grave) {
 }
 
 export default function PieChartSepulturas() {
-
     const [graves, setGraves] = useState([]);
     const [loading, setLoading] = useState(false);
     const [activeIndex, setActiveIndex] = useState(null);
@@ -53,7 +51,13 @@ export default function PieChartSepulturas() {
                 if (!mounted) return;
 
                 const raw = response?.data;
-                const list = Array.isArray(raw) ? raw : Array.isArray(raw?.content) ? raw.content : Array.isArray(raw?.data) ? raw.data : [];
+                const list = Array.isArray(raw)
+                    ? raw
+                    : Array.isArray(raw?.content)
+                      ? raw.content
+                      : Array.isArray(raw?.data)
+                        ? raw.data
+                        : [];
 
                 setGraves(list);
             })
@@ -63,14 +67,13 @@ export default function PieChartSepulturas() {
                 setGraves([]);
             })
             .finally(() => {
-                if (mounted) setLoading(false)
-            })
+                if (mounted) setLoading(false);
+            });
 
         return () => {
             mounted = false;
-        }
+        };
     }, []);
-
 
     const data = useMemo(() => {
         const counts = {
@@ -99,8 +102,8 @@ export default function PieChartSepulturas() {
 
     useEffect(() => {
         cancelAnimationFrame(rafRef.current);
-        const from = animFactor;
-        const to = activeIndex === null ? 1 : 1.20;
+        const from = animFactorRef.current;
+        const to = activeIndex === null ? 1 : 1.2;
         const duration = 220;
         const startTime = performance.now();
 
@@ -113,34 +116,38 @@ export default function PieChartSepulturas() {
             }
         }
 
-        rafRef.current = requestAnimationFrame(step)
-        return () => cancelAnimationFrame(rafRef.current)
+        rafRef.current = requestAnimationFrame(step);
+        return () => cancelAnimationFrame(rafRef.current);
     }, [activeIndex]);
 
     const total = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
 
-
     function renderActiveShape(props) {
-        const {
-            cx,
-            cy,
-            innerRadius,
-            outerRadius,
-            startAngle,
-            endAngle,
-            fill,
-            payload,
-            percent,
-            value,
-        } = props;
+        const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
 
         const animatedOuter = outerRadius * animFactor;
 
         return (
             <g>
-                <Sector cx={cx} cy={cy} innerRadius={innerRadius + 10} outerRadius={animatedOuter + 10} startAngle={startAngle} endAngle={endAngle} fill={fill} />
+                <Sector
+                    cx={cx}
+                    cy={cy}
+                    innerRadius={innerRadius + 10}
+                    outerRadius={animatedOuter + 10}
+                    startAngle={startAngle}
+                    endAngle={endAngle}
+                    fill={fill}
+                />
 
-                <Sector cx={cx} cy={cy} innerRadius={animatedOuter + 6} outerRadius={animatedOuter + 12} startAngle={startAngle} endAngle={endAngle} fill={"rgba(0,0,0,0.06)"} />
+                <Sector
+                    cx={cx}
+                    cy={cy}
+                    innerRadius={animatedOuter + 6}
+                    outerRadius={animatedOuter + 12}
+                    startAngle={startAngle}
+                    endAngle={endAngle}
+                    fill={"rgba(0,0,0,0.06)"}
+                />
 
                 <text x={cx} y={cy - 8} textAnchor="middle" fill="#111" fontSize={12} fontWeight={600}>
                     {payload.status}
@@ -149,12 +156,14 @@ export default function PieChartSepulturas() {
                     {value} ({(percent * 100).toFixed(1)}%)
                 </text>
             </g>
-        )
+        );
     }
 
     if (loading) {
         return (
-            <div style={{ width: "100%", height: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div
+                style={{ width: "100%", height: 300, display: "flex", alignItems: "center", justifyContent: "center" }}
+            >
                 <p style={{ color: "#666" }}>Carregando...</p>
             </div>
         );
@@ -164,7 +173,10 @@ export default function PieChartSepulturas() {
         <div style={{ width: "100%", height: 300 }}>
             <ResponsiveContainer>
                 <PieChart width={400} height={400}>
-                    <Pie data={data} dataKey="value" nameKey="status"
+                    <Pie
+                        data={data}
+                        dataKey="value"
+                        nameKey="status"
                         cx="50%"
                         cy="50%"
                         outerRadius="70%"
@@ -194,6 +206,5 @@ export default function PieChartSepulturas() {
                 </PieChart>
             </ResponsiveContainer>
         </div>
-    )
+    );
 }
-

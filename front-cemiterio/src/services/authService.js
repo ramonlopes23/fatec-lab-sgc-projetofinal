@@ -5,24 +5,22 @@ const MOCK_USERS = [
     { id: 2, username: "operador", password: "123456", name: "Operador", role: "USER" },
 ];
 
-const wait = (ms) => new Promise((r)=>setTimeout(r,ms));
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export async function loginRequest({username, password}){
-    if(AUTH_MODE === "mock"){
+export async function loginRequest({ username, password }) {
+    if (AUTH_MODE === "mock") {
         await wait(500);
-        const user = MOCK_USERS.find(
-            (u) => u.username === String(username).trim() && u.password === String(password)
-        );
+        const user = MOCK_USERS.find((u) => u.username === String(username).trim() && u.password === String(password));
 
-        if(!user){
-            throw new Error("Usuário ou senha inválidos")
+        if (!user) {
+            throw new Error("Usuário ou senha inválidos");
         }
 
         return {
             accessToken: `mock-token-${user.id}-${Date.now()}`,
-            user: {id:user.id, name: user.name, role: user.role, username: user.username}
-        }
+            user: { id: user.id, name: user.name, role: user.role, username: user.username },
+        };
     }
 
-    throw new Error("AUTH_MODE=real ainda não implementado")
+    throw new Error("AUTH_MODE=real ainda não implementado");
 }

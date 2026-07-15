@@ -43,23 +43,23 @@ export function useCreateGraves({ onSuccess } = {}) {
             }
 
             if (typeof blocked !== "boolean") {
-                throw new Error("Estado de bloqueio inválido")
+                throw new Error("Estado de bloqueio inválido");
             }
 
             const existingGraves = await getGrave();
 
-            const alreadyExists = Array.isArray(existingGraves) && existingGraves.some((grave) => Number(grave.number) === parsedNumber && String(grave.blockId) === parsedBlockId);
+            const alreadyExists =
+                Array.isArray(existingGraves) &&
+                existingGraves.some(
+                    (grave) => Number(grave.number) === parsedNumber && String(grave.blockId) === parsedBlockId
+                );
 
             if (alreadyExists) {
                 throw new Error("Já existe uma sepultura com esse número nesta quadra. ");
             }
 
             const normalizedStatus = String(status || "AVAILABLE").toUpperCase();
-            const normalizedBlocked =
-                typeof blocked === "boolean"
-                    ? blocked
-                    : normalizedStatus === "MAINTENANCE";
-
+            const normalizedBlocked = typeof blocked === "boolean" ? blocked : normalizedStatus === "MAINTENANCE";
 
             const payload = {
                 number: parsedNumber,
@@ -74,7 +74,7 @@ export function useCreateGraves({ onSuccess } = {}) {
             const created = await createGrave(payload);
 
             if (onSuccess) {
-                await onSuccess(created)
+                await onSuccess(created);
             }
             return created;
         } catch (err) {
@@ -93,5 +93,5 @@ export function useCreateGraves({ onSuccess } = {}) {
         handleCreateGrave,
         loading,
         error,
-    }
+    };
 }

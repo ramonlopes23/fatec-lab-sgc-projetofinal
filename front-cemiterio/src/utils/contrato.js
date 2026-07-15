@@ -7,45 +7,50 @@ const normalizeLower = (value) => normalizeValue(value).toLowerCase();
 
 const POSITIVE_VALUES = new Set(["sim", "s", "true", "1", "particular", "proprio", "propria"]);
 
-export const getContratoId = (contrato = {}) => normalizeValue(
-    contrato?.id ?? contrato?._id ?? contrato?.contrato_id ?? contrato?.contractId ?? contrato?.numero_titulo ?? ""
-);
+export const getContratoId = (contrato = {}) =>
+    normalizeValue(
+        contrato?.id ?? contrato?._id ?? contrato?.contrato_id ?? contrato?.contractId ?? contrato?.numero_titulo ?? ""
+    );
 
-export const getContratoNumeroTitulo = (contrato = {}) => normalizeValue(
-    contrato?.numero_titulo ?? contrato?.numeroTitulo ?? contrato?.numero_titulo_posse ?? contrato?.titulo ?? contrato?.numero ?? ""
-);
+export const getContratoNumeroTitulo = (contrato = {}) =>
+    normalizeValue(
+        contrato?.numero_titulo ??
+            contrato?.numeroTitulo ??
+            contrato?.numero_titulo_posse ??
+            contrato?.titulo ??
+            contrato?.numero ??
+            ""
+    );
 
-export const getContratoTitularNome = (contrato = {}) => normalizeValue(
-    contrato?.nome_titular ?? contrato?.titular ?? contrato?.responsavel ?? contrato?.nome_responsavel ?? ""
-);
+export const getContratoTitularNome = (contrato = {}) =>
+    normalizeValue(
+        contrato?.nome_titular ?? contrato?.titular ?? contrato?.responsavel ?? contrato?.nome_responsavel ?? ""
+    );
 
-export const getContratoTitularCpf = (contrato = {}) => normalizeValue(
-    contrato?.cpf_titular ?? contrato?.cpf ?? contrato?.documento_titular ?? ""
-);
+export const getContratoTitularCpf = (contrato = {}) =>
+    normalizeValue(contrato?.cpf_titular ?? contrato?.cpf ?? contrato?.documento_titular ?? "");
 
-export const getContratoContato = (contrato = {}) => normalizeValue(
-    contrato?.contato_responsavel ?? contrato?.telefone ?? contrato?.tel_resp ?? contrato?.contato ?? ""
-);
+export const getContratoContato = (contrato = {}) =>
+    normalizeValue(
+        contrato?.contato_responsavel ?? contrato?.telefone ?? contrato?.tel_resp ?? contrato?.contato ?? ""
+    );
 
-export const getContratoQuadraRef = (contrato = {}) => normalizeValue(
-    contrato?.quadra ?? contrato?.blockId ?? contrato?.quadra_sep ?? contrato?.block ?? ""
-);
+export const getContratoQuadraRef = (contrato = {}) =>
+    normalizeValue(contrato?.quadra ?? contrato?.blockId ?? contrato?.quadra_sep ?? contrato?.block ?? "");
 
-export const getContratoSepulturaRef = (contrato = {}) => normalizeValue(
-    contrato?.sepultura ?? contrato?.num_sepultura_sep ?? contrato?.num_sepultura ?? ""
-);
+export const getContratoSepulturaRef = (contrato = {}) =>
+    normalizeValue(contrato?.sepultura ?? contrato?.num_sepultura_sep ?? contrato?.num_sepultura ?? "");
 
-export const getContratoCemiterioName = (contrato = {}) => normalizeValue(
-    contrato?.cemiterio ?? contrato?.cemiterio_nome ?? contrato?.nome_cemiterio ?? ""
-);
+export const getContratoCemiterioName = (contrato = {}) =>
+    normalizeValue(contrato?.cemiterio ?? contrato?.cemiterio_nome ?? contrato?.nome_cemiterio ?? "");
 
-export const getContratoVigenciaInicio = (contrato = {}) => normalizeValue(
-    contrato?.vigencia_inicio ?? contrato?.validade_titulo_inicio ?? contrato?.data_inicio ?? ""
-);
+export const getContratoVigenciaInicio = (contrato = {}) =>
+    normalizeValue(contrato?.vigencia_inicio ?? contrato?.validade_titulo_inicio ?? contrato?.data_inicio ?? "");
 
-export const getContratoVigenciaFim = (contrato = {}) => normalizeValue(
-    contrato?.vigencia_fim ?? contrato?.validade_titulo_fim ?? contrato?.validade_titulo ?? contrato?.data_fim ?? ""
-);
+export const getContratoVigenciaFim = (contrato = {}) =>
+    normalizeValue(
+        contrato?.vigencia_fim ?? contrato?.validade_titulo_fim ?? contrato?.validade_titulo ?? contrato?.data_fim ?? ""
+    );
 
 export const normalizeContratoStatus = (status) => {
     const normalized = normalizeLower(status);
@@ -60,12 +65,11 @@ export const normalizeContratoStatus = (status) => {
 
 export const isTituloPosseSim = (value) => POSITIVE_VALUES.has(normalizeLower(value));
 
-export const hasTituloPosse = (record = {}) => (
+export const hasTituloPosse = (record = {}) =>
     isTituloPosseSim(record?.titulo_posse) ||
     isTituloPosseSim(record?.posse) ||
     isTituloPosseSim(record?.particular) ||
-    Boolean(record?.contrato_id || record?.contractId || record?.contrato || getContratoNumeroTitulo(record))
-);
+    Boolean(record?.contrato_id || record?.contractId || record?.contrato || getContratoNumeroTitulo(record));
 
 export const normalizeContrato = (contrato = {}) => {
     const source = contrato || {};
@@ -91,9 +95,11 @@ export const findContratoByReference = (value, contratos = []) => {
     const raw = normalizeValue(value);
     if (!raw) return null;
 
-    return (Array.isArray(contratos) ? contratos : []).find((contrato) => (
-        [getContratoId(contrato), getContratoNumeroTitulo(contrato)]
-            .filter(Boolean)
-            .some((candidate) => normalizeValue(candidate) === raw)
-    )) || null;
+    return (
+        (Array.isArray(contratos) ? contratos : []).find((contrato) =>
+            [getContratoId(contrato), getContratoNumeroTitulo(contrato)]
+                .filter(Boolean)
+                .some((candidate) => normalizeValue(candidate) === raw)
+        ) || null
+    );
 };

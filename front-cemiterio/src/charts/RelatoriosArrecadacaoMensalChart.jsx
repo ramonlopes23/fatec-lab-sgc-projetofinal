@@ -1,13 +1,5 @@
 import React from "react";
-import {
-    Bar,
-    BarChart,
-    CartesianGrid,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -28,12 +20,21 @@ export default function RelatoriosArrecadacaoMensalChart({ data = [], loading = 
             <BarChart data={data} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e9ecf5" />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} tickFormatter={(value) => `${Math.round(value / 1000)}k`} />
+                <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: "#6b7280", fontSize: 12 }}
+                    tickFormatter={(value) => `${Math.round(value / 1000)}k`}
+                />
                 <Tooltip
                     cursor={{ fill: "rgba(25,25,112,0.05)" }}
                     formatter={(value) => [currencyFormatter.format(Number(value) || 0), "Arrecadação"]}
                     labelStyle={{ color: "#191970", fontWeight: 600 }}
-                    contentStyle={{ borderRadius: 12, border: "1px solid #dbe1f2", boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)" }}
+                    contentStyle={{
+                        borderRadius: 12,
+                        border: "1px solid #dbe1f2",
+                        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
+                    }}
                 />
                 <Bar dataKey="value" fill="#5ec58f" radius={[8, 8, 0, 0]} barSize={22} />
             </BarChart>

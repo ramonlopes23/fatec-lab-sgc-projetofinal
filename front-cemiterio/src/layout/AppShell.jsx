@@ -7,5 +7,5 @@ export default function AppShell() {
         <MainLayout>
             <Outlet />
         </MainLayout>
-    )
+    );
 }

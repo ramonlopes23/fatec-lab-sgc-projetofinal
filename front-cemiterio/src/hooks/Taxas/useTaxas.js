@@ -13,9 +13,7 @@ export default function useTaxas({ autoLoad = true, onlyActive = false } = {}) {
 
         try {
             const data = await getTaxas();
-            const normalized = Array.isArray(data) && data.length
-                ? data.map(normalizeTaxa)
-                : getFallbackTaxas();
+            const normalized = Array.isArray(data) && data.length ? data.map(normalizeTaxa) : getFallbackTaxas();
 
             setTaxas(onlyActive ? normalized.filter(isTaxaActive) : normalized);
             return normalized;

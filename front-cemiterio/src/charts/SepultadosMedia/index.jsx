@@ -1,8 +1,8 @@
 import api from "../../services/index.js";
 import { Card, CardBody, CardHeader, DashboardWrapper, ChartWrapper, Controls, PeriodButton } from "./styles.js";
 import React, { useMemo, useEffect, useState } from "react";
-import {Bar} from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend, } from "chart.js"
+import { Bar } from "react-chartjs-2";
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from "chart.js";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
@@ -13,13 +13,12 @@ const periodos = [
 ];
 
 function startOfDay(d) {
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
 function formatLabel(d) {
     return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
-
 
 export default function SepultadosMedia() {
     const [sepultamentos, setSepultamentos] = useState([]);
@@ -29,15 +28,17 @@ export default function SepultadosMedia() {
     useEffect(() => {
         let mounted = true;
         setLoading(true);
-        api.get("/sepultamentos").then((res) => {
-            if (!mounted) return;
-            setSepultamentos(Array.isArray(res.data) ? res.data : []);
-        }).catch(() => {
-            if (!mounted) return;
-            setSepultamentos([]);
-        }).finally(() => mounted && setLoading(false));
+        api.get("/sepultamentos")
+            .then((res) => {
+                if (!mounted) return;
+                setSepultamentos(Array.isArray(res.data) ? res.data : []);
+            })
+            .catch(() => {
+                if (!mounted) return;
+                setSepultamentos([]);
+            })
+            .finally(() => mounted && setLoading(false));
         return () => (mounted = false);
-
     }, []);
 
     const { labels, counts, avg } = useMemo(() => {
@@ -60,17 +61,17 @@ export default function SepultadosMedia() {
             return count;
         });
 
-        const sum = countsArr.reduce((a, b)=>a + b, 0);
+        const sum = countsArr.reduce((a, b) => a + b, 0);
         const average = countsArr.length ? sum / countsArr.length : 0;
 
-        return{
-            labels:labelsArr.map(formatLabel),
-            counts:countsArr,
-            avg:average,
+        return {
+            labels: labelsArr.map(formatLabel),
+            counts: countsArr,
+            avg: average,
         };
-    },[sepultamentos, period]);
+    }, [sepultamentos, period]);
 
-    const data = useMemo(()=>{
+    const data = useMemo(() => {
         return {
             labels,
             datasets: [
@@ -82,7 +83,6 @@ export default function SepultadosMedia() {
                 },
             ],
         };
-
     }, [labels, counts]);
 
     const options = {
@@ -95,18 +95,23 @@ export default function SepultadosMedia() {
         },
     };
 
-    const formatAvg = (v) => new Intl.NumberFormat("pt-BR", {minimumFractionDigits: 1, maximumFractionDigits:1}).format(v);
+    const formatAvg = (v) =>
+        new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v);
 
     return (
         <DashboardWrapper>
             <Card>
-                <CardHeader>
-                    Média de sepultamentos: {formatAvg(avg)} / dia
-                </CardHeader>
-                <CardBody >
+                <CardHeader>Média de sepultamentos: {formatAvg(avg)} / dia</CardHeader>
+                <CardBody>
                     <Controls>
                         {periodos.map((p) => (
-                            <PeriodButton key={p.key} type="button" onClick={() => setPeriod(p.key)} $active={p.key === period} aria-pressed={p.key === period}>
+                            <PeriodButton
+                                key={p.key}
+                                type="button"
+                                onClick={() => setPeriod(p.key)}
+                                $active={p.key === period}
+                                aria-pressed={p.key === period}
+                            >
                                 {p.label}
                             </PeriodButton>
                         ))}
@@ -114,13 +119,9 @@ export default function SepultadosMedia() {
 
                     <ChartWrapper>
                         {loading ? (
-                            <div style={{ padding: 12, color: "#666" }}>
-                                Carregando...
-                            </div>
+                            <div style={{ padding: 12, color: "#666" }}>Carregando...</div>
                         ) : sepultamentos.length === 0 ? (
-                            <div style={{ padding: 12, color: "#666" }}>
-                                Nenhum sepultamento.
-                            </div>
+                            <div style={{ padding: 12, color: "#666" }}>Nenhum sepultamento.</div>
                         ) : (
                             <Bar data={data} options={options} />
                         )}
@@ -128,5 +129,5 @@ export default function SepultadosMedia() {
                 </CardBody>
             </Card>
         </DashboardWrapper>
-    )
+    );
 }

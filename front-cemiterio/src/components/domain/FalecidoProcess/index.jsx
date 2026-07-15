@@ -15,7 +15,13 @@ import Box from "@mui/material/Box";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import DateTimePicker from "../../common/StableDateTimePicker";
 import { LuChevronDown } from "react-icons/lu";
-import { formatDateKey, formatDateTimeKey, formatDateDMY, formatDateTimeDMY, parseDateValue } from "../../../utils/date";
+import {
+    formatDateKey,
+    formatDateTimeKey,
+    formatDateDMY,
+    formatDateTimeDMY,
+    parseDateValue,
+} from "../../../utils/date";
 import {
     getFieldError,
     hasErrors,
@@ -42,7 +48,6 @@ function FalecidoProcess({
     handleCepBlur,
     disabledFor,
     resultados,
-    busca,
     setBusca,
     validateFieldOnChange,
     isSubmitting,
@@ -58,10 +63,12 @@ function FalecidoProcess({
     const selectedNaturalidade = useMemo(() => {
         if (!form.naturalidade) return null;
 
-        return (cidades || []).find((cidade) => {
-            const cidadeLabel = `${cidade.nome} - ${cidade?.microrregiao?.mesorregiao?.UF?.sigla || ""}`;
-            return cidadeLabel === form.naturalidade;
-        }) || null;
+        return (
+            (cidades || []).find((cidade) => {
+                const cidadeLabel = `${cidade.nome} - ${cidade?.microrregiao?.mesorregiao?.UF?.sigla || ""}`;
+                return cidadeLabel === form.naturalidade;
+            }) || null
+        );
     }, [cidades, form.naturalidade]);
 
     const toggleStepExpanded = (stepIndex) => {
@@ -150,15 +157,36 @@ function FalecidoProcess({
                 <StepContent sx={{ display: expandedSteps[0] ? "block" : "none" }}>
                     <Grid container spacing={2}>
                         <Grid size={{ xs: 12, md: 5 }}>
-                            <TextField fullWidth variant="outlined" label="Nome completo" name="nome_fal" placeholder="Digite o nome do falecido" {...textFieldProps("nome_fal")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Nome completo"
+                                name="nome_fal"
+                                placeholder="Digite o nome do falecido"
+                                {...textFieldProps("nome_fal")}
+                            />
                         </Grid>
                         <Grid size={{ xs: 12, md: 1 }}>
-                            <TextField fullWidth variant="outlined" label="Idade" name="idade" {...textFieldProps("idade")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Idade"
+                                name="idade"
+                                {...textFieldProps("idade")}
+                            />
                         </Grid>
                         <Grid size={{ xs: 12, md: 2 }}>
                             <FormControl fullWidth error={!!fieldErrors.sexo}>
                                 <InputLabel sx={labelSxStyle}>Sexo</InputLabel>
-                                <Select label="Sexo" name="sexo" value={form.sexo} onChange={handleChange} disabled={disabledFor("sexo")} sx={selectSxStyle} slotProps={{ input: { notched: true } }}>
+                                <Select
+                                    label="Sexo"
+                                    name="sexo"
+                                    value={form.sexo}
+                                    onChange={handleChange}
+                                    disabled={disabledFor("sexo")}
+                                    sx={selectSxStyle}
+                                    slotProps={{ input: { notched: true } }}
+                                >
                                     <MenuItem value="">Selecione</MenuItem>
                                     <MenuItem value="masculino">Masculino</MenuItem>
                                     <MenuItem value="feminino">Feminino</MenuItem>
@@ -169,7 +197,15 @@ function FalecidoProcess({
                         <Grid size={{ xs: 12, md: 2 }}>
                             <FormControl fullWidth error={!!fieldErrors.estado_civil}>
                                 <InputLabel sx={labelSxStyle}>Estado civil</InputLabel>
-                                <Select label="Estado civil" name="estado_civil" value={form.estado_civil} onChange={handleChange} disabled={disabledFor("estado_civil")} sx={selectSxStyle} slotProps={{ input: { notched: true } }}>
+                                <Select
+                                    label="Estado civil"
+                                    name="estado_civil"
+                                    value={form.estado_civil}
+                                    onChange={handleChange}
+                                    disabled={disabledFor("estado_civil")}
+                                    sx={selectSxStyle}
+                                    slotProps={{ input: { notched: true } }}
+                                >
                                     <MenuItem value="">Selecione</MenuItem>
                                     <MenuItem value="Solteiro">Solteiro(a)</MenuItem>
                                     <MenuItem value="Casado">Casado(a)</MenuItem>
@@ -177,7 +213,9 @@ function FalecidoProcess({
                                     <MenuItem value="Divorciado">Divorciado(a)</MenuItem>
                                     <MenuItem value="Viuvo">Viuvo(a)</MenuItem>
                                 </Select>
-                                {fieldErrors.estado_civil && <FormHelperText>{fieldErrors.estado_civil}</FormHelperText>}
+                                {fieldErrors.estado_civil && (
+                                    <FormHelperText>{fieldErrors.estado_civil}</FormHelperText>
+                                )}
                             </FormControl>
                         </Grid>
                         <Grid size={{ xs: 12, md: 2 }}>
@@ -192,8 +230,8 @@ function FalecidoProcess({
                                     sx={selectSxStyle}
                                     slotProps={{
                                         input: {
-                                            notched: true
-                                        }
+                                            notched: true,
+                                        },
                                     }}
                                 >
                                     <MenuItem value="">Selecione</MenuItem>
@@ -212,9 +250,19 @@ function FalecidoProcess({
                                 label="Data de nascimento"
                                 format="dd/MM/yyyy"
                                 value={parseDateValue(form.data_nasc)}
-                                onChange={(newVal) => updateFieldByName("data_nasc", newVal ? formatDateKey(newVal) : "")}
+                                onChange={(newVal) =>
+                                    updateFieldByName("data_nasc", newVal ? formatDateKey(newVal) : "")
+                                }
                                 disabled={disabledFor("data_nasc")}
-                                slotProps={{ textField: { fullWidth: true, error: !!fieldErrors.data_nasc, helperText: fieldErrors.data_nasc, sx: fieldSxStyle, slotProps: { inputLabel: { sx: labelSxStyle } } } }}
+                                slotProps={{
+                                    textField: {
+                                        fullWidth: true,
+                                        error: !!fieldErrors.data_nasc,
+                                        helperText: fieldErrors.data_nasc,
+                                        sx: fieldSxStyle,
+                                        slotProps: { inputLabel: { sx: labelSxStyle } },
+                                    },
+                                }}
                             />
                         </Grid>
                         <Grid size={{ xs: 12, md: 6 }}>
@@ -222,27 +270,60 @@ function FalecidoProcess({
                                 label="Data e hora de falecimento"
                                 format="dd/MM/yyyy HH:mm"
                                 value={parseDateValue(form.dh_falec)}
-                                onChange={(newVal) => updateFieldByName("dh_falec", newVal ? formatDateTimeKey(newVal) : "")}
+                                onChange={(newVal) =>
+                                    updateFieldByName("dh_falec", newVal ? formatDateTimeKey(newVal) : "")
+                                }
                                 disabled={disabledFor("dh_falec")}
-                                slotProps={{ textField: { fullWidth: true, error: !!fieldErrors.dh_falec, helperText: fieldErrors.dh_falec, sx: fieldSxStyle, slotProps: { inputLabel: { sx: labelSxStyle } } } }}
+                                slotProps={{
+                                    textField: {
+                                        fullWidth: true,
+                                        error: !!fieldErrors.dh_falec,
+                                        helperText: fieldErrors.dh_falec,
+                                        sx: fieldSxStyle,
+                                        slotProps: { inputLabel: { sx: labelSxStyle } },
+                                    },
+                                }}
                             />
                         </Grid>
 
                         <Grid size={{ xs: 12, md: 6 }}>
-                            <TextField fullWidth variant="outlined" label="Filiação pai" name="filiacao_pai" placeholder="Digite o nome do pai" {...textFieldProps("filiacao_pai")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Filiação pai"
+                                name="filiacao_pai"
+                                placeholder="Digite o nome do pai"
+                                {...textFieldProps("filiacao_pai")}
+                            />
                         </Grid>
                         <Grid size={{ xs: 12, md: 6 }}>
-                            <TextField fullWidth variant="outlined" label="Filiação mãe" name="filiacao_mae" placeholder="Digite o nome da mae" {...textFieldProps("filiacao_mae")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Filiação mãe"
+                                name="filiacao_mae"
+                                placeholder="Digite o nome da mae"
+                                {...textFieldProps("filiacao_mae")}
+                            />
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
-                            <TextField fullWidth variant="outlined" label="Profissão" name="profissao" placeholder="Digite a profissao do falecido" {...textFieldProps("profissao")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Profissão"
+                                name="profissao"
+                                placeholder="Digite a profissao do falecido"
+                                {...textFieldProps("profissao")}
+                            />
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
                             <Autocomplete
                                 fullWidth
                                 value={selectedNaturalidade}
                                 options={resultados}
-                                getOptionLabel={(option) => `${option.nome} - ${option?.microrregiao?.mesorregiao?.UF?.sigla || ""}`}
+                                getOptionLabel={(option) =>
+                                    `${option.nome} - ${option?.microrregiao?.mesorregiao?.UF?.sigla || ""}`
+                                }
                                 onInputChange={(_, newInputValue, reason) => {
                                     if (reason === "input") {
                                         setBusca(newInputValue);
@@ -255,14 +336,28 @@ function FalecidoProcess({
                                     }
                                 }}
                                 onChange={(_, newValue) => {
-                                    const displayValue = newValue ? `${newValue.nome} - ${newValue?.microrregiao?.mesorregiao?.UF?.sigla || ""}` : "";
+                                    const displayValue = newValue
+                                        ? `${newValue.nome} - ${newValue?.microrregiao?.mesorregiao?.UF?.sigla || ""}`
+                                        : "";
                                     updateFieldByName("naturalidade", displayValue);
                                     setBusca(newValue ? newValue.nome : "");
                                     validateFieldOnChange("naturalidade", displayValue);
                                 }}
-                                isOptionEqualToValue={(option, value) => option?.nome === value?.nome && option?.microrregiao?.mesorregiao?.UF?.sigla === value?.microrregiao?.mesorregiao?.UF?.sigla}
+                                isOptionEqualToValue={(option, value) =>
+                                    option?.nome === value?.nome &&
+                                    option?.microrregiao?.mesorregiao?.UF?.sigla ===
+                                        value?.microrregiao?.mesorregiao?.UF?.sigla
+                                }
                                 renderInput={(params) => (
-                                    <TextField {...params} label="Naturalidade" placeholder="Digite a naturalidade do falecido" error={!!fieldErrors.naturalidade} helperText={fieldErrors.naturalidade} sx={fieldSxStyle} slotProps={{ inputLabel: { sx: labelSxStyle } }} />
+                                    <TextField
+                                        {...params}
+                                        label="Naturalidade"
+                                        placeholder="Digite a naturalidade do falecido"
+                                        error={!!fieldErrors.naturalidade}
+                                        helperText={fieldErrors.naturalidade}
+                                        sx={fieldSxStyle}
+                                        slotProps={{ inputLabel: { sx: labelSxStyle } }}
+                                    />
                                 )}
                                 noOptionsText="Nenhuma cidade encontrada"
                                 loadingText="Carregando..."
@@ -270,14 +365,32 @@ function FalecidoProcess({
                             />
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
-                            <TextField fullWidth variant="outlined" label="Causa mortis" name="causa_mortis" placeholder="Digite a causa da morte" {...textFieldProps("causa_mortis")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Causa mortis"
+                                name="causa_mortis"
+                                placeholder="Digite a causa da morte"
+                                {...textFieldProps("causa_mortis")}
+                            />
                         </Grid>
                         <Grid size={{ xs: 12 }}>
-                            <TextField fullWidth variant="outlined" label="Observações" name="obs_fal" placeholder="Observacoes..." multiline rows={4} {...textFieldProps("obs_fal")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Observações"
+                                name="obs_fal"
+                                placeholder="Observacoes..."
+                                multiline
+                                rows={4}
+                                {...textFieldProps("obs_fal")}
+                            />
                         </Grid>
                     </Grid>
                     <Box sx={{ mb: 2, mt: 3 }}>
-                        <SystemButton type="button" onClick={handleNextStep} disabled={isSubmitting}>Próximo</SystemButton>
+                        <SystemButton type="button" onClick={handleNextStep} disabled={isSubmitting}>
+                            Próximo
+                        </SystemButton>
                     </Box>
                 </StepContent>
             </Step>
@@ -294,26 +407,74 @@ function FalecidoProcess({
                 <StepContent sx={{ display: expandedSteps[1] ? "block" : "none" }}>
                     <Grid container spacing={2}>
                         <Grid size={{ xs: 12, md: 6 }}>
-                            <TextField fullWidth variant="outlined" label="CPF do falecido" name="cpf" placeholder="000.000.000-00" {...textFieldProps("cpf")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="CPF do falecido"
+                                name="cpf"
+                                placeholder="000.000.000-00"
+                                {...textFieldProps("cpf")}
+                            />
                         </Grid>
                         <Grid size={{ xs: 12, md: 6 }}>
-                            <TextField fullWidth variant="outlined" label="RG do falecido" name="rg" placeholder="00.000.000-0" {...textFieldProps("rg")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="RG do falecido"
+                                name="rg"
+                                placeholder="00.000.000-0"
+                                {...textFieldProps("rg")}
+                            />
                         </Grid>
                         <Grid size={{ xs: 12 }}>
-                            <TextField fullWidth variant="outlined" label="Nome do médico responsável" name="nome_doutor" placeholder="Digite o nome do medico" {...textFieldProps("nome_doutor")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Nome do médico responsável"
+                                name="nome_doutor"
+                                placeholder="Digite o nome do medico"
+                                {...textFieldProps("nome_doutor")}
+                            />
                         </Grid>
                         <Grid size={{ xs: 12 }}>
-                            <TextField fullWidth variant="outlined" label="Comprovante de residência" type="file" accept="image/*" InputLabelProps={{ shrink: true }} onChange={(event) => handleFileChange(event, "residencia")} sx={fieldSxStyle} />
-                            {form.residencia_preview && <FilePreview src={form.residencia_preview} alt="preview comprovante" />}
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Comprovante de residência"
+                                type="file"
+                                accept="image/*"
+                                InputLabelProps={{ shrink: true }}
+                                onChange={(event) => handleFileChange(event, "residencia")}
+                                sx={fieldSxStyle}
+                            />
+                            {form.residencia_preview && (
+                                <FilePreview src={form.residencia_preview} alt="preview comprovante" />
+                            )}
                         </Grid>
                         <Grid size={{ xs: 12 }}>
-                            <TextField fullWidth variant="outlined" label="Declaração de óbito" type="file" accept="image/*" InputLabelProps={{ shrink: true }} name="dec_obito" onChange={(event) => handleFileChange(event, "dec_obito")} sx={fieldSxStyle} />
-                            {form.dec_obito_preview && <FilePreview src={form.dec_obito_preview} alt="preview declaracao de obito" />}
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Declaração de óbito"
+                                type="file"
+                                accept="image/*"
+                                InputLabelProps={{ shrink: true }}
+                                name="dec_obito"
+                                onChange={(event) => handleFileChange(event, "dec_obito")}
+                                sx={fieldSxStyle}
+                            />
+                            {form.dec_obito_preview && (
+                                <FilePreview src={form.dec_obito_preview} alt="preview declaracao de obito" />
+                            )}
                         </Grid>
                     </Grid>
                     <Box sx={{ mb: 2, mt: 3, display: "flex", gap: 1 }}>
-                        <SystemButton type="button" tone="cancel" onClick={handleBackStep} disabled={isSubmitting}>Voltar</SystemButton>
-                        <SystemButton type="button" onClick={handleNextStep} disabled={isSubmitting}>Próximo</SystemButton>
+                        <SystemButton type="button" tone="cancel" onClick={handleBackStep} disabled={isSubmitting}>
+                            Voltar
+                        </SystemButton>
+                        <SystemButton type="button" onClick={handleNextStep} disabled={isSubmitting}>
+                            Próximo
+                        </SystemButton>
                     </Box>
                 </StepContent>
             </Step>
@@ -330,19 +491,53 @@ function FalecidoProcess({
                 <StepContent sx={{ display: expandedSteps[2] ? "block" : "none" }}>
                     <Grid container spacing={2}>
                         <Grid size={{ xs: 12 }}>
-                            <TextField fullWidth variant="outlined" label="Nome do familiar ou responsável" name="nome_resp" placeholder="Digite o nome do responsavel" {...textFieldProps("nome_resp")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Nome do familiar ou responsável"
+                                name="nome_resp"
+                                placeholder="Digite o nome do responsavel"
+                                {...textFieldProps("nome_resp")}
+                            />
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
-                            <TextField fullWidth variant="outlined" label="Parentesco" name="parentesco" {...textFieldProps("parentesco")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Parentesco"
+                                name="parentesco"
+                                {...textFieldProps("parentesco")}
+                            />
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
-                            <TextField fullWidth variant="outlined" label="CPF do responsável" name="doc_resp" placeholder="000.000.000-00" {...textFieldProps("doc_resp")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="CPF do responsável"
+                                name="doc_resp"
+                                placeholder="000.000.000-00"
+                                {...textFieldProps("doc_resp")}
+                            />
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
-                            <TextField fullWidth variant="outlined" label="Profissão do responsável" name="prof_resp" placeholder="Profissao do responsavel" {...textFieldProps("prof_resp")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Profissão do responsável"
+                                name="prof_resp"
+                                placeholder="Profissao do responsavel"
+                                {...textFieldProps("prof_resp")}
+                            />
                         </Grid>
                         <Grid size={{ xs: 12, md: 6 }}>
-                            <TextField fullWidth variant="outlined" label="Contato do responsável" name="tel_resp" placeholder="(XX)XXXXX-XXXX" {...textFieldProps("tel_resp")} />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                label="Contato do responsável"
+                                name="tel_resp"
+                                placeholder="(XX)XXXXX-XXXX"
+                                {...textFieldProps("tel_resp")}
+                            />
                         </Grid>
                         <Grid size={{ xs: 12, md: 6 }}>
                             <TextField
@@ -350,7 +545,13 @@ function FalecidoProcess({
                                 variant="outlined"
                                 label="CEP"
                                 name="cep_resp"
-                                value={cepResp ? (cepResp.length > 5 ? cepResp.replace(/^(\d{5})(\d{1,3})/, "$1-$2") : cepResp) : ""}
+                                value={
+                                    cepResp
+                                        ? cepResp.length > 5
+                                            ? cepResp.replace(/^(\d{5})(\d{1,3})/, "$1-$2")
+                                            : cepResp
+                                        : ""
+                                }
                                 onChange={handleCepChange}
                                 onBlur={handleCepBlur}
                                 placeholder="00000-000"
@@ -366,7 +567,11 @@ function FalecidoProcess({
                             <TextField
                                 fullWidth
                                 variant="outlined"
-                                label={cepRespNotFound ? "Nenhum endereço encontrado para esse CEP" : "Endereço do responsável"}
+                                label={
+                                    cepRespNotFound
+                                        ? "Nenhum endereço encontrado para esse CEP"
+                                        : "Endereço do responsável"
+                                }
                                 name="endereco_resp"
                                 placeholder="Rua, bairro, cidade - UF"
                                 {...textFieldProps("endereco_resp")}
@@ -375,8 +580,12 @@ function FalecidoProcess({
                         </Grid>
                     </Grid>
                     <Box sx={{ mb: 2, mt: 3, display: "flex", gap: 1 }}>
-                        <SystemButton type="button" tone="cancel" onClick={handleBackStep} disabled={isSubmitting}>Voltar</SystemButton>
-                        <SystemButton type="button" onClick={handleNextStep} disabled={isSubmitting}>Próximo</SystemButton>
+                        <SystemButton type="button" tone="cancel" onClick={handleBackStep} disabled={isSubmitting}>
+                            Voltar
+                        </SystemButton>
+                        <SystemButton type="button" onClick={handleNextStep} disabled={isSubmitting}>
+                            Próximo
+                        </SystemButton>
                     </Box>
                 </StepContent>
             </Step>
@@ -393,35 +602,86 @@ function FalecidoProcess({
                 <StepContent sx={{ display: expandedSteps[3] ? "block" : "none" }}>
                     <ReviewPanel>
                         <Grid container spacing={2}>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Nome:</strong> {form.nome_fal || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Sexo:</strong> {form.sexo || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Idade:</strong> {form.idade || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Estado Civil:</strong> {form.estado_civil || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Cor/Raça:</strong> {form.cor || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>CPF:</strong> {form.cpf || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Filiação mãe:</strong> {form.filiacao_mae || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Filiação pai:</strong> {form.filiacao_pai || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Profissão:</strong> {form.profissao || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Naturalidade:</strong> {form.naturalidade || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Causa da morte:</strong> {form.causa_mortis || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>CPF:</strong> {form.cpf || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>RG:</strong> {form.rg || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Nome do médico responsável:</strong> {form.nome_doutor || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Data de Nascimento:</strong> {form.data_nasc ? formatDateDMY(form.data_nasc) : "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Data e Hora de Falecimento:</strong> {form.dh_falec ? formatDateTimeDMY(form.dh_falec) : "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Responsável:</strong> {form.nome_resp || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Parentesco:</strong> {form.parentesco || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Contato:</strong> {form.tel_resp || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>CPF do responsável:</strong> {form.doc_resp || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Profissão do responsável:</strong> {form.prof_resp || "-"}</Grid>
-                            <Grid size={{ xs: 12, md: 6 }}><strong>Endereço do responsável:</strong> {form.endereco_resp || "-"}</Grid>
-
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Nome:</strong> {form.nome_fal || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Sexo:</strong> {form.sexo || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Idade:</strong> {form.idade || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Estado Civil:</strong> {form.estado_civil || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Cor/Raça:</strong> {form.cor || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>CPF:</strong> {form.cpf || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Filiação mãe:</strong> {form.filiacao_mae || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Filiação pai:</strong> {form.filiacao_pai || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Profissão:</strong> {form.profissao || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Naturalidade:</strong> {form.naturalidade || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Causa da morte:</strong> {form.causa_mortis || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>CPF:</strong> {form.cpf || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>RG:</strong> {form.rg || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Nome do médico responsável:</strong> {form.nome_doutor || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Data de Nascimento:</strong>{" "}
+                                {form.data_nasc ? formatDateDMY(form.data_nasc) : "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Data e Hora de Falecimento:</strong>{" "}
+                                {form.dh_falec ? formatDateTimeDMY(form.dh_falec) : "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Responsável:</strong> {form.nome_resp || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Parentesco:</strong> {form.parentesco || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Contato:</strong> {form.tel_resp || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>CPF do responsável:</strong> {form.doc_resp || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Profissão do responsável:</strong> {form.prof_resp || "-"}
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <strong>Endereço do responsável:</strong> {form.endereco_resp || "-"}
+                            </Grid>
                         </Grid>
                     </ReviewPanel>
                     <Box sx={{ mb: 2, mt: 3, display: "flex", gap: 1 }}>
-                        <SystemButton type="button" tone="cancel" onClick={handleClearFalecido} disabled={isSubmitting}>Limpar</SystemButton>
-                        <SystemButton type="button" tone="cancel" onClick={handleBackStep} disabled={isSubmitting}>Voltar</SystemButton>
-                        <SystemButton type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>Salvar</SystemButton>
+                        <SystemButton type="button" tone="cancel" onClick={handleClearFalecido} disabled={isSubmitting}>
+                            Limpar
+                        </SystemButton>
+                        <SystemButton type="button" tone="cancel" onClick={handleBackStep} disabled={isSubmitting}>
+                            Voltar
+                        </SystemButton>
+                        <SystemButton type="submit" disabled={isSubmitting || hasErrors(fieldErrors)}>
+                            Salvar
+                        </SystemButton>
                     </Box>
                 </StepContent>
             </Step>

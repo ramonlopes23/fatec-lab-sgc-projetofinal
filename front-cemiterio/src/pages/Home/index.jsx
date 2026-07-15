@@ -6,7 +6,6 @@ import SepultadosTotal from "../../components/domain/SepultadosTotal";
 import SepultadosMes from "../../components/domain/SepultadosMes";
 import { Row } from "../../components/domain/DashboardRow/styles";
 
-
 export default function Home() {
     return (
         <div>
@@ -15,9 +14,7 @@ export default function Home() {
                 <SepultadosMes />
                 <SepultadosMedia />
                 <SepultadosTotal />
-
             </Row>
         </div>
-
     );
 }

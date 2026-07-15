@@ -24,7 +24,9 @@ export const useCemeteryStore = create(
 
                     const fallbackCemetery =
                         cemeteries.find((cemetery) => isCemiterioActive(cemetery)) || cemeteries[0] || null;
-                    const nextSelectedId = selectedExists ? currentSelectedId : getCemiterioId(fallbackCemetery) || null;
+                    const nextSelectedId = selectedExists
+                        ? currentSelectedId
+                        : getCemiterioId(fallbackCemetery) || null;
 
                     set({
                         cemeteries,
@@ -33,8 +35,7 @@ export const useCemeteryStore = create(
 
                     return cemeteries;
                 } catch (err) {
-                    const message =
-                        err?.response?.data?.message || err?.message || "Erro ao carregar cemitérios.";
+                    const message = err?.response?.data?.message || err?.message || "Erro ao carregar cemitérios.";
                     set({ error: message });
                     throw new Error(message);
                 } finally {
@@ -43,7 +44,8 @@ export const useCemeteryStore = create(
             },
 
             setSelectedCemeteryId: (selectedCemeteryId) => {
-                const normalizedId = selectedCemeteryId == null || selectedCemeteryId === "" ? null : selectedCemeteryId;
+                const normalizedId =
+                    selectedCemeteryId == null || selectedCemeteryId === "" ? null : selectedCemeteryId;
                 set({ selectedCemeteryId: normalizedId });
             },
         }),

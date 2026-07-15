@@ -1,8 +1,9 @@
-export const stripDiacritics = (value) => String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+export const stripDiacritics = (value) =>
+    String(value || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
 
 export const normalizeText = (value) => stripDiacritics(value);
 

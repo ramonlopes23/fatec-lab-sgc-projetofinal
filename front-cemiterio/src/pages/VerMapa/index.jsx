@@ -20,8 +20,28 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { MdPets } from "react-icons/md";
 import { LuChevronDown } from "react-icons/lu";
 import { PiFlowerTulipLight, PiFlowerTulipBold } from "react-icons/pi";
-import { SquarePlus } from 'lucide-react';
-import { findContratoByReference, formatDateTimeDMY, formatDateTimeKey, formatQuadraDisplay, getContratoContato, getContratoNumeroTitulo, getContratoQuadraRef, getContratoSepulturaRef, getContratoTitularNome, getFalecidoDeathDate, getFalecidoId, getFalecidoIdFromRecord, getFalecidoName, getFalecidoResponsibleName, getFalecidoResponsiblePhone, getSepulturaCapacity, normalizeFalecido, normalizeSepultura, parseDateValue } from "../../utils";
+import { SquarePlus } from "lucide-react";
+import {
+    findContratoByReference,
+    formatDateTimeDMY,
+    formatDateTimeKey,
+    formatQuadraDisplay,
+    getContratoContato,
+    getContratoNumeroTitulo,
+    getContratoQuadraRef,
+    getContratoSepulturaRef,
+    getContratoTitularNome,
+    getFalecidoDeathDate,
+    getFalecidoId,
+    getFalecidoIdFromRecord,
+    getFalecidoName,
+    getFalecidoResponsibleName,
+    getFalecidoResponsiblePhone,
+    getSepulturaCapacity,
+    normalizeFalecido,
+    normalizeSepultura,
+    parseDateValue,
+} from "../../utils";
 import {
     QuadraDropdownWrapper,
     Container,
@@ -139,24 +159,17 @@ export default function VerMapa() {
 
     const FIXED_CEMETERY_ID = 1;
 
-    const {
-        blocks,
-        loadBlocks
-    } = useBlocks();
+    const { blocks, loadBlocks } = useBlocks();
 
-    const {
-        showSuccess,
-        showError,
-        ToastElement,
-    } = useToastFeedback();
+    const { showSuccess, showError, ToastElement } = useToastFeedback();
 
     const { handleCreateBlock, loading: creatingBlock } = useCreateBlocks({
         onSuccess: async (created) => {
             await loadBlocks();
             setSelectedQuadraId(created.id);
             setStructureDrawerOpen(false);
-            showSuccess("Quadra criada")
-        }
+            showSuccess("Quadra criada");
+        },
     });
 
     const { handleCreateGrave } = useCreateGraves();
@@ -238,7 +251,7 @@ export default function VerMapa() {
             responsavel: "",
             prazo_anos: 0,
             data_inicio: "",
-            data_fim: ""
+            data_fim: "",
         },
         obs: "",
     });
@@ -259,7 +272,7 @@ export default function VerMapa() {
 
     // Load cemeteries on component mount
     useEffect(() => {
-        loadCemeteries().catch(err => {
+        loadCemeteries().catch((err) => {
             console.error("Erro ao carregar cemitérios:", err);
         });
     }, [loadCemeteries]);
@@ -267,14 +280,13 @@ export default function VerMapa() {
     const location = useLocation();
     const navigate = useNavigate();
 
-
     const handleAddQuadra = () => {
         setFormQuadra({
             num_quadra: "",
             descricao: "",
         });
         setStructureSectionsOpen({ quadra: true, sepultura: false });
-        setStructureDrawerOpen(true)
+        setStructureDrawerOpen(true);
     };
 
     const openExumacaoForm = (sep) => {
@@ -285,13 +297,19 @@ export default function VerMapa() {
             return;
         }
 
-        const sepQuadraKey = mapHelpers.resolveCovaQuadraKey(selectedCova, sep, selectedGraveForModal, selectedQuadraId);
+        const sepQuadraKey = mapHelpers.resolveCovaQuadraKey(
+            selectedCova,
+            sep,
+            selectedGraveForModal,
+            selectedQuadraId
+        );
         const sepNumeroKey = mapHelpers.resolveCovaNumber(selectedCova, sep, selectedGraveForModal);
 
-        const quadraObj = (quadras || []).find(q =>
-            String(q.id) === String(sepQuadraKey) ||
-            String(q.num_quadra) === String(sepQuadraKey) ||
-            String(q.nome || "").endsWith(String(sepQuadraKey))
+        const quadraObj = (quadras || []).find(
+            (q) =>
+                String(q.id) === String(sepQuadraKey) ||
+                String(q.num_quadra) === String(sepQuadraKey) ||
+                String(q.nome || "").endsWith(String(sepQuadraKey))
         );
 
         const quadraNum = quadraObj?.num_quadra ?? quadraObj?.number ?? quadraObj?.numero ?? "";
@@ -308,33 +326,32 @@ export default function VerMapa() {
             obs_exu: "",
             status: "pendente",
             confirmacao: false,
-            origem: "frontend"
-        })
+            origem: "frontend",
+        });
         setExumacoesErrors({});
         setExumacoesModalIsOpen(true);
-    }
-
+    };
 
     const handleExumacaoField = (name, value) => {
-        setExumacoesForm(prev => ({ ...prev, [name]: value }));
-        setExumacoesErrors(prev => {
+        setExumacoesForm((prev) => ({ ...prev, [name]: value }));
+        setExumacoesErrors((prev) => {
             if (!prev[name]) return prev;
             const next = { ...prev };
             delete next[name];
             return next;
         });
-    }
+    };
 
     const closeExumacaoForm = () => {
         setExumacoesModalIsOpen(false);
         setExumacoesErrors({});
-    }
+    };
 
     const submitExumacao = async (e) => {
         if (e && e.preventDefault) e.preventDefault();
         if (!exumacoesForm || !exumacoesForm.sepultamentoId) return showError("Dados inválidos");
 
-        const key = String(exumacoesForm.sepultamentoId)
+        const key = String(exumacoesForm.sepultamentoId);
         if (exumacoesPending[key]) return showError("Já existe uma exumação pendente para este registro.");
 
         const validationErrors = getExumacaoValidationErrors(exumacoesForm);
@@ -353,21 +370,19 @@ export default function VerMapa() {
                 coveiro: String(exumacoesForm.coveiro || "").trim(),
                 obs_exu: String(exumacoesForm.obs_exu || "").trim(),
                 status: "pendente",
-                confirmado: false
+                confirmado: false,
             };
             const res = await api.post("/exumacoes", payload);
             const created = res?.data ?? null;
             if (!created) throw new Error("Resposta inválida do servidor ao criar exumação");
 
-
-            setExumacoesPending(prev => ({ ...prev, [key]: created }));
+            setExumacoesPending((prev) => ({ ...prev, [key]: created }));
 
             try {
                 window.dispatchEvent(new CustomEvent("processoCriado", { detail: created }));
-            }
-            catch (evErr) {
+            } catch (evErr) {
                 console.warn("Erro ao dispatch processoCriado", evErr);
-            };
+            }
 
             closeExumacaoForm();
             showSuccess("Exumação cadastrada e aguardando confirmação. ");
@@ -377,8 +392,7 @@ export default function VerMapa() {
         } finally {
             setIsSubmittingExumacao(false);
         }
-    }
-
+    };
 
     const cancelExumacao = async (sep) => {
         if (!sep || !sep.id) return showError("Sepultamento inválido");
@@ -400,25 +414,34 @@ export default function VerMapa() {
         const key = String(pending.sep.id);
         try {
             await api.delete(`/exumacoes/${pending.ex.id}`);
-            setExumacoesPending(prev => {
+            setExumacoesPending((prev) => {
                 const clone = { ...prev };
                 delete clone[key];
                 return clone;
             });
-            try { window.dispatchEvent(new CustomEvent("processoCancelado", { detail: pending.ex })); } catch (e) { e };
+            try {
+                window.dispatchEvent(new CustomEvent("processoCancelado", { detail: pending.ex }));
+            } catch (e) {
+                e;
+            }
             showError("Exumação cancelada. ");
             closeCancelExumacaoDialog();
         } catch (err) {
             console.error("Erro ao cancelar exumação", err);
             showError("Erro ao cancelar exumação");
         }
-    }
+    };
 
     const getCovasCount = (quadraNum) => {
         if (!quadraNum) return 0;
-        const q = quadras.find(qt => String(qt.id) === String(quadraNum) || String(qt.nome) === `Quadra ${quadraNum}` || String(qt.nome).endsWith(String(quadraNum)));
+        const q = quadras.find(
+            (qt) =>
+                String(qt.id) === String(quadraNum) ||
+                String(qt.nome) === `Quadra ${quadraNum}` ||
+                String(qt.nome).endsWith(String(quadraNum))
+        );
         return q && Array.isArray(q.covas) ? q.covas.length : 0;
-    }
+    };
 
     const getQuadraOption = (q, idx = 0) => {
         const used = Array.isArray(q.covas) ? q.covas.length : getCovasCount(q.num_quadra ?? q.id);
@@ -442,7 +465,8 @@ export default function VerMapa() {
 
     /* getSepultadosCount moved to src/utils/mapHelpers.js; fallback to sepCountsByQuadra first */
     const getSepultadosCountLocal = (quadraOrId) => {
-        const quadraNum = (quadraOrId && typeof quadraOrId === "object") ? (quadraOrId.num_quadra ?? quadraOrId.id) : quadraOrId;
+        const quadraNum =
+            quadraOrId && typeof quadraOrId === "object" ? (quadraOrId.num_quadra ?? quadraOrId.id) : quadraOrId;
         if (quadraNum === null || quadraNum === undefined || quadraNum === "") return 0;
         const qStr = String(quadraNum);
 
@@ -451,10 +475,11 @@ export default function VerMapa() {
         }
 
         return mapHelpers.getSepultadosCount(sepultamentosAll, quadraOrId);
-    }
+    };
 
     /* getSepultadosCountBySep moved to src/utils/mapHelpers.js */
-    const getSepultadosCountBySepLocal = (cova, quadraId) => mapHelpers.getSepultadosCountBySep(cova, quadraId, sepultamentosAll);
+    const getSepultadosCountBySepLocal = (cova, quadraId) =>
+        mapHelpers.getSepultadosCountBySep(cova, quadraId, sepultamentosAll);
 
     const handleAddCova = () => {
         setFormCova({
@@ -468,45 +493,45 @@ export default function VerMapa() {
                 responsavel: "",
                 prazo_anos: 0,
                 data_inicio: "",
-                data_fim: ""
+                data_fim: "",
             },
             obs: "",
         });
         setStructureSectionsOpen({ quadra: false, sepultura: true });
-        setStructureDrawerOpen(true)
+        setStructureDrawerOpen(true);
     };
 
     const updateQuadraFieldByName = (name, value) => {
         if (!name.includes(".")) {
-            setFormQuadra(prev => ({ ...prev, [name]: value }));
+            setFormQuadra((prev) => ({ ...prev, [name]: value }));
             return;
         }
         const parts = name.split(".");
-        setFormQuadra(prev => {
+        setFormQuadra((prev) => {
             const clone = { ...prev };
             let cur = clone;
             for (let i = 0; i < parts.length - 1; i++) {
                 const k = parts[i];
-                cur[k] = (cur[k] && typeof cur[k] === "object") ? { ...cur[k] } : {};
+                cur[k] = cur[k] && typeof cur[k] === "object" ? { ...cur[k] } : {};
                 cur = cur[k];
             }
             cur[parts[parts.length - 1]] = value;
             return clone;
         });
-    }
+    };
 
     const updateFieldByName = (name, value) => {
         if (!name.includes(".")) {
-            setFormCova(prev => ({ ...prev, [name]: value }));
+            setFormCova((prev) => ({ ...prev, [name]: value }));
             return;
         }
         const parts = name.split(".");
-        setFormCova(prev => {
+        setFormCova((prev) => {
             const clone = { ...prev };
             let cur = clone;
             for (let i = 0; i < parts.length - 1; i++) {
                 const k = parts[i];
-                cur[k] = (cur[k] && typeof cur[k] === "object") ? { ...cur[k] } : {};
+                cur[k] = cur[k] && typeof cur[k] === "object" ? { ...cur[k] } : {};
                 cur = cur[k];
             }
             cur[parts[parts.length - 1]] = value;
@@ -516,16 +541,17 @@ export default function VerMapa() {
 
     const handleQuadraChange = (e) => {
         const { name, value, type, checked } = e.target;
-        const incoming = type === "checkbox" ? checked : (type === "number" ? (value === "" ? "" : Number(value)) : value);
+        const incoming =
+            type === "checkbox" ? checked : type === "number" ? (value === "" ? "" : Number(value)) : value;
         updateQuadraFieldByName(name, incoming);
-    }
+    };
 
     const handleGridChange = useCallback((item) => {
         const newId = item?.id ?? null;
-        setSelectedQuadraId(prev => {
+        setSelectedQuadraId((prev) => {
             if (prev === newId) return prev;
             return newId;
-        })
+        });
     }, []);
 
     const handleCovaChange = (e) => {
@@ -602,8 +628,6 @@ export default function VerMapa() {
                 )
             );
 
-            console.log(finalBlocked)
-
             setSelectedCova((prev) => {
                 if (!prev) return prev;
                 const prevGrave = prev?.cova?.grave ?? prev?.grave ?? null;
@@ -634,7 +658,6 @@ export default function VerMapa() {
                     },
                 };
             });
-            console.log(finalBlocked)
             notifyInfo(finalBlocked ? "Sepultura bloqueada por questão legal." : "Bloqueio legal removido");
         } catch (err) {
             console.error("Erro ao atualizar blocked da sepultura", err);
@@ -666,14 +689,14 @@ export default function VerMapa() {
                     String(item?.grave?.id) !== String(grave.id)
                         ? item
                         : {
-                            ...item,
-                            grave: {
-                                ...item.grave,
-                                ...updatedGrave,
-                                status: nextStatus,
-                            },
-                            status: item.blocked ? "indisponivel" : nextDisplayStatus,
-                        }
+                              ...item,
+                              grave: {
+                                  ...item.grave,
+                                  ...updatedGrave,
+                                  status: nextStatus,
+                              },
+                              status: item.blocked ? "indisponivel" : nextDisplayStatus,
+                          }
                 )
             );
 
@@ -755,13 +778,11 @@ export default function VerMapa() {
             nicho: "MAUSOLEUM",
         };
 
-
         const graveType = graveTypeMap[tipo] || "EARTH";
         const areaType = formCova.concessao?.ativa ? "PERPETUAL" : "COMMON";
         const blocked = false;
         // Toda sepultura nasce disponível; os demais rótulos são derivados por contrato, bloqueio ou sepultamentos.
         const backendStatus = "AVAILABLE";
-
 
         try {
             await handleCreateGrave({
@@ -779,9 +800,9 @@ export default function VerMapa() {
             showSuccess("Sepultura criada");
         } catch (err) {
             console.error("Erro ao criar sepultura", err);
-            showError(err.message || "Erro ao criar sepultura")
+            showError(err.message || "Erro ao criar sepultura");
         }
-    }
+    };
 
     const closeStructureDrawer = () => {
         setStructureDrawerOpen(false);
@@ -795,23 +816,18 @@ export default function VerMapa() {
     };
 
     const loadMapData = useCallback(async () => {
-        setIsMapLoading(true)
+        setIsMapLoading(true);
         try {
-
-            const [rGraves] = await Promise.all([
-                api.get("/graves"),
-                loadBlocks(),
-            ]);
+            const [rGraves] = await Promise.all([api.get("/graves"), loadBlocks()]);
 
             const rawGraves = rGraves?.data;
             const gravesData = Array.isArray(rawGraves)
                 ? rawGraves
                 : Array.isArray(rawGraves?.content)
-                    ? rawGraves.content
-                    : Array.isArray(rawGraves?.data)
-                        ? rawGraves.data
-                        : [];
-
+                  ? rawGraves.content
+                  : Array.isArray(rawGraves?.data)
+                    ? rawGraves.data
+                    : [];
 
             const normalizedCovasData = gravesData.map((grave) => ({
                 ...normalizeSepultura(grave),
@@ -831,30 +847,16 @@ export default function VerMapa() {
                 api.get("/contratos"),
             ]);
 
-            const sepData =
-                rSep.status === "fulfilled" && Array.isArray(rSep.value?.data)
-                    ? rSep.value.data
-                    : [];
-            const exuData =
-                rExu.status === "fulfilled" && Array.isArray(rExu.value?.data)
-                    ? rExu.value.data
-                    : [];
-            const petsData =
-                rPets.status === "fulfilled" && Array.isArray(rPets.value?.data)
-                    ? rPets.value.data
-                    : [];
-            const ossariosData =
-                rOss.status === "fulfilled" && Array.isArray(rOss.value?.data)
-                    ? rOss.value.data
-                    : [];
+            const sepData = rSep.status === "fulfilled" && Array.isArray(rSep.value?.data) ? rSep.value.data : [];
+            const exuData = rExu.status === "fulfilled" && Array.isArray(rExu.value?.data) ? rExu.value.data : [];
+            const petsData = rPets.status === "fulfilled" && Array.isArray(rPets.value?.data) ? rPets.value.data : [];
+            const ossariosData = rOss.status === "fulfilled" && Array.isArray(rOss.value?.data) ? rOss.value.data : [];
             const falecidosData =
                 rFal.status === "fulfilled" && Array.isArray(rFal.value?.data)
                     ? rFal.value.data.map(normalizeFalecido)
                     : [];
             const contratosData =
-                rContratos.status === "fulfilled" && Array.isArray(rContratos.value?.data)
-                    ? rContratos.value.data
-                    : [];
+                rContratos.status === "fulfilled" && Array.isArray(rContratos.value?.data) ? rContratos.value.data : [];
 
             setSepultamentosAll(sepData);
             setExumacoesAll(exuData);
@@ -880,7 +882,6 @@ export default function VerMapa() {
                 }
             });
             setExumacoesPending(pendingMap);
-
 
             setSepCountsByQuadra(mapHelpers.getSepCountsByQuadra(sepData, normalizedCovasData));
 
@@ -932,19 +933,23 @@ export default function VerMapa() {
             if (!ex) return;
             const sepId = ex.sepultamentoId ?? ex.sepultamentoId ?? ex.sepultamento ?? null;
             if (sepId != null) {
-                setExumacoesPending(prev => ({ ...prev, [String(sepId)]: ex }));
+                setExumacoesPending((prev) => ({ ...prev, [String(sepId)]: ex }));
             }
         };
 
         const onCancelado = (ev) => {
             const ex = ev?.detail;
             if (!ex) return;
-            setExumacoesPending(prev => {
+            setExumacoesPending((prev) => {
                 const clone = { ...prev };
-                Object.keys(clone).forEach(k => {
+                Object.keys(clone).forEach((k) => {
                     const val = clone[k];
                     if (!val) return;
-                    if (String(val.id) === String(ex.id) || String(k) === String(ex.sepultamentoId) || String(val.sepultamentoId) === String(ex.sepultamentoId)) {
+                    if (
+                        String(val.id) === String(ex.id) ||
+                        String(k) === String(ex.sepultamentoId) ||
+                        String(val.sepultamentoId) === String(ex.sepultamentoId)
+                    ) {
                         delete clone[k];
                     }
                 });
@@ -958,18 +963,26 @@ export default function VerMapa() {
             const type = String(detail.type || "").toLowerCase();
             if (type.includes("sepult") || type.includes("exum")) {
                 const exId = detail.id;
-                setExumacoesPending(prev => {
+                setExumacoesPending((prev) => {
                     const clone = { ...prev };
-                    Object.keys(clone).forEach(k => {
+                    Object.keys(clone).forEach((k) => {
                         const val = clone[k];
                         if (!val) return;
-                        if (String(val.id) === String(exId) || String(val.sepultamentoId) === String(detail.sepultamentoId) || String(k) === String(detail.sepultamentoId)) {
+                        if (
+                            String(val.id) === String(exId) ||
+                            String(val.sepultamentoId) === String(detail.sepultamentoId) ||
+                            String(k) === String(detail.sepultamentoId)
+                        ) {
                             delete clone[k];
                         }
                     });
                     return clone;
                 });
-                try { loadMapData(); } catch (e) { e }
+                try {
+                    loadMapData();
+                } catch (e) {
+                    e;
+                }
             }
         };
         window.addEventListener("processoCriado", onCriado);
@@ -985,21 +998,19 @@ export default function VerMapa() {
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-                setIsQuadraDropdownOpen(false)
+                setIsQuadraDropdownOpen(false);
             }
             if (sortDropdownRef.current && !sortDropdownRef.current.contains(e.target)) {
                 setIsSortDropdownOpen(false);
             }
-        }
+        };
 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-
     }, []);
 
-
     const quadraSelecionada = useMemo(
-        () => quadras.find(q => String(q.id) === String(selectedQuadraId)) || { covas: [] },
+        () => quadras.find((q) => String(q.id) === String(selectedQuadraId)) || { covas: [] },
         [quadras, selectedQuadraId]
     );
     const quadraSelecionadaLabel = formatQuadraDisplay(quadraSelecionada, [], "Quadra ", "");
@@ -1022,14 +1033,14 @@ export default function VerMapa() {
         const grave = cova?.cova?.grave ?? cova?.grave ?? null;
         const quadraKey = mapHelpers.resolveCovaQuadraKey(cova, cova?.sep, grave, selectedQuadraId);
         const numero = mapHelpers.resolveCovaNumber(cova, cova?.sep, grave);
-        const list = (sepultamentosAll || []).filter(s => {
+        const list = (sepultamentosAll || []).filter((s) => {
             if (s.foi_exumado) return false;
             const sQuadra = mapHelpers.resolveCovaQuadraKey(null, s);
             const sNum = mapHelpers.resolveCovaNumber(null, s);
             return sQuadra === quadraKey && sNum === numero;
         });
 
-        if (cova.sep && !list.find(s => String(s.id) === String(cova.sep.id))) list.unshift(cova.sep);
+        if (cova.sep && !list.find((s) => String(s.id) === String(cova.sep.id))) list.unshift(cova.sep);
         setModalSepList(list);
         setModalExpandedIndex(null);
 
@@ -1043,8 +1054,8 @@ export default function VerMapa() {
                         const rf = await api.get(`/falecidos/${falId}`);
                         fal = normalizeFalecido(rf.data);
                     } catch (e) {
-                        console.error("Erro", e)
-                    };
+                        console.error("Erro", e);
+                    }
                 }
                 setModalForm({ ...first, falecido: fal || null });
             } else {
@@ -1052,8 +1063,6 @@ export default function VerMapa() {
             }
             setModalOpen(true);
         })();
-
-
     };
 
     const statusList = [
@@ -1061,24 +1070,49 @@ export default function VerMapa() {
         { key: "disponivel", label: "Disponível", color: "#9e9e9e" },
         { key: "indisponivel", label: "Indisponível", color: "#c55" },
         { key: "reservada", label: "Particular", color: "#d2b24a" },
-        { key: "particular_ocupada", label: "P/O (Particular e ocupada)", color: "#000", borderColor: "#d2b24a", borderWidth: 3 }
+        {
+            key: "particular_ocupada",
+            label: "P/O (Particular e ocupada)",
+            color: "#000",
+            borderColor: "#d2b24a",
+            borderWidth: 3,
+        },
     ];
 
     const sepDataForModal = modalForm ?? selectedCova?.sep ?? null;
-    const isOccupiedForModal = String(selectedCova?.status || "").toLowerCase().includes("ocup") || !!sepDataForModal;
-    const tipoForModal = selectedCova?.tipo_cova ?? selectedCova?.cova?.tipo_cova ?? sepDataForModal?.tipo_cova ?? sepDataForModal?.tipo_sep ?? "-";
+    const isOccupiedForModal =
+        String(selectedCova?.status || "")
+            .toLowerCase()
+            .includes("ocup") || !!sepDataForModal;
+    const tipoForModal =
+        selectedCova?.tipo_cova ??
+        selectedCova?.cova?.tipo_cova ??
+        sepDataForModal?.tipo_cova ??
+        sepDataForModal?.tipo_sep ??
+        "-";
     const selectedGraveForModal = selectedCova?.cova?.grave ?? selectedCova?.grave ?? null;
     const bloqueadoForModal = Boolean(selectedGraveForModal?.blocked);
-    const capacidadeForModal = selectedCova?.capacidade ?? selectedCova?.cova?.capacidade ?? selectedCova?.sep?.capacidade ?? sepDataForModal?.capacidade ?? "-";
+    const capacidadeForModal =
+        selectedCova?.capacidade ??
+        selectedCova?.cova?.capacidade ??
+        selectedCova?.sep?.capacidade ??
+        sepDataForModal?.capacidade ??
+        "-";
     const observacoesForModal = selectedCova?.obs ?? selectedCova?.cova?.obs ?? "-";
 
     const selectedCovaMeta = useMemo(() => {
-        const quadraKey = mapHelpers.resolveCovaQuadraKey(selectedCova, sepDataForModal, selectedGraveForModal, selectedQuadraId);
+        const quadraKey = mapHelpers.resolveCovaQuadraKey(
+            selectedCova,
+            sepDataForModal,
+            selectedGraveForModal,
+            selectedQuadraId
+        );
         const numeroKey = mapHelpers.resolveCovaNumber(selectedCova, sepDataForModal, selectedGraveForModal);
-        const quadra = (quadrasDesc || quadras || []).find((item) =>
-            String(item?.id) === String(quadraKey) ||
-            String(item?.num_quadra) === String(quadraKey) ||
-            String(item?.number) === String(quadraKey)
+        const quadra = (quadrasDesc || quadras || []).find(
+            (item) =>
+                String(item?.id) === String(quadraKey) ||
+                String(item?.num_quadra) === String(quadraKey) ||
+                String(item?.number) === String(quadraKey)
         );
 
         return {
@@ -1107,9 +1141,11 @@ export default function VerMapa() {
             modalForm?.numero_titulo,
         ].filter((value) => value !== null && value !== undefined && String(value).trim() !== "");
 
-        const contractId = sepDataForModal?.contrato_id ?? modalForm?.contrato_id ?? selectedCova?.sep?.contrato_id ?? "";
-        const byIdOrTitle = findContratoByReference(contractId, contratosAll)
-            || titleKeys.map((key) => findContratoByReference(key, contratosAll)).find(Boolean);
+        const contractId =
+            sepDataForModal?.contrato_id ?? modalForm?.contrato_id ?? selectedCova?.sep?.contrato_id ?? "";
+        const byIdOrTitle =
+            findContratoByReference(contractId, contratosAll) ||
+            titleKeys.map((key) => findContratoByReference(key, contratosAll)).find(Boolean);
         if (byIdOrTitle) return byIdOrTitle;
 
         const quadraKeys = [
@@ -1118,14 +1154,19 @@ export default function VerMapa() {
             quadraSelecionada?.num_quadra,
             grave.blockId,
             grave.block?.id,
-        ].filter((value) => value !== null && value !== undefined && String(value).trim() !== "").map(String);
+        ]
+            .filter((value) => value !== null && value !== undefined && String(value).trim() !== "")
+            .map(String);
         const sepulturaNumber = String(selectedCovaNumeroKey || "").trim();
         if (!quadraKeys.length || !sepulturaNumber) return null;
 
-        return contratosAll.find((contrato) => (
-            getContratoSepulturaRef(contrato) === sepulturaNumber &&
-            quadraKeys.includes(getContratoQuadraRef(contrato))
-        )) || null;
+        return (
+            contratosAll.find(
+                (contrato) =>
+                    getContratoSepulturaRef(contrato) === sepulturaNumber &&
+                    quadraKeys.includes(getContratoQuadraRef(contrato))
+            ) || null
+        );
     }, [
         contratosAll,
         modalForm,
@@ -1152,8 +1193,8 @@ export default function VerMapa() {
     const statusToggleTitle = statusToggleBlocked
         ? "Não é possível alterar: há falecidos sepultados nesta sepultura."
         : String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"
-            ? "Liberar para uso"
-            : "Marcar indisponível (manutenção)";
+          ? "Liberar para uso"
+          : "Marcar indisponível (manutenção)";
 
     const covaTimelineItems = useMemo(() => {
         if (!selectedCovaQuadraKey || !selectedCovaNumeroKey) return [];
@@ -1177,7 +1218,11 @@ export default function VerMapa() {
         const events = [];
 
         if (selectedGraveForModal?.id) {
-            const date = resolveDate(selectedGraveForModal.createdAt, selectedGraveForModal.created_at, selectedGraveForModal.updatedAt);
+            const date = resolveDate(
+                selectedGraveForModal.createdAt,
+                selectedGraveForModal.created_at,
+                selectedGraveForModal.updatedAt
+            );
             events.push({
                 id: `grave-${selectedGraveForModal.id}`,
                 label: "Sepultura cadastrada",
@@ -1221,32 +1266,38 @@ export default function VerMapa() {
                 return (sepId != null && sepIds.has(String(sepId))) || sameSepultura(exumacao);
             })
             .forEach((exumacao) => {
-                const date = resolveDate(exumacao.dh_exu, exumacao.data_exumacao, exumacao.createdAt, exumacao.created_at);
+                const date = resolveDate(
+                    exumacao.dh_exu,
+                    exumacao.data_exumacao,
+                    exumacao.createdAt,
+                    exumacao.created_at
+                );
                 const statusRaw = String(exumacao.status ?? "").toLowerCase();
-                const isPending = statusRaw.includes("pend") || exumacao.confirmado === false || exumacao.confirmado == null;
+                const isPending =
+                    statusRaw.includes("pend") || exumacao.confirmado === false || exumacao.confirmado == null;
                 events.push({
                     id: `exu-${exumacao.id ?? exumacao._id ?? `${date}-${exumacao.destino}`}`,
                     label: isPending ? "Exumação pendente" : "Exumação registrada",
-                    text: exumacao.destino ? `Destino: ${exumacao.destino}` : exumacao.motivo || "Movimentação de exumação",
+                    text: exumacao.destino
+                        ? `Destino: ${exumacao.destino}`
+                        : exumacao.motivo || "Movimentação de exumação",
                     timestamp: date,
                     meta: formatMeta(date),
                     tone: isPending ? "warning" : "danger",
                 });
             });
 
-        (petsAll || [])
-            .filter(sameSepultura)
-            .forEach((pet) => {
-                const date = resolveDate(pet.dh_sep_pet, pet.createdAt, pet.created_at, pet.data_obito_pet);
-                events.push({
-                    id: `pet-${pet.id ?? pet._id ?? `${date}-${pet.nome_pet}`}`,
-                    label: "Pet vinculado",
-                    text: pet.nome_pet || pet.nome || "Pet sepultado",
-                    timestamp: date,
-                    meta: formatMeta(date),
-                    tone: "success",
-                });
+        (petsAll || []).filter(sameSepultura).forEach((pet) => {
+            const date = resolveDate(pet.dh_sep_pet, pet.createdAt, pet.created_at, pet.data_obito_pet);
+            events.push({
+                id: `pet-${pet.id ?? pet._id ?? `${date}-${pet.nome_pet}`}`,
+                label: "Pet vinculado",
+                text: pet.nome_pet || pet.nome || "Pet sepultado",
+                timestamp: date,
+                meta: formatMeta(date),
+                tone: "success",
             });
+        });
 
         return events.sort((a, b) => {
             const dateA = parseDateValue(a.timestamp)?.getTime() ?? 0;
@@ -1273,10 +1324,14 @@ export default function VerMapa() {
         [petsAll, quadraSelecionada, sepultamentosAll]
     );
 
-    const filteredCovas = useMemo(() => (quadraSelecionada.covas || []).filter((cova) => {
-        if (!statusFilter) return true;
-        return covaMeta(cova).displayStatus === statusFilter;
-    }), [covaMeta, quadraSelecionada.covas, statusFilter]);
+    const filteredCovas = useMemo(
+        () =>
+            (quadraSelecionada.covas || []).filter((cova) => {
+                if (!statusFilter) return true;
+                return covaMeta(cova).displayStatus === statusFilter;
+            }),
+        [covaMeta, quadraSelecionada.covas, statusFilter]
+    );
 
     const displayedCovas = useMemo(() => {
         if (covaSortMode === mapHelpers.COVA_SORT_MODES.numero) {
@@ -1297,7 +1352,6 @@ export default function VerMapa() {
         setModalExpandedIndex(null);
     };
 
-
     return (
         <>
             {ToastElement}
@@ -1308,7 +1362,11 @@ export default function VerMapa() {
                 title="Cancelar exumação"
                 alertSeverity="error"
                 alertMessage="Esta ação removerá a exumação pendente do sistema."
-                description={pendingCancelExumacao ? `Cancelar exumação pendente para ${pendingCancelExumacao.sep?.nome_sep || "este registro"}?` : "Confirme o cancelamento da exumação."}
+                description={
+                    pendingCancelExumacao
+                        ? `Cancelar exumação pendente para ${pendingCancelExumacao.sep?.nome_sep || "este registro"}?`
+                        : "Confirme o cancelamento da exumação."
+                }
                 confirmLabel="Cancelar exumação"
                 confirmTone="delete"
                 confirmDisabled={!pendingCancelExumacao}
@@ -1325,17 +1383,18 @@ export default function VerMapa() {
                     <ToolbarLabel>Quadra: </ToolbarLabel>
 
                     <QuadraDropdownWrapper ref={dropdownRef}>
-                        <QuadraSelectButton disabled={isMapLoading} onClick={() => { if (isMapLoading) return; setIsQuadraDropdownOpen(!isQuadraDropdownOpen) }}
+                        <QuadraSelectButton
+                            disabled={isMapLoading}
+                            onClick={() => {
+                                if (isMapLoading) return;
+                                setIsQuadraDropdownOpen(!isQuadraDropdownOpen);
+                            }}
                         >
                             {selectedQuadraButtonLabel}
-                            <DropdownIcon>
-                                {isQuadraDropdownOpen ? "▲" : "▼"}
-                            </DropdownIcon>
+                            <DropdownIcon>{isQuadraDropdownOpen ? "▲" : "▼"}</DropdownIcon>
                         </QuadraSelectButton>
 
-                        <QuadraDropdown
-                            $isOpen={isQuadraDropdownOpen}
-                            aria-hidden={!isQuadraDropdownOpen}>
+                        <QuadraDropdown $isOpen={isQuadraDropdownOpen} aria-hidden={!isQuadraDropdownOpen}>
                             {quadrasDesc.length > 0 ? (
                                 <GridQuadras
                                     quadrasDesc={quadrasDesc}
@@ -1349,7 +1408,6 @@ export default function VerMapa() {
                                 </EmptyQuadraDropdownLabel>
                             )}
                         </QuadraDropdown>
-
                     </QuadraDropdownWrapper>
 
                     <ToolbarLabel>Ordenar:</ToolbarLabel>
@@ -1364,15 +1422,10 @@ export default function VerMapa() {
                             }}
                         >
                             {covaSortLabel}
-                            <DropdownIcon>
-                                {isSortDropdownOpen ? "▲" : "▼"}
-                            </DropdownIcon>
+                            <DropdownIcon>{isSortDropdownOpen ? "▲" : "▼"}</DropdownIcon>
                         </QuadraSelectButton>
 
-                        <SortDropdown
-                            $isOpen={isSortDropdownOpen}
-                            aria-hidden={!isSortDropdownOpen}
-                        >
+                        <SortDropdown $isOpen={isSortDropdownOpen} aria-hidden={!isSortDropdownOpen}>
                             <SortOptionButton
                                 type="button"
                                 $active={covaSortMode === mapHelpers.COVA_SORT_MODES.cadastro}
@@ -1397,8 +1450,34 @@ export default function VerMapa() {
                     </SortDropdownWrapper>
 
                     <QuadraActions>
-                        <SystemButton style={{ width: "100px", paddingLeft: "1px", paddingRight: "1px", background: "#fff", color: "#191970" }} type="button" disabled={isMapLoading} onClick={handleAddQuadra}><SquarePlus /> Quadra </SystemButton>
-                        <SystemButton style={{ width: "115px", paddingLeft: "1px", paddingRight: "1px", background: "#fff", color: "#191970" }} type="button" disabled={isMapLoading} onClick={handleAddCova}><SquarePlus /> Sepultura </SystemButton>
+                        <SystemButton
+                            style={{
+                                width: "100px",
+                                paddingLeft: "1px",
+                                paddingRight: "1px",
+                                background: "#fff",
+                                color: "#191970",
+                            }}
+                            type="button"
+                            disabled={isMapLoading}
+                            onClick={handleAddQuadra}
+                        >
+                            <SquarePlus /> Quadra{" "}
+                        </SystemButton>
+                        <SystemButton
+                            style={{
+                                width: "115px",
+                                paddingLeft: "1px",
+                                paddingRight: "1px",
+                                background: "#fff",
+                                color: "#191970",
+                            }}
+                            type="button"
+                            disabled={isMapLoading}
+                            onClick={handleAddCova}
+                        >
+                            <SquarePlus /> Sepultura{" "}
+                        </SystemButton>
                     </QuadraActions>
                 </MapToolbar>
 
@@ -1406,38 +1485,57 @@ export default function VerMapa() {
                     <QuadraHeader>
                         <QuadraTitle>{quadraSelecionadaLabel || "Nenhuma quadra selecionada"}</QuadraTitle>
                         <QuadraInfo key={String(quadraSelecionada.id)}>
-                            <InfoPill>Capacidade máxima de sepulturas: {quadraSelecionada.max_covas > 0 ? quadraSelecionada.max_covas : "-"}</InfoPill>
-                            <InfoPill>Número atual de sepulturas: {Array.isArray(quadraSelecionada.covas) ? quadraSelecionada.covas.length : getCovasCount?.(quadraSelecionada.num_quadra ?? quadraSelecionada.id) ?? 0}</InfoPill>
-                            <InfoPill>Número atual de sepultados: {getSepultadosCountLocal(quadraSelecionada.id ?? quadraSelecionada.num_quadra ?? selectedQuadraId)}</InfoPill>
+                            <InfoPill>
+                                Capacidade máxima de sepulturas:{" "}
+                                {quadraSelecionada.max_covas > 0 ? quadraSelecionada.max_covas : "-"}
+                            </InfoPill>
+                            <InfoPill>
+                                Número atual de sepulturas:{" "}
+                                {Array.isArray(quadraSelecionada.covas)
+                                    ? quadraSelecionada.covas.length
+                                    : (getCovasCount?.(quadraSelecionada.num_quadra ?? quadraSelecionada.id) ?? 0)}
+                            </InfoPill>
+                            <InfoPill>
+                                Número atual de sepultados:{" "}
+                                {getSepultadosCountLocal(
+                                    quadraSelecionada.id ?? quadraSelecionada.num_quadra ?? selectedQuadraId
+                                )}
+                            </InfoPill>
                         </QuadraInfo>
                     </QuadraHeader>
 
-
-
                     {filteredCovas.length === 0 ? (
                         <EmptyMapState>
-                            {statusFilter ? `Nenhuma sepultura encontrada para ${activeStatusLabel}.` : "Nenhuma sepultura cadastrada nesta quadra."}
+                            {statusFilter
+                                ? `Nenhuma sepultura encontrada para ${activeStatusLabel}.`
+                                : "Nenhuma sepultura cadastrada nesta quadra."}
                         </EmptyMapState>
                     ) : (
                         <CovaGrid>
                             {displayedCovas.map((cova) => {
-
                                 const grave = cova?.cova?.grave ?? cova?.grave ?? {};
                                 const backendStatus = String(grave?.status ?? "").toUpperCase();
-                                const rawAreaType = grave?.areaType ?? grave?.area_type ?? cova?.areaType ?? cova?.area_type ?? "";
+                                const rawAreaType =
+                                    grave?.areaType ?? grave?.area_type ?? cova?.areaType ?? cova?.area_type ?? "";
                                 const isPerpetual = String(rawAreaType).toUpperCase() === "PERPETUAL";
                                 const isBlocked = !!grave?.blocked;
 
-                                const sepCount = getSepultadosCountBySepLocal(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
-                                const petCount = getPetsCountBySepLocal(cova, quadraSelecionada.id ?? quadraSelecionada.num_quadra);
+                                const sepCount = getSepultadosCountBySepLocal(
+                                    cova,
+                                    quadraSelecionada.id ?? quadraSelecionada.num_quadra
+                                );
+                                const petCount = getPetsCountBySepLocal(
+                                    cova,
+                                    quadraSelecionada.id ?? quadraSelecionada.num_quadra
+                                );
 
                                 const capacidadeDisponivel = Number(getSepulturaCapacity(cova));
                                 const occupiedCount =
                                     sepCount > 0
                                         ? sepCount
                                         : backendStatus === "OCCUPIED" && capacidadeDisponivel > 0
-                                            ? capacidadeDisponivel
-                                            : 0;
+                                          ? capacidadeDisponivel
+                                          : 0;
                                 const capacidadeTotal = Number.isFinite(capacidadeDisponivel)
                                     ? capacidadeDisponivel + occupiedCount
                                     : occupiedCount;
@@ -1458,15 +1556,30 @@ export default function VerMapa() {
                                     <CovaItem
                                         key={cova.id}
                                         status={displayStatus}
-                                        borderColor={(displayStatus === "reservada" || displayStatus === "particular_ocupada") ? "#d2b24a" : undefined}
-                                        borderWidth={(displayStatus === "reservada" || displayStatus === "particular_ocupada") ? 5 : undefined}
+                                        borderColor={
+                                            displayStatus === "reservada" || displayStatus === "particular_ocupada"
+                                                ? "#d2b24a"
+                                                : undefined
+                                        }
+                                        borderWidth={
+                                            displayStatus === "reservada" || displayStatus === "particular_ocupada"
+                                                ? 5
+                                                : undefined
+                                        }
                                         $selected={String(selectedCova?.id) === String(cova.id)}
-                                        $progressContrast={displayStatus === "ocupada" || displayStatus === "particular_ocupada" ? "light" : "dark"}
+                                        $progressContrast={
+                                            displayStatus === "ocupada" || displayStatus === "particular_ocupada"
+                                                ? "light"
+                                                : "dark"
+                                        }
                                         onClick={() => handleClickCova(cova)}
                                         title={`Sepultura ${cova.numero} - ${displayStatus} (${occupiedCount}/${capacidadeTotal}${petCount > 0 ? ` | 🐾 ${petCount}` : ""})`}
                                     >
                                         <CovaNumber aria-hidden="true">{cova.numero}</CovaNumber>
-                                        <span className="cova-capacity" aria-hidden="true"><PiFlowerTulipBold />{`${occupiedCount}/${capacidadeTotal}`}  </span>
+                                        <span className="cova-capacity" aria-hidden="true">
+                                            <PiFlowerTulipBold />
+                                            {`${occupiedCount}/${capacidadeTotal}`}{" "}
+                                        </span>
                                         {slotCount > 0 ? (
                                             <span
                                                 className="cova-progress"
@@ -1492,7 +1605,7 @@ export default function VerMapa() {
                                             </>
                                         )}
                                     </CovaItem>
-                                )
+                                );
                             })}
                         </CovaGrid>
                     )}
@@ -1500,7 +1613,7 @@ export default function VerMapa() {
 
                 <LegendWrapper>
                     <LegendRow>
-                        {statusList.map(s => (
+                        {statusList.map((s) => (
                             <LegendButton
                                 key={s.key}
                                 type="button"
@@ -1508,7 +1621,7 @@ export default function VerMapa() {
                                 borderColor={s.borderColor}
                                 borderWidth={s.borderWidth}
                                 $active={statusFilter === s.key}
-                                onClick={() => setStatusFilter((current) => current === s.key ? null : s.key)}
+                                onClick={() => setStatusFilter((current) => (current === s.key ? null : s.key))}
                                 aria-pressed={statusFilter === s.key}
                             >
                                 <span className="color" />
@@ -1524,7 +1637,12 @@ export default function VerMapa() {
                     </LegendRow>
 
                     <CovaGridToolbar>
-                        <SystemButton type="button" tone="cancel" disabled={isMapLoading} onClick={() => setIsPieChartOpen(true)}>
+                        <SystemButton
+                            type="button"
+                            tone="cancel"
+                            disabled={isMapLoading}
+                            onClick={() => setIsPieChartOpen(true)}
+                        >
                             <FaChartPie /> Distribuição de Sepulturas
                         </SystemButton>
                     </CovaGridToolbar>
@@ -1542,8 +1660,13 @@ export default function VerMapa() {
                             <PieChartSepulturas />
                         </ChartArea>
                         <ChartLegend>
-                            {statusList.map(s => (
-                                <LegendItem key={s.key} color={s.color} borderColor={s.borderColor} borderWidth={s.borderWidth}>
+                            {statusList.map((s) => (
+                                <LegendItem
+                                    key={s.key}
+                                    color={s.color}
+                                    borderColor={s.borderColor}
+                                    borderWidth={s.borderWidth}
+                                >
                                     <span className="color" />
                                     <span>{s.label}</span>
                                 </LegendItem>
@@ -1598,11 +1721,7 @@ export default function VerMapa() {
                                 </InfoGrid>
 
                                 <ModalActions>
-                                    <SystemButton
-                                        type="button"
-                                        tone="cancel"
-                                        onClick={closeStructureDrawer}
-                                    >
+                                    <SystemButton type="button" tone="cancel" onClick={closeStructureDrawer}>
                                         Cancelar
                                     </SystemButton>
 
@@ -1623,7 +1742,9 @@ export default function VerMapa() {
                             >
                                 <div>
                                     <SectionTitle>Cadastro de sepultura</SectionTitle>
-                                    <SectionHint>Vincule a sepultura a uma quadra e defina seus dados operacionais.</SectionHint>
+                                    <SectionHint>
+                                        Vincule a sepultura a uma quadra e defina seus dados operacionais.
+                                    </SectionHint>
                                 </div>
                                 <StructureChevron $open={structureSectionsOpen.sepultura}>
                                     <LuChevronDown size={20} />
@@ -1642,16 +1763,16 @@ export default function VerMapa() {
                                             placeholder="Selecione a quadra"
                                             options={quadrasDesc.map(getQuadraOption)}
                                             renderValue={(_, option) => (
-                                                <InfoPill>{formatQuadraDisplay(option.raw, [], "Quadra ", "sem número")}</InfoPill>
+                                                <InfoPill>
+                                                    {formatQuadraDisplay(option.raw, [], "Quadra ", "sem número")}
+                                                </InfoPill>
                                             )}
                                             renderDropdown={({ selectOption }) => (
                                                 <GridQuadras
                                                     quadrasDesc={quadrasDesc}
                                                     value={formCova.quadra_cova}
                                                     onChange={(quadra) => {
-                                                        const option = quadra
-                                                            ? getQuadraOption(quadra)
-                                                            : null;
+                                                        const option = quadra ? getQuadraOption(quadra) : null;
                                                         selectOption(option);
                                                     }}
                                                     columnsMinWidth={40}
@@ -1667,7 +1788,11 @@ export default function VerMapa() {
 
                                     <Field>
                                         <Label>Tipo</Label>
-                                        <SystemSelect name="tipo_cova" value={formCova.tipo_cova} onChange={handleCovaChange}>
+                                        <SystemSelect
+                                            name="tipo_cova"
+                                            value={formCova.tipo_cova}
+                                            onChange={handleCovaChange}
+                                        >
                                             <option value="cova">Cova</option>
                                             <option value="gaveta">Gaveta</option>
                                             <option value="nicho">Nicho</option>
@@ -1676,27 +1801,51 @@ export default function VerMapa() {
 
                                     <Field>
                                         <Label>Capacidade</Label>
-                                        <Input type="number" name="capacidade" value={formCova.capacidade} onChange={handleCovaChange} />
+                                        <Input
+                                            type="number"
+                                            name="capacidade"
+                                            value={formCova.capacidade}
+                                            onChange={handleCovaChange}
+                                        />
                                     </Field>
 
                                     {formCova.concessao?.ativa ? (
                                         <>
                                             <Field>
                                                 <Label>Responsável</Label>
-                                                <Input name="concessao.responsavel" value={formCova.concessao?.responsavel || ""} onChange={handleCovaChange} />
+                                                <Input
+                                                    name="concessao.responsavel"
+                                                    value={formCova.concessao?.responsavel || ""}
+                                                    onChange={handleCovaChange}
+                                                />
                                             </Field>
                                             <Field>
                                                 <Label>Prazo (anos)</Label>
-                                                <Input type="number" name="concessao.prazo_anos" value={formCova.concessao?.prazo_anos || 0} onChange={handleCovaChange} />
+                                                <Input
+                                                    type="number"
+                                                    name="concessao.prazo_anos"
+                                                    value={formCova.concessao?.prazo_anos || 0}
+                                                    onChange={handleCovaChange}
+                                                />
                                             </Field>
                                             <Field>
                                                 <Label>Data Início</Label>
-                                                <Input type="date" name="concessao.data_inicio" value={formCova.concessao?.data_inicio || ""} onChange={handleCovaChange} />
+                                                <Input
+                                                    type="date"
+                                                    name="concessao.data_inicio"
+                                                    value={formCova.concessao?.data_inicio || ""}
+                                                    onChange={handleCovaChange}
+                                                />
                                             </Field>
 
                                             <Field>
                                                 <Label>Data Fim</Label>
-                                                <Input type="date" name="concessao.data_fim" value={formCova.concessao?.data_fim || ""} onChange={handleCovaChange} />
+                                                <Input
+                                                    type="date"
+                                                    name="concessao.data_fim"
+                                                    value={formCova.concessao?.data_fim || ""}
+                                                    onChange={handleCovaChange}
+                                                />
                                             </Field>
                                         </>
                                     ) : null}
@@ -1704,12 +1853,18 @@ export default function VerMapa() {
                                     <StructureGridFull>
                                         <Field>
                                             <Label>Observações</Label>
-                                            <Textarea name="obs" value={formCova.obs || ""} onChange={handleCovaChange}></Textarea>
+                                            <Textarea
+                                                name="obs"
+                                                value={formCova.obs || ""}
+                                                onChange={handleCovaChange}
+                                            ></Textarea>
                                         </Field>
                                     </StructureGridFull>
                                 </StructureTripleGrid>
                                 <ModalActions>
-                                    <SystemButton type="button" tone="cancel" onClick={closeStructureDrawer}>Cancelar</SystemButton>
+                                    <SystemButton type="button" tone="cancel" onClick={closeStructureDrawer}>
+                                        Cancelar
+                                    </SystemButton>
                                     <SystemButton type="submit">Criar sepultura</SystemButton>
                                 </ModalActions>
                             </form>
@@ -1730,7 +1885,11 @@ export default function VerMapa() {
                         bodyPadding="16px 18px 22px"
                         bodyDisplay="block"
                         onClose={closeCovaDrawer}
-                        closeButton={<SystemButton type="button" tone="cancel" onClick={closeCovaDrawer}>Fechar</SystemButton>}
+                        closeButton={
+                            <SystemButton type="button" tone="cancel" onClick={closeCovaDrawer}>
+                                Fechar
+                            </SystemButton>
+                        }
                     >
                         <SectionCard>
                             <SectionHeader>
@@ -1747,7 +1906,9 @@ export default function VerMapa() {
                                 </InfoTile>
                                 <InfoTile>
                                     <InfoLabel>Status</InfoLabel>
-                                    <InfoValue>{selectedCova.status ?? (isOccupiedForModal ? "ocupada" : "-")}</InfoValue>
+                                    <InfoValue>
+                                        {selectedCova.status ?? (isOccupiedForModal ? "ocupada" : "-")}
+                                    </InfoValue>
                                 </InfoTile>
                                 <InfoTile>
                                     <InfoLabel>Tipo</InfoLabel>
@@ -1778,14 +1939,21 @@ export default function VerMapa() {
                                     type="button"
                                     onClick={handleToggleStatus}
                                     disabled={!selectedGraveForModal?.id || statusToggleBlocked}
-                                    $active={String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"}
+                                    $active={
+                                        String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"
+                                    }
                                     aria-label="Alternar status da sepultura"
-                                    aria-pressed={String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"}
+                                    aria-pressed={
+                                        String(selectedGraveForModal?.status || "").toUpperCase() === "MAINTENANCE"
+                                    }
                                     title={statusToggleTitle}
                                 />
                             </ToggleStatusRow>
                             {statusToggleBlocked ? (
-                                <SectionHint>Há {selectedCovaSepultadosCount} falecido(s) sepultado(s). A indisponibilidade só pode ser alterada quando a sepultura estiver vazia.</SectionHint>
+                                <SectionHint>
+                                    Há {selectedCovaSepultadosCount} falecido(s) sepultado(s). A indisponibilidade só
+                                    pode ser alterada quando a sepultura estiver vazia.
+                                </SectionHint>
                             ) : null}
                         </SectionCard>
                         {hasContratoForModal ? (
@@ -1797,7 +1965,7 @@ export default function VerMapa() {
                                     </div>
                                 </SectionHeader>
 
-                                <InfoGrid >
+                                <InfoGrid>
                                     <InfoTile style={{ border: "1px solid #d2b24a" }}>
                                         <InfoLabel>Nº do título</InfoLabel>
                                         <InfoValue>{contratoNumeroForModal || "-"}</InfoValue>
@@ -1822,8 +1990,6 @@ export default function VerMapa() {
                                         </SepulturaPreviewButton>
                                     </InfoTile>
                                 </InfoGrid>
-
-
                             </SectionCard>
                         ) : null}
                         <SectionCard>
@@ -1855,8 +2021,7 @@ export default function VerMapa() {
                                     setPetsAll((prev) => prev.filter((p) => String(p.id) !== String(petId)));
                                 }}
                             >
-
-                                {(modalSepList && modalSepList.length > 0) ? (
+                                {modalSepList && modalSepList.length > 0 ? (
                                     <>
                                         <SepDivider />
                                         <SepList>
@@ -1875,20 +2040,28 @@ export default function VerMapa() {
                                                                             let fall = null;
                                                                             if (falId) {
                                                                                 try {
-                                                                                    const rf = await api.get(`/falecidos/${falId}`);
+                                                                                    const rf = await api.get(
+                                                                                        `/falecidos/${falId}`
+                                                                                    );
                                                                                     fall = normalizeFalecido(rf.data);
                                                                                 } catch (e) {
-                                                                                    console.error("Erro ", e)
+                                                                                    console.error("Erro ", e);
                                                                                 }
                                                                             }
-                                                                            setModalForm({ ...s, falecido: fall || null });
+                                                                            setModalForm({
+                                                                                ...s,
+                                                                                falecido: fall || null,
+                                                                            });
                                                                         })();
                                                                     }
                                                                 }}
                                                             >
                                                                 <SepItemContent>
-                                                                    <SepItemName>{getFalecidoName(s) || getFalecidoIdFromRecord(s) || "-"}</SepItemName>
-
+                                                                    <SepItemName>
+                                                                        {getFalecidoName(s) ||
+                                                                            getFalecidoIdFromRecord(s) ||
+                                                                            "-"}
+                                                                    </SepItemName>
                                                                 </SepItemContent>
                                                             </SepItemButton>
 
@@ -1903,13 +2076,18 @@ export default function VerMapa() {
                                                                             let fall = null;
                                                                             if (falId) {
                                                                                 try {
-                                                                                    const rf = await api.get(`/falecidos/${falId}`);
+                                                                                    const rf = await api.get(
+                                                                                        `/falecidos/${falId}`
+                                                                                    );
                                                                                     fall = normalizeFalecido(rf.data);
                                                                                 } catch (e) {
-                                                                                    console.error("Erro ", e)
+                                                                                    console.error("Erro ", e);
                                                                                 }
                                                                             }
-                                                                            setModalForm({ ...s, falecido: fall || null });
+                                                                            setModalForm({
+                                                                                ...s,
+                                                                                falecido: fall || null,
+                                                                            });
                                                                         })();
                                                                     }
                                                                 }}
@@ -1918,34 +2096,64 @@ export default function VerMapa() {
                                                             </SepToggle>
                                                         </SepItemRow>
 
-                                                        {expanded && modalForm && modalForm.id === (s.id ?? modalForm.id) ? (
+                                                        {expanded &&
+                                                        modalForm &&
+                                                        modalForm.id === (s.id ?? modalForm.id) ? (
                                                             <SepDetailPanel>
                                                                 <InfoGrid>
                                                                     <InfoTile>
                                                                         <InfoLabel>Nome do sepultado</InfoLabel>
-                                                                        <InfoValue>{getFalecidoName(modalForm) || "-"}</InfoValue>
+                                                                        <InfoValue>
+                                                                            {getFalecidoName(modalForm) || "-"}
+                                                                        </InfoValue>
                                                                     </InfoTile>
                                                                     <InfoTile>
                                                                         <InfoLabel>Sepultamento</InfoLabel>
-                                                                        <InfoValue>{modalForm.dh_sep || modalForm.data_hora || modalForm.data_obito_sep || "-"}</InfoValue>
+                                                                        <InfoValue>
+                                                                            {modalForm.dh_sep ||
+                                                                                modalForm.data_hora ||
+                                                                                modalForm.data_obito_sep ||
+                                                                                "-"}
+                                                                        </InfoValue>
                                                                     </InfoTile>
                                                                     <InfoTile>
                                                                         <InfoLabel>Data do óbito</InfoLabel>
-                                                                        <InfoValue>{getFalecidoDeathDate(modalForm) || "-"}</InfoValue>
+                                                                        <InfoValue>
+                                                                            {getFalecidoDeathDate(modalForm) || "-"}
+                                                                        </InfoValue>
                                                                     </InfoTile>
                                                                     <InfoTile>
                                                                         <InfoLabel>Responsável</InfoLabel>
-                                                                        <InfoValue>{getFalecidoResponsibleName(modalForm) || "-"}</InfoValue>
+                                                                        <InfoValue>
+                                                                            {getFalecidoResponsibleName(modalForm) ||
+                                                                                "-"}
+                                                                        </InfoValue>
                                                                     </InfoTile>
                                                                     <InfoTile>
                                                                         <InfoLabel>Contato</InfoLabel>
-                                                                        <InfoValue>{getFalecidoResponsiblePhone(modalForm) || "-"}</InfoValue>
+                                                                        <InfoValue>
+                                                                            {getFalecidoResponsiblePhone(modalForm) ||
+                                                                                "-"}
+                                                                        </InfoValue>
                                                                     </InfoTile>
                                                                 </InfoGrid>
                                                                 {exumacoesPending[String(s.id)] ? (
-                                                                    <SystemButton style={{ marginTop: "10px" }} type="button" tone="delete" onClick={() => cancelExumacao(s)}>Cancelar exumação</SystemButton>
+                                                                    <SystemButton
+                                                                        style={{ marginTop: "10px" }}
+                                                                        type="button"
+                                                                        tone="delete"
+                                                                        onClick={() => cancelExumacao(s)}
+                                                                    >
+                                                                        Cancelar exumação
+                                                                    </SystemButton>
                                                                 ) : (
-                                                                    <SystemButton style={{ marginTop: "15px" }} type="button" onClick={() => openExumacaoForm(s)}>Iniciar exumação</SystemButton>
+                                                                    <SystemButton
+                                                                        style={{ marginTop: "15px" }}
+                                                                        type="button"
+                                                                        onClick={() => openExumacaoForm(s)}
+                                                                    >
+                                                                        Iniciar exumação
+                                                                    </SystemButton>
                                                                 )}
                                                             </SepDetailPanel>
                                                         ) : null}
@@ -1954,25 +2162,27 @@ export default function VerMapa() {
                                             })}
                                         </SepList>
                                     </>
-                                ) : (
-                                    sepDataForModal ? (
-                                        <InfoGrid>
-                                            <InfoTile>
-                                                <InfoLabel>Nome do sepultado</InfoLabel>
-                                                <InfoValue>{getFalecidoName(sepDataForModal) || "-"}</InfoValue>
-                                            </InfoTile>
-                                            <InfoTile>
-                                                <InfoLabel>Sepultamento</InfoLabel>
-                                                <InfoValue>{sepDataForModal.dh_sep || sepDataForModal.data_hora || sepDataForModal.data_obito_sep || "-"}</InfoValue>
-                                            </InfoTile>
-                                            <InfoTile>
-                                                <InfoLabel>Data do óbito</InfoLabel>
-                                                <InfoValue>{getFalecidoDeathDate(sepDataForModal) || "-"}</InfoValue>
-                                            </InfoTile>
-                                        </InfoGrid>
-                                    ) : null
-
-                                )}
+                                ) : sepDataForModal ? (
+                                    <InfoGrid>
+                                        <InfoTile>
+                                            <InfoLabel>Nome do sepultado</InfoLabel>
+                                            <InfoValue>{getFalecidoName(sepDataForModal) || "-"}</InfoValue>
+                                        </InfoTile>
+                                        <InfoTile>
+                                            <InfoLabel>Sepultamento</InfoLabel>
+                                            <InfoValue>
+                                                {sepDataForModal.dh_sep ||
+                                                    sepDataForModal.data_hora ||
+                                                    sepDataForModal.data_obito_sep ||
+                                                    "-"}
+                                            </InfoValue>
+                                        </InfoTile>
+                                        <InfoTile>
+                                            <InfoLabel>Data do óbito</InfoLabel>
+                                            <InfoValue>{getFalecidoDeathDate(sepDataForModal) || "-"}</InfoValue>
+                                        </InfoTile>
+                                    </InfoGrid>
+                                ) : null}
                             </CovaPetsSection>
                         </SectionCard>
                         <SectionCard>
@@ -2007,7 +2217,12 @@ export default function VerMapa() {
                         onClose={closeExumacaoForm}
                         closeOnOverlayClick={false}
                         closeButton={
-                            <SystemButton type="button" tone="cancel" onClick={closeExumacaoForm} disabled={isSubmittingExumacao}>
+                            <SystemButton
+                                type="button"
+                                tone="cancel"
+                                onClick={closeExumacaoForm}
+                                disabled={isSubmittingExumacao}
+                            >
                                 Fechar
                             </SystemButton>
                         }
@@ -2037,7 +2252,11 @@ export default function VerMapa() {
 
                                 <div>
                                     <Label>Data e hora</Label>
-                                    <Input type="datetime-local" value={exumacoesForm.dh_exu || ""} onChange={(ev) => handleExumacaoField("dh_exu", ev.target.value)} />
+                                    <Input
+                                        type="datetime-local"
+                                        value={exumacoesForm.dh_exu || ""}
+                                        onChange={(ev) => handleExumacaoField("dh_exu", ev.target.value)}
+                                    />
                                 </div>
 
                                 <div>
@@ -2048,7 +2267,9 @@ export default function VerMapa() {
                                         $invalid={!!exumacoesErrors.motivo}
                                         aria-invalid={!!exumacoesErrors.motivo}
                                     />
-                                    {exumacoesErrors.motivo && <FieldErrorText>{exumacoesErrors.motivo}</FieldErrorText>}
+                                    {exumacoesErrors.motivo && (
+                                        <FieldErrorText>{exumacoesErrors.motivo}</FieldErrorText>
+                                    )}
                                 </div>
 
                                 <div>
@@ -2061,10 +2282,15 @@ export default function VerMapa() {
                                     >
                                         <option value="">Selecione o ossário</option>
                                         {ossariosAll.map((ossario) => (
-                                            <option key={String(ossario.id)} value={String(ossario.numero ?? ossario.id ?? "")}>{`Ossário ${ossario.numero ?? ossario.id} - ${String(ossario.tipo || "-").replace(/_/g, " ")} - ${String(ossario.status || "-")}`}</option>
+                                            <option
+                                                key={String(ossario.id)}
+                                                value={String(ossario.numero ?? ossario.id ?? "")}
+                                            >{`Ossário ${ossario.numero ?? ossario.id} - ${String(ossario.tipo || "-").replace(/_/g, " ")} - ${String(ossario.status || "-")}`}</option>
                                         ))}
                                     </SystemSelect>
-                                    {exumacoesErrors.destino && <FieldErrorText>{exumacoesErrors.destino}</FieldErrorText>}
+                                    {exumacoesErrors.destino && (
+                                        <FieldErrorText>{exumacoesErrors.destino}</FieldErrorText>
+                                    )}
                                 </div>
 
                                 <div>
@@ -2075,32 +2301,37 @@ export default function VerMapa() {
                                         $invalid={!!exumacoesErrors.coveiro}
                                         aria-invalid={!!exumacoesErrors.coveiro}
                                     />
-                                    {exumacoesErrors.coveiro && <FieldErrorText>{exumacoesErrors.coveiro}</FieldErrorText>}
+                                    {exumacoesErrors.coveiro && (
+                                        <FieldErrorText>{exumacoesErrors.coveiro}</FieldErrorText>
+                                    )}
                                 </div>
 
                                 <ModalGridFull>
                                     <Label>Observações</Label>
-                                    <Textarea value={exumacoesForm.obs_exu || ""} onChange={(ev) => handleExumacaoField("obs_exu", ev.target.value)} />
+                                    <Textarea
+                                        value={exumacoesForm.obs_exu || ""}
+                                        onChange={(ev) => handleExumacaoField("obs_exu", ev.target.value)}
+                                    />
                                 </ModalGridFull>
                             </ModalGrid>
                         </SectionCard>
 
                         <ModalActions>
-                            <SystemButton type="button" tone="cancel" onClick={closeExumacaoForm} disabled={isSubmittingExumacao}>Voltar</SystemButton>
+                            <SystemButton
+                                type="button"
+                                tone="cancel"
+                                onClick={closeExumacaoForm}
+                                disabled={isSubmittingExumacao}
+                            >
+                                Voltar
+                            </SystemButton>
                             <SystemButton type="submit" disabled={isSubmittingExumacao}>
                                 {isSubmittingExumacao ? "Enviando..." : "Registrar exumação"}
                             </SystemButton>
                         </ModalActions>
                     </DrawerComponent>
                 )}
-
-            </Container >
-
+            </Container>
         </>
-    )
+    );
 }
-
-
-
-
-

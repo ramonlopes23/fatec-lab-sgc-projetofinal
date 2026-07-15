@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FaChartBar, FaExchangeAlt, FaEye, FaFilter, FaSearch } from "react-icons/fa";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
@@ -167,12 +167,13 @@ const classifyDestino = (item) => {
     return "outros";
 };
 
-const getDestinoLabel = (key) => ({
-    ossario: "Ossario",
-    crematorio: "Crematorio",
-    transladado: "Transladado",
-    outros: "Outros",
-}[key] || "Outros");
+const getDestinoLabel = (key) =>
+    ({
+        ossario: "Ossario",
+        crematorio: "Crematorio",
+        transladado: "Transladado",
+        outros: "Outros",
+    })[key] || "Outros";
 
 const isTransferenciaExumacao = (item) => {
     const destino = normalizeText(getExumacaoDestino(item));
@@ -307,11 +308,12 @@ const buildReportHash = (payload) => {
 
 const getFileExtension = (format) => (format === "xlsx" ? "xls" : format);
 
-const getMimeType = (format) => ({
-    pdf: "text/html;charset=utf-8",
-    xlsx: "application/vnd.ms-excel;charset=utf-8",
-    csv: "text/csv;charset=utf-8",
-}[format] || "application/octet-stream");
+const getMimeType = (format) =>
+    ({
+        pdf: "text/html;charset=utf-8",
+        xlsx: "application/vnd.ms-excel;charset=utf-8",
+        csv: "text/csv;charset=utf-8",
+    })[format] || "application/octet-stream";
 
 const downloadBlob = (blob, filename) => {
     const url = window.URL.createObjectURL(blob);
@@ -324,12 +326,13 @@ const downloadBlob = (blob, filename) => {
     window.URL.revokeObjectURL(url);
 };
 
-const escapeHtml = (value) => String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+const escapeHtml = (value) =>
+    String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 
 const escapeCsv = (value) => {
     const raw = String(value ?? "");
@@ -338,34 +341,46 @@ const escapeCsv = (value) => {
 
 const buildCsvContent = (payload) => {
     const header = payload.table.columns.map((column) => escapeCsv(column.label)).join(";");
-    const rows = payload.table.rows.map((row) => (
+    const rows = payload.table.rows.map((row) =>
         payload.table.columns.map((column) => escapeCsv(row[column.key])).join(";")
-    ));
+    );
     return `\uFEFF${[header, ...rows].join("\n")}`;
 };
 
 const buildExcelContent = (payload) => {
-    const summaryRows = payload.summary.map((item) => `
+    const summaryRows = payload.summary
+        .map(
+            (item) => `
         <tr>
             <td>${escapeHtml(item.label)}</td>
             <td>${escapeHtml(item.value)}</td>
             <td>${escapeHtml(item.hint)}</td>
         </tr>
-    `).join("");
+    `
+        )
+        .join("");
 
-    const filterRows = payload.appliedFilters.map((item) => `
+    const filterRows = payload.appliedFilters
+        .map(
+            (item) => `
         <tr>
             <td>${escapeHtml(item.label)}</td>
             <td>${escapeHtml(item.value || "-")}</td>
         </tr>
-    `).join("");
+    `
+        )
+        .join("");
 
     const detailHeader = payload.table.columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join("");
-    const detailRows = payload.table.rows.map((row, index) => `
+    const detailRows = payload.table.rows
+        .map(
+            (row, index) => `
         <tr class="${index % 2 === 0 ? "even" : "odd"}">
             ${payload.table.columns.map((column) => `<td>${escapeHtml(row[column.key])}</td>`).join("")}
         </tr>
-    `).join("");
+    `
+        )
+        .join("");
 
     return `<!doctype html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
@@ -402,20 +417,32 @@ const buildExcelContent = (payload) => {
 };
 
 const renderPrintHtml = (payload) => {
-    const filters = payload.appliedFilters.filter((item) => item.value && item.value !== "Todos" && item.value !== "Todas");
-    const chartBlocks = payload.charts.map((chart) => `
+    const filters = payload.appliedFilters.filter(
+        (item) => item.value && item.value !== "Todos" && item.value !== "Todas"
+    );
+    const chartBlocks = payload.charts
+        .map(
+            (chart) => `
         <section class="panel">
             <h3>${escapeHtml(chart.title)}</h3>
             <div class="bars">
-                ${(chart.data || []).map((item) => `
+                ${
+                    (chart.data || [])
+                        .map(
+                            (item) => `
                     <div class="bar-row">
                         <span>${escapeHtml(item.label)}</span>
                         <strong>${escapeHtml(item.value)}</strong>
                     </div>
-                `).join("") || "<p class='muted'>Sem dados</p>"}
+                `
+                        )
+                        .join("") || "<p class='muted'>Sem dados</p>"
+                }
             </div>
         </section>
-    `).join("");
+    `
+        )
+        .join("");
 
     return `<!doctype html>
 <html>
@@ -518,19 +545,23 @@ export default function RelatoriosComponent() {
     const { showError, showWarning, ToastElement } = useToastFeedback();
 
     const isExumacoesReport = activeReport === "exumacoes";
-    const selectedCemetery = useMemo(() => (
-        cemeteries.find((cemetery) => String(getCemiterioId(cemetery)) === String(selectedCemeteryId)) ||
-        cemeteries[0] ||
-        null
-    ), [cemeteries, selectedCemeteryId]);
+    const selectedCemetery = useMemo(
+        () =>
+            cemeteries.find((cemetery) => String(getCemiterioId(cemetery)) === String(selectedCemeteryId)) ||
+            cemeteries[0] ||
+            null,
+        [cemeteries, selectedCemeteryId]
+    );
     const reportCemeteryName = filters.cemiterio || getCemiterioName(selectedCemetery) || "Cemitério não informado";
 
-    const getSepultamentoQuadra = (item) => (
-        resolveQuadraDisplay(getSepulturaQuadraRef(item), quadras, "")
+    const getSepultamentoQuadra = useCallback(
+        (item) => resolveQuadraDisplay(getSepulturaQuadraRef(item), quadras, ""),
+        [quadras]
     );
 
-    const getExumacaoQuadra = (item) => (
-        resolveQuadraDisplay(getExumacaoQuadraReference(item), quadras, "")
+    const getExumacaoQuadra = useCallback(
+        (item) => resolveQuadraDisplay(getExumacaoQuadraReference(item), quadras, ""),
+        [quadras]
     );
 
     useEffect(() => {
@@ -579,7 +610,7 @@ export default function RelatoriosComponent() {
             if (end && date > end) return false;
             return true;
         });
-    }, [filters, quadras, sepultamentos]);
+    }, [filters, getSepultamentoQuadra, sepultamentos]);
 
     const filteredExumacoes = useMemo(() => {
         const search = normalizeText(filters.search);
@@ -599,13 +630,23 @@ export default function RelatoriosComponent() {
             if (end && date > end) return false;
             return true;
         });
-    }, [exumacoes, filters, quadras]);
+    }, [exumacoes, filters, getExumacaoQuadra]);
 
     const filteredItems = isExumacoesReport ? filteredExumacoes : filteredSepultamentos;
 
     useEffect(() => {
         setPage(1);
-    }, [activeReport, filters.search, filters.quadra, filters.sepultura, filters.destino, filters.tipo, filters.periodo, filters.dataInicio, filters.dataFim]);
+    }, [
+        activeReport,
+        filters.search,
+        filters.quadra,
+        filters.sepultura,
+        filters.destino,
+        filters.tipo,
+        filters.periodo,
+        filters.dataInicio,
+        filters.dataFim,
+    ]);
 
     const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
     const currentPage = Math.min(page, totalPages);
@@ -617,7 +658,9 @@ export default function RelatoriosComponent() {
 
     const periodLabel = useMemo(() => {
         if (filters.periodo === "custom") {
-            const startLabel = filters.dataInicio ? formatDateDMY(filters.dataInicio, filters.dataInicio) : "Inicio livre";
+            const startLabel = filters.dataInicio
+                ? formatDateDMY(filters.dataInicio, filters.dataInicio)
+                : "Inicio livre";
             const endLabel = filters.dataFim ? formatDateDMY(filters.dataFim, filters.dataFim) : "Fim livre";
             return `${startLabel} a ${endLabel}`;
         }
@@ -631,7 +674,9 @@ export default function RelatoriosComponent() {
 
         if (isExumacoesReport) {
             const transferencias = filteredItems.filter((item) => isTransferenciaExumacao(item)).length;
-            const monthCount = new Set(filteredItems.map((item) => getMonthKey(parseDateValue(getExumacaoDate(item)))).filter(Boolean)).size || 1;
+            const monthCount =
+                new Set(filteredItems.map((item) => getMonthKey(parseDateValue(getExumacaoDate(item)))).filter(Boolean))
+                    .size || 1;
             const mediaMensal = total / monthCount;
             const arrecadacao = filteredItems.reduce((sum, item) => sum + getTaxaValorFromRecord(item), 0);
 
@@ -703,27 +748,56 @@ export default function RelatoriosComponent() {
         ];
     }, [filteredItems, isExumacoesReport]);
 
-    const monthlySepultamentos = useMemo(() => buildMonthlySeries(filteredSepultamentos, () => 1), [filteredSepultamentos]);
-    const monthlyExumacoes = useMemo(() => buildMonthlySeries(filteredExumacoes, () => 1, getExumacaoDate), [filteredExumacoes]);
-    const monthlyRevenue = useMemo(() => buildMonthlySeries(filteredSepultamentos, getTaxaValorFromRecord), [filteredSepultamentos]);
+    const monthlySepultamentos = useMemo(
+        () => buildMonthlySeries(filteredSepultamentos, () => 1),
+        [filteredSepultamentos]
+    );
+    const monthlyExumacoes = useMemo(
+        () => buildMonthlySeries(filteredExumacoes, () => 1, getExumacaoDate),
+        [filteredExumacoes]
+    );
+    const monthlyRevenue = useMemo(
+        () => buildMonthlySeries(filteredSepultamentos, getTaxaValorFromRecord),
+        [filteredSepultamentos]
+    );
     const sepultamentoTypeSeries = useMemo(() => buildTypeSeries(filteredSepultamentos), [filteredSepultamentos]);
     const exumacaoTypeSeries = useMemo(() => buildTypeSeries(filteredExumacoes, true), [filteredExumacoes]);
     const destinoSeries = useMemo(() => buildDestinoSeries(filteredExumacoes), [filteredExumacoes]);
 
     const quadraOptions = useMemo(() => {
         const source = isExumacoesReport ? exumacoes : sepultamentos;
-        const values = Array.from(new Set(source.map((item) => String(isExumacoesReport ? getExumacaoQuadra(item) : getSepultamentoQuadra(item)).trim()).filter(Boolean)));
+        const values = Array.from(
+            new Set(
+                source
+                    .map((item) =>
+                        String(isExumacoesReport ? getExumacaoQuadra(item) : getSepultamentoQuadra(item)).trim()
+                    )
+                    .filter(Boolean)
+            )
+        );
         return values.sort(sortNumericText);
-    }, [exumacoes, isExumacoesReport, quadras, sepultamentos]);
+    }, [exumacoes, getExumacaoQuadra, getSepultamentoQuadra, isExumacoesReport, sepultamentos]);
 
     const sepulturaOptions = useMemo(() => {
         const source = isExumacoesReport ? exumacoes : sepultamentos;
         const base = filters.quadra
-            ? source.filter((item) => String(isExumacoesReport ? getExumacaoQuadra(item) : getSepultamentoQuadra(item)) === String(filters.quadra))
+            ? source.filter(
+                  (item) =>
+                      String(isExumacoesReport ? getExumacaoQuadra(item) : getSepultamentoQuadra(item)) ===
+                      String(filters.quadra)
+              )
             : source;
-        const values = Array.from(new Set(base.map((item) => String(isExumacoesReport ? getExumacaoSepultura(item) : getSepulturaNumber(item)).trim()).filter(Boolean)));
+        const values = Array.from(
+            new Set(
+                base
+                    .map((item) =>
+                        String(isExumacoesReport ? getExumacaoSepultura(item) : getSepulturaNumber(item)).trim()
+                    )
+                    .filter(Boolean)
+            )
+        );
         return values.sort(sortNumericText);
-    }, [exumacoes, filters.quadra, isExumacoesReport, quadras, sepultamentos]);
+    }, [exumacoes, filters.quadra, getExumacaoQuadra, getSepultamentoQuadra, isExumacoesReport, sepultamentos]);
 
     const destinoOptions = useMemo(() => {
         const values = Array.from(new Set(exumacoes.map((item) => classifyDestino(item)).filter(Boolean)));
@@ -736,76 +810,100 @@ export default function RelatoriosComponent() {
         const appliedFilters = [
             { key: "search", label: "Busca textual", value: filters.search || "" },
             { key: "periodo", label: "Periodo", value: periodLabel },
-            { key: "dataInicio", label: "Periodo inicial", value: filters.dataInicio ? formatDateDMY(filters.dataInicio, filters.dataInicio) : "" },
-            { key: "dataFim", label: "Periodo final", value: filters.dataFim ? formatDateDMY(filters.dataFim, filters.dataFim) : "" },
+            {
+                key: "dataInicio",
+                label: "Periodo inicial",
+                value: filters.dataInicio ? formatDateDMY(filters.dataInicio, filters.dataInicio) : "",
+            },
+            {
+                key: "dataFim",
+                label: "Periodo final",
+                value: filters.dataFim ? formatDateDMY(filters.dataFim, filters.dataFim) : "",
+            },
             { key: "quadra", label: "Quadra", value: filters.quadra ? `Quadra ${filters.quadra}` : "Todas" },
             { key: "sepultura", label: "Sepultura", value: filters.sepultura || "Todas" },
-            { key: "tipoSepultamento", label: "Tipo de sepultamento", value: !isExumacoesReport ? (filters.tipo === "all" ? "Todos" : filters.tipo) : "" },
+            {
+                key: "tipoSepultamento",
+                label: "Tipo de sepultamento",
+                value: !isExumacoesReport ? (filters.tipo === "all" ? "Todos" : filters.tipo) : "",
+            },
             { key: "situacaoFinanceira", label: "Situacao financeira", value: filters.situacaoFinanceira || "" },
             { key: "faixaValor", label: "Faixa de valor", value: filters.faixaValor || "" },
             { key: "cemiterio", label: "Cemiterio", value: filters.cemiterio || "" },
             { key: "responsavel", label: "Responsavel", value: filters.responsavel || "" },
-            { key: "destinoExumacao", label: "Destino da exumacao", value: isExumacoesReport ? (filters.destino ? getDestinoLabel(filters.destino) : "Todos") : "" },
-            { key: "tipoExumacao", label: "Tipo de exumacao", value: isExumacoesReport ? (filters.tipo === "all" ? "Todos" : getTypeText({ tipo: filters.tipo })) : "" },
+            {
+                key: "destinoExumacao",
+                label: "Destino da exumacao",
+                value: isExumacoesReport ? (filters.destino ? getDestinoLabel(filters.destino) : "Todos") : "",
+            },
+            {
+                key: "tipoExumacao",
+                label: "Tipo de exumacao",
+                value: isExumacoesReport
+                    ? filters.tipo === "all"
+                        ? "Todos"
+                        : getTypeText({ tipo: filters.tipo })
+                    : "",
+            },
         ];
 
         const table = isExumacoesReport
             ? {
-                columns: [
-                    { key: "data", label: "Data" },
-                    { key: "falecido", label: "Falecido" },
-                    { key: "destino", label: "Destino" },
-                    { key: "ossario", label: "Ossario" },
-                    { key: "responsavel", label: "Responsavel" },
-                    { key: "taxa", label: "Taxa" },
-                    { key: "situacao", label: "Situacao" },
-                ],
-                rows: filteredItems.map((item) => ({
-                    data: formatDateDMY(getExumacaoDate(item), "--"),
-                    falecido: getExumacaoName(item),
-                    destino: getDestinoLabel(classifyDestino(item)),
-                    ossario: classifyDestino(item) === "ossario" ? getExumacaoDestino(item) : "--",
-                    responsavel: item?.responsavel || item?.coveiro || item?.usuario || "--",
-                    taxa: formatCurrencyBRL(getTaxaValorFromRecord(item)),
-                    situacao: getStatusLabel(item),
-                })),
-            }
+                  columns: [
+                      { key: "data", label: "Data" },
+                      { key: "falecido", label: "Falecido" },
+                      { key: "destino", label: "Destino" },
+                      { key: "ossario", label: "Ossario" },
+                      { key: "responsavel", label: "Responsavel" },
+                      { key: "taxa", label: "Taxa" },
+                      { key: "situacao", label: "Situacao" },
+                  ],
+                  rows: filteredItems.map((item) => ({
+                      data: formatDateDMY(getExumacaoDate(item), "--"),
+                      falecido: getExumacaoName(item),
+                      destino: getDestinoLabel(classifyDestino(item)),
+                      ossario: classifyDestino(item) === "ossario" ? getExumacaoDestino(item) : "--",
+                      responsavel: item?.responsavel || item?.coveiro || item?.usuario || "--",
+                      taxa: formatCurrencyBRL(getTaxaValorFromRecord(item)),
+                      situacao: getStatusLabel(item),
+                  })),
+              }
             : {
-                columns: [
-                    { key: "data", label: "Data" },
-                    { key: "falecido", label: "Falecido" },
-                    { key: "documento", label: "CPF/documento" },
-                    { key: "quadra", label: "Quadra" },
-                    { key: "sepultura", label: "Sepultura" },
-                    { key: "tipo", label: "Tipo" },
-                    { key: "taxa", label: "Taxa" },
-                    { key: "situacaoFinanceira", label: "Situacao financeira" },
-                    { key: "responsavel", label: "Responsavel" },
-                ],
-                rows: filteredItems.map((item) => ({
-                    data: formatDateDMY(item?.dh_sep, "--"),
-                    falecido: getFalecidoName(item) || "--",
-                    documento: getFalecidoCpf(item) || "--",
-                    quadra: getSepultamentoQuadra(item) || "--",
-                    sepultura: getSepulturaNumber(item) || "--",
-                    tipo: getTypeText(item),
-                    taxa: formatCurrencyBRL(getTaxaValorFromRecord(item)),
-                    situacaoFinanceira: getStatusLabel(item),
-                    responsavel: item?.responsavel || item?.nome_resp || item?.coveiro_sep || "--",
-                })),
-            };
+                  columns: [
+                      { key: "data", label: "Data" },
+                      { key: "falecido", label: "Falecido" },
+                      { key: "documento", label: "CPF/documento" },
+                      { key: "quadra", label: "Quadra" },
+                      { key: "sepultura", label: "Sepultura" },
+                      { key: "tipo", label: "Tipo" },
+                      { key: "taxa", label: "Taxa" },
+                      { key: "situacaoFinanceira", label: "Situacao financeira" },
+                      { key: "responsavel", label: "Responsavel" },
+                  ],
+                  rows: filteredItems.map((item) => ({
+                      data: formatDateDMY(item?.dh_sep, "--"),
+                      falecido: getFalecidoName(item) || "--",
+                      documento: getFalecidoCpf(item) || "--",
+                      quadra: getSepultamentoQuadra(item) || "--",
+                      sepultura: getSepulturaNumber(item) || "--",
+                      tipo: getTypeText(item),
+                      taxa: formatCurrencyBRL(getTaxaValorFromRecord(item)),
+                      situacaoFinanceira: getStatusLabel(item),
+                      responsavel: item?.responsavel || item?.nome_resp || item?.coveiro_sep || "--",
+                  })),
+              };
 
         const charts = isExumacoesReport
             ? [
-                { key: "exumacoesMes", title: "Exumacoes por mes", data: monthlyExumacoes },
-                { key: "destinos", title: "Destino da exumacao", data: destinoSeries },
-                { key: "tipos", title: "Tipo de exumacao", data: exumacaoTypeSeries },
-            ]
+                  { key: "exumacoesMes", title: "Exumacoes por mes", data: monthlyExumacoes },
+                  { key: "destinos", title: "Destino da exumacao", data: destinoSeries },
+                  { key: "tipos", title: "Tipo de exumacao", data: exumacaoTypeSeries },
+              ]
             : [
-                { key: "sepultamentosMes", title: "Sepultamentos por mes", data: monthlySepultamentos },
-                { key: "tipos", title: "Tipo de sepultamento", data: sepultamentoTypeSeries },
-                { key: "arrecadacaoMensal", title: "Arrecadacao mensal", data: monthlyRevenue },
-            ];
+                  { key: "sepultamentosMes", title: "Sepultamentos por mes", data: monthlySepultamentos },
+                  { key: "tipos", title: "Tipo de sepultamento", data: sepultamentoTypeSeries },
+                  { key: "arrecadacaoMensal", title: "Arrecadacao mensal", data: monthlyRevenue },
+              ];
 
         const snapshot = {
             reportType: isExumacoesReport ? "exumacoes" : "sepultamentos",
@@ -831,7 +929,11 @@ export default function RelatoriosComponent() {
             table,
             workbook: {
                 sheets: [
-                    { name: "Resumo executivo", summary: stats.map(({ label, value, hint }) => ({ label, value, hint })), charts },
+                    {
+                        name: "Resumo executivo",
+                        summary: stats.map(({ label, value, hint }) => ({ label, value, hint })),
+                        charts,
+                    },
                     { name: "Dados completos", columns: table.columns, rows: table.rows },
                 ],
                 options: {
@@ -869,6 +971,7 @@ export default function RelatoriosComponent() {
         exumacaoTypeSeries,
         filteredItems,
         filters,
+        getSepultamentoQuadra,
         isExumacoesReport,
         monthlyExumacoes,
         monthlyRevenue,
@@ -948,16 +1051,41 @@ export default function RelatoriosComponent() {
         }, 350);
     };
 
-    const renderSepultamentoRows = () => pageItems.map((item, index) => {
-        const isParticular = isParticularRecord(item);
-        return (
-            <Tr key={item?.id || `${getFalecidoName(item) || "sep"}-${index}`} $index={index}>
-                <Td>{formatDateDMY(item?.dh_sep, "--")}</Td>
-                <Td>{getFalecidoName(item) || "--"}</Td>
-                <Td>{getSepultamentoQuadra(item) || "--"}</Td>
-                <Td>{getSepulturaNumber(item) || "--"}</Td>
+    const renderSepultamentoRows = () =>
+        pageItems.map((item, index) => {
+            const isParticular = isParticularRecord(item);
+            return (
+                <Tr key={item?.id || `${getFalecidoName(item) || "sep"}-${index}`} $index={index}>
+                    <Td>{formatDateDMY(item?.dh_sep, "--")}</Td>
+                    <Td>{getFalecidoName(item) || "--"}</Td>
+                    <Td>{getSepultamentoQuadra(item) || "--"}</Td>
+                    <Td>{getSepulturaNumber(item) || "--"}</Td>
+                    <Td>{getTypeText(item)}</Td>
+                    <Td>{isParticular ? "Particular" : "Comum"}</Td>
+                    <TdValue>{formatCurrencyBRL(getTaxaValorFromRecord(item))}</TdValue>
+                    <Td>
+                        <StatusBadge $tone={getStatusTone(item)}>{getStatusLabel(item)}</StatusBadge>
+                    </Td>
+                    <Td>
+                        <Actions>
+                            <IconBtn type="button" onClick={() => setSelectedItem(item)} aria-label="Ver detalhes">
+                                <FaEye />
+                            </IconBtn>
+                        </Actions>
+                    </Td>
+                </Tr>
+            );
+        });
+
+    const renderExumacaoRows = () =>
+        pageItems.map((item, index) => (
+            <Tr key={item?.id || `${getExumacaoName(item)}-${index}`} $index={index}>
+                <Td>{formatDateDMY(getExumacaoDate(item), "--")}</Td>
+                <Td>{getExumacaoName(item)}</Td>
+                <Td>{getExumacaoQuadra(item) || "--"}</Td>
+                <Td>{getExumacaoSepultura(item) || "--"}</Td>
+                <Td>{getDestinoLabel(classifyDestino(item))}</Td>
                 <Td>{getTypeText(item)}</Td>
-                <Td>{isParticular ? "Particular" : "Comum"}</Td>
                 <TdValue>{formatCurrencyBRL(getTaxaValorFromRecord(item))}</TdValue>
                 <Td>
                     <StatusBadge $tone={getStatusTone(item)}>{getStatusLabel(item)}</StatusBadge>
@@ -970,30 +1098,7 @@ export default function RelatoriosComponent() {
                     </Actions>
                 </Td>
             </Tr>
-        );
-    });
-
-    const renderExumacaoRows = () => pageItems.map((item, index) => (
-        <Tr key={item?.id || `${getExumacaoName(item)}-${index}`} $index={index}>
-            <Td>{formatDateDMY(getExumacaoDate(item), "--")}</Td>
-            <Td>{getExumacaoName(item)}</Td>
-            <Td>{getExumacaoQuadra(item) || "--"}</Td>
-            <Td>{getExumacaoSepultura(item) || "--"}</Td>
-            <Td>{getDestinoLabel(classifyDestino(item))}</Td>
-            <Td>{getTypeText(item)}</Td>
-            <TdValue>{formatCurrencyBRL(getTaxaValorFromRecord(item))}</TdValue>
-            <Td>
-                <StatusBadge $tone={getStatusTone(item)}>{getStatusLabel(item)}</StatusBadge>
-            </Td>
-            <Td>
-                <Actions>
-                    <IconBtn type="button" onClick={() => setSelectedItem(item)} aria-label="Ver detalhes">
-                        <FaEye />
-                    </IconBtn>
-                </Actions>
-            </Td>
-        </Tr>
-    ));
+        ));
 
     const renderModalFields = () => {
         if (isExumacoesReport) {
@@ -1028,315 +1133,410 @@ export default function RelatoriosComponent() {
     return (
         <>
             {ToastElement}
-        <Container>
-            <PageHeader>
-                <HeaderCopy>
-                    <Title>Relatórios Operacionais</Title>
-                    <Subtitle>Visualize a movimentação de sepultamentos e exumações com filtros, indicadores e gráficos consolidados.</Subtitle>
-                </HeaderCopy>
-                <PeriodChip>
-                    <PeriodChipLabel>Período ativo</PeriodChipLabel>
-                    <PeriodChipValue>{periodLabel}</PeriodChipValue>
-                    <PeriodChipValue>{filteredItems.length.toLocaleString("pt-BR")} registros filtrados</PeriodChipValue>
-                </PeriodChip>
-            </PageHeader>
+            <Container>
+                <PageHeader>
+                    <HeaderCopy>
+                        <Title>Relatórios Operacionais</Title>
+                        <Subtitle>
+                            Visualize a movimentação de sepultamentos e exumações com filtros, indicadores e gráficos
+                            consolidados.
+                        </Subtitle>
+                    </HeaderCopy>
+                    <PeriodChip>
+                        <PeriodChipLabel>Período ativo</PeriodChipLabel>
+                        <PeriodChipValue>{periodLabel}</PeriodChipValue>
+                        <PeriodChipValue>
+                            {filteredItems.length.toLocaleString("pt-BR")} registros filtrados
+                        </PeriodChipValue>
+                    </PeriodChip>
+                </PageHeader>
 
-            <ReportModeTabs>
-                <ReportModeButton type="button" $active={!isExumacoesReport} onClick={() => handleReportMode("sepultamentos")}>
-                    <FaCross /> Sepultamentos
-                </ReportModeButton>
-                <ReportModeButton type="button" $active={isExumacoesReport} onClick={() => handleReportMode("exumacoes")}>
-                    <LuFlower2 /> Exumações
-                </ReportModeButton>
-            </ReportModeTabs>
+                <ReportModeTabs>
+                    <ReportModeButton
+                        type="button"
+                        $active={!isExumacoesReport}
+                        onClick={() => handleReportMode("sepultamentos")}
+                    >
+                        <FaCross /> Sepultamentos
+                    </ReportModeButton>
+                    <ReportModeButton
+                        type="button"
+                        $active={isExumacoesReport}
+                        onClick={() => handleReportMode("exumacoes")}
+                    >
+                        <LuFlower2 /> Exumações
+                    </ReportModeButton>
+                </ReportModeTabs>
 
-            <FilterCard>
-                <FilterGrid>
-                    <SearchWrapper>
-                        <SearchField
-                            value={filters.search}
-                            onChange={handleFilterChange("search")}
-                            placeholder={isExumacoesReport ? "Nome do falecido/exumado" : "Nome do falecido"}
-                        />
-                        <SearchIcon>
-                            <FaSearch />
-                        </SearchIcon>
-                    </SearchWrapper>
+                <FilterCard>
+                    <FilterGrid>
+                        <SearchWrapper>
+                            <SearchField
+                                value={filters.search}
+                                onChange={handleFilterChange("search")}
+                                placeholder={isExumacoesReport ? "Nome do falecido/exumado" : "Nome do falecido"}
+                            />
+                            <SearchIcon>
+                                <FaSearch />
+                            </SearchIcon>
+                        </SearchWrapper>
 
-                    <FilterRow>
-                        <FormControl fullWidth size="medium">
-                            <InputLabel sx={filterLabelSx}>Quadra</InputLabel>
-                            <Select value={filters.quadra} label="Quadra" onChange={handleFilterChange("quadra")} sx={filterSelectSx}>
-                                <MenuItem value="">Todas</MenuItem>
-                                {quadraOptions.map((quadra) => (
-                                    <MenuItem key={quadra} value={quadra}>Quadra {quadra}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <FormControl fullWidth size="medium">
-                            <InputLabel sx={filterLabelSx}>Sepultura</InputLabel>
-                            <Select value={filters.sepultura} label="Sepultura" onChange={handleFilterChange("sepultura")} sx={filterSelectSx}>
-                                <MenuItem value="">Todas</MenuItem>
-                                {sepulturaOptions.map((sepultura) => (
-                                    <MenuItem key={sepultura} value={sepultura}>{sepultura}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </FilterRow>
-
-                    <FilterRow>
-                        <FormControl fullWidth size="medium">
-                            <InputLabel sx={filterLabelSx}>{isExumacoesReport ? "Destino" : "Tipo"}</InputLabel>
-                            <Select
-                                value={isExumacoesReport ? filters.destino : filters.tipo}
-                                label={isExumacoesReport ? "Destino" : "Tipo"}
-                                onChange={handleFilterChange(isExumacoesReport ? "destino" : "tipo")}
-                                sx={filterSelectSx}
-                            >
-                                {isExumacoesReport ? (
-                                    [
-                                        <MenuItem key="all-destinos" value="">Todos</MenuItem>,
-                                        ...destinoOptions.map((destino) => (
-                                            <MenuItem key={destino} value={destino}>{getDestinoLabel(destino)}</MenuItem>
-                                        )),
-                                    ]
-                                ) : (
-                                    [
-                                        <MenuItem key="all-tipos" value="all">Todos</MenuItem>,
-                                        <MenuItem key="particular" value="particular">Particular</MenuItem>,
-                                        <MenuItem key="comum" value="comum">Comum</MenuItem>,
-                                    ]
-                                )}
-                            </Select>
-                        </FormControl>
-
-                        <FormControl fullWidth size="medium">
-                            <InputLabel sx={filterLabelSx}>{isExumacoesReport ? "Tipo" : "Periodo"}</InputLabel>
-                            <Select
-                                value={isExumacoesReport ? filters.tipo : filters.periodo}
-                                label={isExumacoesReport ? "Tipo" : "Periodo"}
-                                onChange={handleFilterChange(isExumacoesReport ? "tipo" : "periodo")}
-                                sx={filterSelectSx}
-                            >
-                                {isExumacoesReport ? (
-                                    [
-                                        <MenuItem key="all-exu-tipos" value="all">Todos</MenuItem>,
-                                        <MenuItem key="adulto" value="adulto">Adulto</MenuItem>,
-                                        <MenuItem key="crianca" value="crianca">Criança</MenuItem>,
-                                        <MenuItem key="indigente" value="indigente">Indigente</MenuItem>,
-                                    ]
-                                ) : (
-                                    PERIOD_OPTIONS.map((option) => (
-                                        <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-                                    ))
-                                )}
-                            </Select>
-                        </FormControl>
-                    </FilterRow>
-
-                    {isExumacoesReport && (
                         <FilterRow>
                             <FormControl fullWidth size="medium">
-                                <InputLabel sx={filterLabelSx}>Período</InputLabel>
-                                <Select value={filters.periodo} label="Periodo" onChange={handleFilterChange("periodo")} sx={filterSelectSx}>
-                                    {PERIOD_OPTIONS.map((option) => (
-                                        <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                                <InputLabel sx={filterLabelSx}>Quadra</InputLabel>
+                                <Select
+                                    value={filters.quadra}
+                                    label="Quadra"
+                                    onChange={handleFilterChange("quadra")}
+                                    sx={filterSelectSx}
+                                >
+                                    <MenuItem value="">Todas</MenuItem>
+                                    {quadraOptions.map((quadra) => (
+                                        <MenuItem key={quadra} value={quadra}>
+                                            Quadra {quadra}
+                                        </MenuItem>
                                     ))}
                                 </Select>
                             </FormControl>
-                            <SystemButton type="button" tone="cancel" onClick={clearFilters} sx={{ minHeight: 50 }}>
-                                <FaFilter /> Limpar filtros
-                            </SystemButton>
-                        </FilterRow>
-                    )}
 
-                    {filters.periodo === "custom" && (
+                            <FormControl fullWidth size="medium">
+                                <InputLabel sx={filterLabelSx}>Sepultura</InputLabel>
+                                <Select
+                                    value={filters.sepultura}
+                                    label="Sepultura"
+                                    onChange={handleFilterChange("sepultura")}
+                                    sx={filterSelectSx}
+                                >
+                                    <MenuItem value="">Todas</MenuItem>
+                                    {sepulturaOptions.map((sepultura) => (
+                                        <MenuItem key={sepultura} value={sepultura}>
+                                            {sepultura}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </FilterRow>
+
                         <FilterRow>
-                            <TextField
-                                type="date"
-                                fullWidth
-                                size="small"
-                                label="Inicio"
-                                value={filters.dataInicio}
-                                onChange={handleFilterChange("dataInicio")}
-                                sx={filterTextFieldSx}
-                                InputLabelProps={{ shrink: true }}
-                            />
-                            <TextField
-                                type="date"
-                                fullWidth
-                                size="small"
-                                label="Fim"
-                                value={filters.dataFim}
-                                onChange={handleFilterChange("dataFim")}
-                                sx={filterTextFieldSx}
-                                InputLabelProps={{ shrink: true }}
-                            />
+                            <FormControl fullWidth size="medium">
+                                <InputLabel sx={filterLabelSx}>{isExumacoesReport ? "Destino" : "Tipo"}</InputLabel>
+                                <Select
+                                    value={isExumacoesReport ? filters.destino : filters.tipo}
+                                    label={isExumacoesReport ? "Destino" : "Tipo"}
+                                    onChange={handleFilterChange(isExumacoesReport ? "destino" : "tipo")}
+                                    sx={filterSelectSx}
+                                >
+                                    {isExumacoesReport
+                                        ? [
+                                              <MenuItem key="all-destinos" value="">
+                                                  Todos
+                                              </MenuItem>,
+                                              ...destinoOptions.map((destino) => (
+                                                  <MenuItem key={destino} value={destino}>
+                                                      {getDestinoLabel(destino)}
+                                                  </MenuItem>
+                                              )),
+                                          ]
+                                        : [
+                                              <MenuItem key="all-tipos" value="all">
+                                                  Todos
+                                              </MenuItem>,
+                                              <MenuItem key="particular" value="particular">
+                                                  Particular
+                                              </MenuItem>,
+                                              <MenuItem key="comum" value="comum">
+                                                  Comum
+                                              </MenuItem>,
+                                          ]}
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth size="medium">
+                                <InputLabel sx={filterLabelSx}>{isExumacoesReport ? "Tipo" : "Periodo"}</InputLabel>
+                                <Select
+                                    value={isExumacoesReport ? filters.tipo : filters.periodo}
+                                    label={isExumacoesReport ? "Tipo" : "Periodo"}
+                                    onChange={handleFilterChange(isExumacoesReport ? "tipo" : "periodo")}
+                                    sx={filterSelectSx}
+                                >
+                                    {isExumacoesReport
+                                        ? [
+                                              <MenuItem key="all-exu-tipos" value="all">
+                                                  Todos
+                                              </MenuItem>,
+                                              <MenuItem key="adulto" value="adulto">
+                                                  Adulto
+                                              </MenuItem>,
+                                              <MenuItem key="crianca" value="crianca">
+                                                  Criança
+                                              </MenuItem>,
+                                              <MenuItem key="indigente" value="indigente">
+                                                  Indigente
+                                              </MenuItem>,
+                                          ]
+                                        : PERIOD_OPTIONS.map((option) => (
+                                              <MenuItem key={option.value} value={option.value}>
+                                                  {option.label}
+                                              </MenuItem>
+                                          ))}
+                                </Select>
+                            </FormControl>
                         </FilterRow>
-                    )}
 
-                    {!isExumacoesReport && (
-                        <FilterActionRow>
-                            <SystemButton type="button" tone="cancel" onClick={clearFilters} sx={{ minHeight: 50 }}>
-                                <FaFilter /> Limpar filtros
-                            </SystemButton>
-                        </FilterActionRow>
-                    )}
-                </FilterGrid>
-            </FilterCard>
-
-            <LayoutGrid>
-                <MainColumn>
-                    <StatsGrid>
-                        {stats.map((item) => (
-                            <StatCard key={item.label}>
-                                <StatIcon $tone={item.tone}>{item.icon}</StatIcon>
-                                <StatCopy>
-                                    <StatLabel>{item.label}</StatLabel>
-                                    <StatValue>{item.value}</StatValue>
-                                    <StatHint>{item.hint}</StatHint>
-                                </StatCopy>
-                            </StatCard>
-                        ))}
-                    </StatsGrid>
-
-                    <ChartsGrid>
-                        <ChartCard>
-                            <ChartHeader>
-                                <div>
-                                    <ChartTitle>
-                                        <FaChartBar /> {isExumacoesReport ? "Exumações por mês" : "Sepultamentos por mês"}
-                                    </ChartTitle>
-                                    <ChartSubtitle>Distribuição temporal dos registros filtrados.</ChartSubtitle>
-                                </div>
-                            </ChartHeader>
-                            <ChartBody>
-                                <RelatoriosSepultadosMesChart data={isExumacoesReport ? monthlyExumacoes : monthlySepultamentos} loading={isLoading} label={isExumacoesReport ? "Exumacoes" : "Sepultamentos"} />
-                            </ChartBody>
-                        </ChartCard>
-
-                        <ChartCard>
-                            <ChartHeader>
-                                <div>
-                                    <ChartTitle>{isExumacoesReport ? "Destino da exumação" : "Tipo de sepultamento"}</ChartTitle>
-                                    <ChartSubtitle>{isExumacoesReport ? "Ossário, crematório, transladado e outros." : "Adulto, criança e indigente."}</ChartSubtitle>
-                                </div>
-                            </ChartHeader>
-                            <ChartBody>
-                                <RelatoriosTipoSepultamentoPie data={isExumacoesReport ? destinoSeries : sepultamentoTypeSeries} loading={isLoading} />
-                            </ChartBody>
-                        </ChartCard>
-
-                        <ChartCard>
-                            <ChartHeader>
-                                <div>
-                                    <ChartTitle>{isExumacoesReport ? "Tipo de exumação" : "Arrecadação mensal"}</ChartTitle>
-                                    <ChartSubtitle>{isExumacoesReport ? "Adulto, crianca, indigente e outros." : "Somatório de taxa aplicada por competência."}</ChartSubtitle>
-                                </div>
-                            </ChartHeader>
-                            <ChartBody>
-                                {isExumacoesReport ? (
-                                    <RelatoriosTipoSepultamentoPie data={exumacaoTypeSeries} loading={isLoading} />
-                                ) : (
-                                    <RelatoriosArrecadacaoMensalChart data={monthlyRevenue} loading={isLoading} />
-                                )}
-                            </ChartBody>
-                        </ChartCard>
-                    </ChartsGrid>
-
-                    <TableCard>
-                        <TableHeader>
-                            <div>
-                                <TableTitle>{isExumacoesReport ? "Lista de exumacoes" : "Lista de sepultamentos"}</TableTitle>
-                            </div>
-                        </TableHeader>
-
-                        <TableScroller>
-                            <Table $minWidth="900px">
-                                <THead>
-                                    <tr>
-                                        {isExumacoesReport ? (
-                                            <>
-                                                <Th>Data da exumacao</Th>
-                                                <Th>Falecido</Th>
-                                                <Th>Quadra</Th>
-                                                <Th>Sepultura</Th>
-                                                <Th>Destino</Th>
-                                                <Th>Tipo</Th>
-                                                <Th>Taxa</Th>
-                                                <Th>Status</Th>
-                                                <Th>Ações</Th>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Th>Data</Th>
-                                                <Th>Falecido</Th>
-                                                <Th>Quadra</Th>
-                                                <Th>Sepultura</Th>
-                                                <Th>Tipo</Th>
-                                                <Th>Posse</Th>
-                                                <Th>Taxa</Th>
-                                                <Th>Status</Th>
-                                                <Th>Ações</Th>
-                                            </>
-                                        )}
-                                    </tr>
-                                </THead>
-                                <TBody>
-                                    {pageItems.length ? (
-                                        isExumacoesReport ? renderExumacaoRows() : renderSepultamentoRows()
-                                    ) : (
-                                        <tr>
-                                            <Td colSpan={9}>
-                                                <EmptyState>
-                                                    Nenhum {isExumacoesReport ? "registro de exumacao" : "sepultamento"} encontrado com os filtros atuais.
-                                                </EmptyState>
-                                            </Td>
-                                        </tr>
-                                    )}
-                                </TBody>
-                            </Table>
-                        </TableScroller>
-
-                        {totalPages > 1 && (
-                            <Pagination>
-                                <PageButton type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={currentPage === 1}>
-                                    Anterior
-                                </PageButton>
-                                {Array.from({ length: totalPages }, (_, index) => index + 1).map((number) => (
-                                    <PageButton key={number} type="button" $active={number === currentPage} onClick={() => setPage(number)}>
-                                        {number}
-                                    </PageButton>
-                                ))}
-                                <PageButton type="button" onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={currentPage === totalPages}>
-                                    Próxima
-                                </PageButton>
-                            </Pagination>
+                        {isExumacoesReport && (
+                            <FilterRow>
+                                <FormControl fullWidth size="medium">
+                                    <InputLabel sx={filterLabelSx}>Período</InputLabel>
+                                    <Select
+                                        value={filters.periodo}
+                                        label="Periodo"
+                                        onChange={handleFilterChange("periodo")}
+                                        sx={filterSelectSx}
+                                    >
+                                        {PERIOD_OPTIONS.map((option) => (
+                                            <MenuItem key={option.value} value={option.value}>
+                                                {option.label}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <SystemButton type="button" tone="cancel" onClick={clearFilters} sx={{ minHeight: 50 }}>
+                                    <FaFilter /> Limpar filtros
+                                </SystemButton>
+                            </FilterRow>
                         )}
-                    </TableCard>
 
-                    <RelatoriosExportActions
-                        loadingFormat={exportLoading}
-                        error={exportError}
-                        onExport={handleExport}
-                        onPrint={handlePrint}
-                    />
-                </MainColumn>
-            </LayoutGrid>
+                        {filters.periodo === "custom" && (
+                            <FilterRow>
+                                <TextField
+                                    type="date"
+                                    fullWidth
+                                    size="small"
+                                    label="Inicio"
+                                    value={filters.dataInicio}
+                                    onChange={handleFilterChange("dataInicio")}
+                                    sx={filterTextFieldSx}
+                                    InputLabelProps={{ shrink: true }}
+                                />
+                                <TextField
+                                    type="date"
+                                    fullWidth
+                                    size="small"
+                                    label="Fim"
+                                    value={filters.dataFim}
+                                    onChange={handleFilterChange("dataFim")}
+                                    sx={filterTextFieldSx}
+                                    InputLabelProps={{ shrink: true }}
+                                />
+                            </FilterRow>
+                        )}
 
-            <DefaultModal
-                open={Boolean(selectedItem)}
-                title={isExumacoesReport ? getExumacaoName(selectedItem) : getFalecidoName(selectedItem) || "Detalhes do registro"}
-                subtitle={
-                    isExumacoesReport
-                        ? `Exumacao registrada em ${formatDateDMY(getExumacaoDate(selectedItem), "--")}.`
-                        : `Sepultamento registrado em ${formatDateDMY(selectedItem?.dh_sep, "--")}.`
-                }
-                fields={selectedItem ? renderModalFields() : []}
-                onClose={() => setSelectedItem(null)}
-            />
-        </Container>
+                        {!isExumacoesReport && (
+                            <FilterActionRow>
+                                <SystemButton type="button" tone="cancel" onClick={clearFilters} sx={{ minHeight: 50 }}>
+                                    <FaFilter /> Limpar filtros
+                                </SystemButton>
+                            </FilterActionRow>
+                        )}
+                    </FilterGrid>
+                </FilterCard>
+
+                <LayoutGrid>
+                    <MainColumn>
+                        <StatsGrid>
+                            {stats.map((item) => (
+                                <StatCard key={item.label}>
+                                    <StatIcon $tone={item.tone}>{item.icon}</StatIcon>
+                                    <StatCopy>
+                                        <StatLabel>{item.label}</StatLabel>
+                                        <StatValue>{item.value}</StatValue>
+                                        <StatHint>{item.hint}</StatHint>
+                                    </StatCopy>
+                                </StatCard>
+                            ))}
+                        </StatsGrid>
+
+                        <ChartsGrid>
+                            <ChartCard>
+                                <ChartHeader>
+                                    <div>
+                                        <ChartTitle>
+                                            <FaChartBar />{" "}
+                                            {isExumacoesReport ? "Exumações por mês" : "Sepultamentos por mês"}
+                                        </ChartTitle>
+                                        <ChartSubtitle>Distribuição temporal dos registros filtrados.</ChartSubtitle>
+                                    </div>
+                                </ChartHeader>
+                                <ChartBody>
+                                    <RelatoriosSepultadosMesChart
+                                        data={isExumacoesReport ? monthlyExumacoes : monthlySepultamentos}
+                                        loading={isLoading}
+                                        label={isExumacoesReport ? "Exumacoes" : "Sepultamentos"}
+                                    />
+                                </ChartBody>
+                            </ChartCard>
+
+                            <ChartCard>
+                                <ChartHeader>
+                                    <div>
+                                        <ChartTitle>
+                                            {isExumacoesReport ? "Destino da exumação" : "Tipo de sepultamento"}
+                                        </ChartTitle>
+                                        <ChartSubtitle>
+                                            {isExumacoesReport
+                                                ? "Ossário, crematório, transladado e outros."
+                                                : "Adulto, criança e indigente."}
+                                        </ChartSubtitle>
+                                    </div>
+                                </ChartHeader>
+                                <ChartBody>
+                                    <RelatoriosTipoSepultamentoPie
+                                        data={isExumacoesReport ? destinoSeries : sepultamentoTypeSeries}
+                                        loading={isLoading}
+                                    />
+                                </ChartBody>
+                            </ChartCard>
+
+                            <ChartCard>
+                                <ChartHeader>
+                                    <div>
+                                        <ChartTitle>
+                                            {isExumacoesReport ? "Tipo de exumação" : "Arrecadação mensal"}
+                                        </ChartTitle>
+                                        <ChartSubtitle>
+                                            {isExumacoesReport
+                                                ? "Adulto, crianca, indigente e outros."
+                                                : "Somatório de taxa aplicada por competência."}
+                                        </ChartSubtitle>
+                                    </div>
+                                </ChartHeader>
+                                <ChartBody>
+                                    {isExumacoesReport ? (
+                                        <RelatoriosTipoSepultamentoPie data={exumacaoTypeSeries} loading={isLoading} />
+                                    ) : (
+                                        <RelatoriosArrecadacaoMensalChart data={monthlyRevenue} loading={isLoading} />
+                                    )}
+                                </ChartBody>
+                            </ChartCard>
+                        </ChartsGrid>
+
+                        <TableCard>
+                            <TableHeader>
+                                <div>
+                                    <TableTitle>
+                                        {isExumacoesReport ? "Lista de exumacoes" : "Lista de sepultamentos"}
+                                    </TableTitle>
+                                </div>
+                            </TableHeader>
+
+                            <TableScroller>
+                                <Table $minWidth="900px">
+                                    <THead>
+                                        <tr>
+                                            {isExumacoesReport ? (
+                                                <>
+                                                    <Th>Data da exumacao</Th>
+                                                    <Th>Falecido</Th>
+                                                    <Th>Quadra</Th>
+                                                    <Th>Sepultura</Th>
+                                                    <Th>Destino</Th>
+                                                    <Th>Tipo</Th>
+                                                    <Th>Taxa</Th>
+                                                    <Th>Status</Th>
+                                                    <Th>Ações</Th>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Th>Data</Th>
+                                                    <Th>Falecido</Th>
+                                                    <Th>Quadra</Th>
+                                                    <Th>Sepultura</Th>
+                                                    <Th>Tipo</Th>
+                                                    <Th>Posse</Th>
+                                                    <Th>Taxa</Th>
+                                                    <Th>Status</Th>
+                                                    <Th>Ações</Th>
+                                                </>
+                                            )}
+                                        </tr>
+                                    </THead>
+                                    <TBody>
+                                        {pageItems.length ? (
+                                            isExumacoesReport ? (
+                                                renderExumacaoRows()
+                                            ) : (
+                                                renderSepultamentoRows()
+                                            )
+                                        ) : (
+                                            <tr>
+                                                <Td colSpan={9}>
+                                                    <EmptyState>
+                                                        Nenhum{" "}
+                                                        {isExumacoesReport ? "registro de exumacao" : "sepultamento"}{" "}
+                                                        encontrado com os filtros atuais.
+                                                    </EmptyState>
+                                                </Td>
+                                            </tr>
+                                        )}
+                                    </TBody>
+                                </Table>
+                            </TableScroller>
+
+                            {totalPages > 1 && (
+                                <Pagination>
+                                    <PageButton
+                                        type="button"
+                                        onClick={() => setPage((value) => Math.max(1, value - 1))}
+                                        disabled={currentPage === 1}
+                                    >
+                                        Anterior
+                                    </PageButton>
+                                    {Array.from({ length: totalPages }, (_, index) => index + 1).map((number) => (
+                                        <PageButton
+                                            key={number}
+                                            type="button"
+                                            $active={number === currentPage}
+                                            onClick={() => setPage(number)}
+                                        >
+                                            {number}
+                                        </PageButton>
+                                    ))}
+                                    <PageButton
+                                        type="button"
+                                        onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        Próxima
+                                    </PageButton>
+                                </Pagination>
+                            )}
+                        </TableCard>
+
+                        <RelatoriosExportActions
+                            loadingFormat={exportLoading}
+                            error={exportError}
+                            onExport={handleExport}
+                            onPrint={handlePrint}
+                        />
+                    </MainColumn>
+                </LayoutGrid>
+
+                <DefaultModal
+                    open={Boolean(selectedItem)}
+                    title={
+                        isExumacoesReport
+                            ? getExumacaoName(selectedItem)
+                            : getFalecidoName(selectedItem) || "Detalhes do registro"
+                    }
+                    subtitle={
+                        isExumacoesReport
+                            ? `Exumacao registrada em ${formatDateDMY(getExumacaoDate(selectedItem), "--")}.`
+                            : `Sepultamento registrado em ${formatDateDMY(selectedItem?.dh_sep, "--")}.`
+                    }
+                    fields={selectedItem ? renderModalFields() : []}
+                    onClose={() => setSelectedItem(null)}
+                />
+            </Container>
         </>
     );
 }

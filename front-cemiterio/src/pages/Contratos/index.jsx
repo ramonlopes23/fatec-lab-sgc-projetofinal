@@ -5,7 +5,6 @@ export default function Contratos() {
     return (
         <>
             <ContratosComponent />
-
         </>
-    )
+    );
 }
