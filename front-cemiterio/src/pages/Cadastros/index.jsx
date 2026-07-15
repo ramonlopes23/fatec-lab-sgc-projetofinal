@@ -50,7 +50,7 @@ import {
     STEPS_DECEASED,
     STORAGE_KEY,
     VELORIO_FIELDS,
-    normalizeProcessType,
+    getInitialProcessForm,
 } from "./constants";
 import { CheckboxInput, CheckboxLabel, CheckboxWrapper, Container, FormStyled, Title, Subtitle } from "./styles";
 
@@ -61,16 +61,9 @@ export default function Cadastros() {
     const location = useLocation();
     const routeProcessType = processFromPath(location.pathname);
     const [saved, setSaved, clearSaved] = useLocalStorage(STORAGE_KEY);
-    const savedProcessType = normalizeProcessType(saved?.processType);
     const { showSuccess, showWarning, showError, ToastElement } = useToastFeedback();
 
-    const [form, setForm] = useState(() =>
-        savedProcessType === routeProcessType
-            ? saved?.form
-            : routeProcessType === PROCESS_TYPES.sepultamento
-              ? INITIAL_SEPULTAMENTO_FORM
-              : INITIAL_FALECIDO_FORM
-    );
+    const [form, setForm] = useState(() => getInitialProcessForm(saved, routeProcessType));
     const [processType, setProcessType] = useState(() => routeProcessType);
     const [activeStep, setActiveStep] = useState(0);
     const [, setRegistros] = useState([]);

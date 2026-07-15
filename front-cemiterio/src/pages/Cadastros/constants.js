@@ -79,6 +79,20 @@ export const INITIAL_SEPULTAMENTO_FORM = {
     falecido: "",
 };
 
+const isRecord = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+
+export const getInitialProcessForm = (saved, routeProcessType) => {
+    const normalizedRouteProcessType = normalizeProcessType(routeProcessType);
+    const initialForm =
+        normalizedRouteProcessType === PROCESS_TYPES.sepultamento ? INITIAL_SEPULTAMENTO_FORM : INITIAL_FALECIDO_FORM;
+
+    if (!isRecord(saved) || normalizeProcessType(saved.processType) !== normalizedRouteProcessType) {
+        return { ...initialForm };
+    }
+
+    return isRecord(saved.form) ? { ...initialForm, ...saved.form } : { ...initialForm };
+};
+
 export const VELORIO_FIELDS = [
     "dh_inicio_velorio",
     "dh_fim_velorio",
