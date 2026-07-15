@@ -5,7 +5,7 @@ export const GridWrap = styled.div`
 `;
 
 export const Grid = styled.div`
-    --tile-min-width: ${(props) => props.tileMinWidth || "91px"};
+    --tile-min-width: ${(props) => props.$tileMinWidth || "91px"};
 
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(var(--tile-min-width), 1fr));
@@ -65,14 +65,14 @@ export const Tile = styled.button`
 
     /* Tile selecionado */
     ${(props) =>
-        props.selected &&
+        props.$selected &&
         css`
             background: linear-gradient(180deg, rgba(106, 87, 255, 0.12), rgba(106, 87, 255, 0.06));
             border-color: #191970;
         `}
 
     /* Status dinâmico */
-  ${(props) => statusStyle[props.status] || css``}
+  ${(props) => statusStyle[props.$status] || css``}
 
   @media (max-width: 420px) {
         min-height: 56px;

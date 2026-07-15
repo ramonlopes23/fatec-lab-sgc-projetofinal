@@ -75,15 +75,15 @@ function GridQuadras({
 
     return (
         <GridWrap className="gridquad-wrap">
-            <Grid className="gridquad" tileMinWidth={`${columnsMinWidth}px`}>
+            <Grid className="gridquad" $tileMinWidth={`${columnsMinWidth}px`}>
                 {normalizedQuadras.map((q, idx) => {
                     const isSelected = selectedId === q.id;
                     return (
                         <Tile
                             key={safeKey(q.id, idx)}
                             type="button"
-                            selected={isSelected}
-                            status={q.status}
+                            $selected={isSelected}
+                            $status={q.status}
                             onClick={() => handleToggle(q)}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter" || e.key === " ") {

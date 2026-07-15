@@ -17,8 +17,8 @@ export const Content = styled.div`
     border-left: 1px solid var(--app-border);
     display: flex;
     flex-direction: column;
-    width: ${({ isSidebarOpen }) => (isSidebarOpen ? "calc(100% - 16rem)" : "calc(100% - 5.5rem)")};
-    margin-left: ${({ isSidebarOpen }) => (isSidebarOpen ? "16rem" : "5.5rem")};
+    width: ${({ $isSidebarOpen }) => ($isSidebarOpen ? "calc(100% - 16rem)" : "calc(100% - 5.5rem)")};
+    margin-left: ${({ $isSidebarOpen }) => ($isSidebarOpen ? "16rem" : "5.5rem")};
     transition:
         width 0.3s ease,
         margin-left 0.3s ease;
@@ -36,7 +36,7 @@ export const PageContent = styled.main`
 `;
 
 export const SidebarContainer = styled.div`
-    width: ${({ isOpen }) => (isOpen ? "16rem" : "5.5rem")};
+    width: ${({ $isOpen }) => ($isOpen ? "16rem" : "5.5rem")};
     height: 100vh;
     background-color: var(--app-surface);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -54,7 +54,7 @@ export const SidebarContainer = styled.div`
 export const SidebarExternalToggle = styled.button`
     position: fixed;
     top: 20rem;
-    left: ${({ isOpen }) => (isOpen ? "16rem" : "5.5rem")};
+    left: ${({ $isOpen }) => ($isOpen ? "16rem" : "5.5rem")};
     width: 2rem;
     height: 5.1rem;
     border: 1px solid rgba(255, 255, 255, 0.24);

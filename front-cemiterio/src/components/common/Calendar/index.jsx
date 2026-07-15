@@ -205,7 +205,7 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
                                 const key = formatDateKey(dia);
                                 const eventos = key ? eventosPorData[key] || [] : [];
                                 return (
-                                    <DayCell key={key ?? `${i}-${idx}`} isCurrentMonth={!!dia}>
+                                    <DayCell key={key ?? `${i}-${idx}`} $isCurrentMonth={!!dia}>
                                         {dia ? (
                                             <DayButton
                                                 onClick={() => abrirDia(dia)}

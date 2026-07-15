@@ -47,7 +47,7 @@ export const DayCell = styled.div`
     border: 1px solid #e6e6e6;
     border-radius: 6px;
     padding: 6px;
-    background: ${(p) => (p.isCurrentMonth ? "#fff" : "#fafafa")};
+    background: ${(p) => (p.$isCurrentMonth ? "#fff" : "#fafafa")};
     box-sizing: border-box;
 `;
 

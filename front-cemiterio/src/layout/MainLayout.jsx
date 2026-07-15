@@ -26,18 +26,18 @@ export default function MainLayout({ children }) {
     return (
         <LayoutContainer>
             <LoadingOverlay open={routeLoading} label="Carregando página..." />
-            <SidebarContainer isOpen={isSidebarOpen}>
+            <SidebarContainer $isOpen={isSidebarOpen}>
                 <SidebarMenu isCollapsed={!isSidebarOpen} />
             </SidebarContainer>
             <SidebarExternalToggle
                 type="button"
-                isOpen={isSidebarOpen}
+                $isOpen={isSidebarOpen}
                 onClick={toggleSidebarMenu}
                 aria-label={isSidebarOpen ? "Recolher menu lateral" : "Expandir menu lateral"}
             >
                 {isSidebarOpen ? <LuChevronLeft size={16} /> : <LuChevronRight size={16} />}
             </SidebarExternalToggle>
-            <Content isSidebarOpen={isSidebarOpen}>
+            <Content $isSidebarOpen={isSidebarOpen}>
                 <Header onMenuClick={toggleSidebarMenu} isSidebarOpen={isSidebarOpen} />
                 <PageContent>{children}</PageContent>
                 <Footer />
