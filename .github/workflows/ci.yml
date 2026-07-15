@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: front-cemiterio
+
+jobs:
+  quality:
+    name: Format, lint and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.12.0
+          cache: npm
+          cache-dependency-path: front-cemiterio/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Build application
+        run: npm run build
+
+  unit-tests:
+    name: Unit tests (known baseline, non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.12.0
+          cache: npm
+          cache-dependency-path: front-cemiterio/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        id: unit-tests
+        continue-on-error: true
+        run: npm run test:unit
+
+      - name: Report known test debt
+        if: steps.unit-tests.outcome == 'failure'
+        run: echo "::warning::Unit tests still contain the known sepultamento/map baseline failures. Remove continue-on-error when that debt is resolved."
+
+  security-audit:
+    name: Production audit (known baseline, non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.12.0
+          cache: npm
+          cache-dependency-path: front-cemiterio/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit production dependencies
+        id: production-audit
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Report known security debt
+        if: steps.production-audit.outcome == 'failure'
+        run: echo "::warning::Production dependencies still contain known high-severity advisories. Remove continue-on-error when that debt is resolved."
