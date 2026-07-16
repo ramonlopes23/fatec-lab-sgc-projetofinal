@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { getAddressByCep } from "../../services/viaCepService.js";
 
 export default function useViacepLookup() {
     const [cep, setCep] = useState("");
@@ -16,8 +17,7 @@ export default function useViacepLookup() {
         if (!cepDigits || cepDigits.length !== 8) return null;
         try {
             setLoading(true);
-            const res = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`);
-            const data = await res.json();
+            const data = await getAddressByCep(cepDigits);
             if (!data || data.erro) return null;
 
             const formatted =

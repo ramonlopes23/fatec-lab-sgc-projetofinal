@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import api from "../../services/index.js";
+import { getBlocks } from "../../services/blockService.js";
+import { getFalecidos } from "../../services/falecidoService.js";
+import { getGraves } from "../../services/graveService.js";
+import { getMunicipios } from "../../services/ibgeService.js";
 import { normalizeFalecido } from "../../utils/falecido.js";
 import { normalizeQuadra } from "../../utils/quadra.js";
 import { normalizeSepultura } from "../../utils/sepultura.js";
@@ -13,20 +16,19 @@ export default function useApiInitDataCad() {
     useEffect(() => {
         let mounted = true;
 
-        fetch("https://servicodados.ibge.gov.br/api/v1/localidades/municipios")
-            .then((res) => res.json())
+        getMunicipios()
             .then((data) => {
-                if (mounted) setCidades(data);
+                if (mounted) setCidades(Array.isArray(data) ? data : []);
             })
             .catch(() => {
                 if (mounted) setCidades([]);
             });
 
-        Promise.all([api.get("/quadras"), api.get("/covas")])
-            .then(([rq, rc]) => {
+        Promise.all([getBlocks(), getGraves()])
+            .then(([loadedQuadras, loadedCovas]) => {
                 if (!mounted) return;
-                const quadrasData = Array.isArray(rq.data) ? rq.data.map(normalizeQuadra) : [];
-                const covasData = Array.isArray(rc.data) ? rc.data.map(normalizeSepultura) : [];
+                const quadrasData = Array.isArray(loadedQuadras) ? loadedQuadras.map(normalizeQuadra) : [];
+                const covasData = Array.isArray(loadedCovas) ? loadedCovas.map(normalizeSepultura) : [];
                 setQuadras(quadrasData);
                 setCovas(covasData);
             })
@@ -37,10 +39,10 @@ export default function useApiInitDataCad() {
                 }
             });
 
-        api.get("/falecidos")
-            .then((res) => {
+        getFalecidos()
+            .then((data) => {
                 if (!mounted) return;
-                setFalecidos(Array.isArray(res.data) ? res.data.map(normalizeFalecido) : []);
+                setFalecidos(Array.isArray(data) ? data.map(normalizeFalecido) : []);
             })
             .catch(() => {
                 if (mounted) setFalecidos([]);
