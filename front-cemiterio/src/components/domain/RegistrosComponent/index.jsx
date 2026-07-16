@@ -8,7 +8,11 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
-import api from "../../../services/index.js";
+import { getBlocks } from "../../../services/blockService.js";
+import { getCemeteries } from "../../../services/cemeteryService.js";
+import { getExumacoes } from "../../../services/exumacaoService.js";
+import { archiveFalecido, getFalecidos, patchFalecido } from "../../../services/falecidoService.js";
+import { archiveSepultamento, getSepultamentos, patchSepultamento } from "../../../services/sepultamentoService.js";
 import { useFormModal, useToastFeedback } from "../../../hooks";
 import {
     formatDateDMY,
@@ -274,19 +278,20 @@ export default function RegistrosComponent() {
     const loadAll = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [resFalecidos, resExumacoes, resSepultamentos, resQuadras, resCemiterios] = await Promise.all([
-                api.get("/falecidos").catch(() => ({ data: [] })),
-                api.get("/exumacoes").catch(() => ({ data: [] })),
-                api.get("/sepultamentos").catch(() => ({ data: [] })),
-                api.get("/quadras").catch(() => ({ data: [] })),
-                api.get("/cemiterios").catch(() => ({ data: [] })),
-            ]);
+            const [loadedFalecidos, loadedExumacoes, loadedSepultamentos, loadedQuadras, loadedCemiterios] =
+                await Promise.all([
+                    getFalecidos().catch(() => []),
+                    getExumacoes().catch(() => []),
+                    getSepultamentos().catch(() => []),
+                    getBlocks().catch(() => []),
+                    getCemeteries().catch(() => []),
+                ]);
 
-            const falecidosData = Array.isArray(resFalecidos.data) ? resFalecidos.data.map(normalizeFalecido) : [];
-            const exumacoesData = Array.isArray(resExumacoes.data) ? resExumacoes.data : [];
-            const sepultamentosData = Array.isArray(resSepultamentos.data) ? resSepultamentos.data : [];
-            const quadrasData = Array.isArray(resQuadras.data) ? resQuadras.data.map(normalizeQuadra) : [];
-            const cemiteriosData = Array.isArray(resCemiterios.data) ? resCemiterios.data.map(normalizeCemiterio) : [];
+            const falecidosData = Array.isArray(loadedFalecidos) ? loadedFalecidos.map(normalizeFalecido) : [];
+            const exumacoesData = Array.isArray(loadedExumacoes) ? loadedExumacoes : [];
+            const sepultamentosData = Array.isArray(loadedSepultamentos) ? loadedSepultamentos : [];
+            const quadrasData = Array.isArray(loadedQuadras) ? loadedQuadras.map(normalizeQuadra) : [];
+            const cemiteriosData = Array.isArray(loadedCemiterios) ? loadedCemiterios.map(normalizeCemiterio) : [];
 
             const sepultamentosByFalecido = new Map();
             sepultamentosData.forEach((sepultamento) => {
@@ -526,18 +531,16 @@ export default function RegistrosComponent() {
 
         try {
             setIsSubmitting(true);
-            await api.patch(`/falecidos/${selectedRecord.id}`, falPayload);
+            await patchFalecido(selectedRecord.id, falPayload);
 
             if (selectedRecord?.sepultamento?.id) {
-                await api
-                    .patch(`/sepultamentos/${selectedRecord.sepultamento.id}`, {
-                        nome_sep: modalForm.nome_fal,
-                        quadra_sep: modalForm.quadra_num,
-                        num_sepultura_sep: modalForm.sepultura,
-                        data_obito_sep: modalForm.data_obito,
-                        cemiterio: modalForm.cemiterio,
-                    })
-                    .catch(() => {});
+                await patchSepultamento(selectedRecord.sepultamento.id, {
+                    nome_sep: modalForm.nome_fal,
+                    quadra_sep: modalForm.quadra_num,
+                    num_sepultura_sep: modalForm.sepultura,
+                    data_obito_sep: modalForm.data_obito,
+                    cemiterio: modalForm.cemiterio,
+                }).catch(() => {});
             }
 
             const updated = await loadAll();
@@ -567,9 +570,9 @@ export default function RegistrosComponent() {
 
         try {
             if (record.sepultamento?.id) {
-                await api.patch(`/sepultamentos/${record.sepultamento.id}`, { arquivado: true });
+                await archiveSepultamento(record.sepultamento.id);
             } else if (record.id) {
-                await api.patch(`/falecidos/${record.id}`, { arquivado: true });
+                await archiveFalecido(record.id);
             }
             await loadAll();
             showSuccess("Registro arquivado com sucesso");

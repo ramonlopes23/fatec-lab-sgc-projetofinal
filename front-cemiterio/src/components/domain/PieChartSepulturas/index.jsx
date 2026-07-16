@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Sector } from "recharts";
-import api from "../../../services/index.js";
+import { getGraves } from "../../../services/graveService.js";
 import { useEffect, useState, useRef, useMemo } from "react";
 
 const PIE_SERIES = [
@@ -46,11 +46,10 @@ export default function PieChartSepulturas() {
         let mounted = true;
         setLoading(true);
 
-        api.get("/graves")
-            .then((response) => {
+        getGraves()
+            .then((raw) => {
                 if (!mounted) return;
 
-                const raw = response?.data;
                 const list = Array.isArray(raw)
                     ? raw
                     : Array.isArray(raw?.content)

@@ -13,7 +13,12 @@ import {
 import { FaCross } from "react-icons/fa";
 import { FaSkullCrossbones } from "react-icons/fa";
 import { FaTools } from "react-icons/fa";
-import api from "../../../services/index.js";
+import { getBlocks } from "../../../services/blockService.js";
+import { getExumacoes, patchExumacao } from "../../../services/exumacaoService.js";
+import { getFalecidos } from "../../../services/falecidoService.js";
+import { getGraves, patchGrave } from "../../../services/graveService.js";
+import { getSepultamentoById, getSepultamentos, patchSepultamento } from "../../../services/sepultamentoService.js";
+import { getVelorios, patchVelorio } from "../../../services/velorioService.js";
 import { useToastFeedback } from "../../../hooks";
 import {
     formatDateNormalized,
@@ -49,11 +54,11 @@ export default function Dashboard() {
     };
 
     const resolveGraveBySep = async (quadra, num) => {
-        const rc = await api.get("/covas", { params: { blockId: quadra, number: num } }).catch(() => null);
-        if (rc && Array.isArray(rc.data) && rc.data.length) return rc.data[0];
+        const matchingGraves = await getGraves({ blockId: quadra, number: num }).catch(() => null);
+        if (Array.isArray(matchingGraves) && matchingGraves.length) return matchingGraves[0];
 
-        const fallback = await api.get("/covas").catch(() => null);
-        const allGraves = Array.isArray(fallback?.data) ? fallback.data : [];
+        const fallback = await getGraves().catch(() => null);
+        const allGraves = Array.isArray(fallback) ? fallback : [];
         return (
             allGraves.find(
                 (g) =>
@@ -63,8 +68,8 @@ export default function Dashboard() {
     };
 
     const getActiveConfirmedSepsCount = async (quadra, num) => {
-        const rS = await api.get("/sepultamentos").catch(() => null);
-        const seps = Array.isArray(rS?.data) ? rS.data : [];
+        const loadedSepultamentos = await getSepultamentos().catch(() => null);
+        const seps = Array.isArray(loadedSepultamentos) ? loadedSepultamentos : [];
         return seps.filter((s) => {
             const sameQuadra = String(getSepulturaQuadraRef(s)) === String(quadra);
             const sameNum = String(getSepulturaNumber(s)) === String(num);
@@ -76,19 +81,19 @@ export default function Dashboard() {
     const loadProcessos = async () => {
         try {
             const [rFalecidos, rSep, rVel, rExu, rQuadras] = await Promise.all([
-                api.get("/falecidos"),
-                api.get("/sepultamentos"),
-                api.get("/velorios"),
-                api.get("/exumacoes"),
-                api.get("/quadras"),
+                getFalecidos(),
+                getSepultamentos(),
+                getVelorios(),
+                getExumacoes(),
+                getBlocks(),
             ]);
 
-            const loadedFalecidos = Array.isArray(rFalecidos.data) ? rFalecidos.data.map(normalizeFalecido) : [];
-            const loadedSepultamentos = rSep.data || [];
+            const loadedFalecidos = Array.isArray(rFalecidos) ? rFalecidos.map(normalizeFalecido) : [];
+            const loadedSepultamentos = Array.isArray(rSep) ? rSep : [];
             const sep = loadedSepultamentos.map((s) => ({ ...s, _type: "Sepultamento" }));
-            const vel = (rVel.data || []).map((v) => ({ ...v, _type: "Velório" }));
-            const exu = (rExu.data || []).map((x) => ({ ...x, _type: "Exumação" }));
-            const quadras = rQuadras.data || [];
+            const vel = (Array.isArray(rVel) ? rVel : []).map((v) => ({ ...v, _type: "Velório" }));
+            const exu = (Array.isArray(rExu) ? rExu : []).map((x) => ({ ...x, _type: "Exumação" }));
+            const quadras = Array.isArray(rQuadras) ? rQuadras : [];
 
             const all = [...vel, ...sep, ...exu].map((item) => {
                 const fk = getFalecidoIdFromRecord(item);
@@ -193,20 +198,17 @@ export default function Dashboard() {
         try {
             setProcessos((prev) => prev.filter((p) => !(p._type === item._type && p.id === item.id)));
             if (item._type === "Velório") {
-                await api.patch(`/velorios/${item.id}`, { status: "Concluído", confirmado: true }).catch(() => {});
+                await patchVelorio(item.id, { status: "Concluído", confirmado: true }).catch(() => {});
 
                 const linkedSepultamentoId = item.sepultamento_id ?? item.sepultamentoId ?? null;
                 if (linkedSepultamentoId) {
                     try {
-                        await api
-                            .patch(`/sepultamentos/${linkedSepultamentoId}`, {
-                                status: "Pendente",
-                                confirmado: false,
-                                liberado_por_velorio: true,
-                            })
-                            .catch(() => {});
-                        const rSep = await api.get(`/sepultamentos/${linkedSepultamentoId}`).catch(() => null);
-                        const sepultamento = rSep?.data ?? null;
+                        await patchSepultamento(linkedSepultamentoId, {
+                            status: "Pendente",
+                            confirmado: false,
+                            liberado_por_velorio: true,
+                        }).catch(() => {});
+                        const sepultamento = await getSepultamentoById(linkedSepultamentoId).catch(() => null);
                         if (sepultamento) {
                             window.dispatchEvent(
                                 new CustomEvent("processoCriado", {
@@ -219,12 +221,11 @@ export default function Dashboard() {
                     }
                 }
             } else if (item._type === "Sepultamento") {
-                await api.patch(`/sepultamentos/${item.id}`, { status: "Concluído", confirmado: true }).catch(() => {});
+                await patchSepultamento(item.id, { status: "Concluído", confirmado: true }).catch(() => {});
                 sepId = item.id;
 
                 try {
-                    const rSep = await api.get(`/sepultamentos/${item.id}`).catch(() => null);
-                    const sep = rSep?.data ?? null;
+                    const sep = await getSepultamentoById(item.id).catch(() => null);
                     if (sep) {
                         const quadra = sep.quadra_sep ?? sep.quadra;
                         const num = getSepulturaNumber(sep);
@@ -236,9 +237,7 @@ export default function Dashboard() {
                                 const activeConfirmedSeps = await getActiveConfirmedSepsCount(quadra, num);
                                 const newStatus = activeConfirmedSeps > 0 ? "OCCUPIED" : "AVAILABLE";
 
-                                await api
-                                    .patch(`/covas/${found.id}`, { bodyCapacity: newCap, status: newStatus })
-                                    .catch(() => {});
+                                await patchGrave(found.id, { bodyCapacity: newCap, status: newStatus }).catch(() => {});
                                 try {
                                     window.dispatchEvent(
                                         new CustomEvent("covaCapacidadeAlterada", {
@@ -255,19 +254,18 @@ export default function Dashboard() {
                     console.warn("Erro ao decrementar capacidade de cova ao confirmar sepultamento:", capErr);
                 }
             } else if (item._type === "Exumação") {
-                await api.patch(`/exumacoes/${item.id}`, { status: "Concluído", confirmado: true }).catch(() => {});
+                await patchExumacao(item.id, { status: "Concluído", confirmado: true }).catch(() => {});
 
                 sepId = item.sepultamentoId ?? item.sepultamento ?? item.falecido_id ?? null;
                 if (sepId) {
                     try {
-                        await api.patch(`/sepultamentos/${sepId}`, { foi_exumado: true }).catch(() => {});
+                        await patchSepultamento(sepId, { foi_exumado: true }).catch(() => {});
                     } catch (patchErr) {
                         console.warn("Erro ao marcar sepultamento como exumado:", patchErr);
                     }
 
                     try {
-                        const rSep = await api.get(`/sepultamentos/${sepId}`).catch(() => null);
-                        const sep = rSep?.data ?? null;
+                        const sep = await getSepultamentoById(sepId).catch(() => null);
                         if (sep) {
                             const quadra = sep.quadra_sep ?? sep.quadra;
                             const num = getSepulturaNumber(sep);
@@ -280,9 +278,10 @@ export default function Dashboard() {
                                     const activeConfirmedSeps = await getActiveConfirmedSepsCount(quadra, num);
                                     const newStatus = activeConfirmedSeps > 0 ? "OCCUPIED" : "AVAILABLE";
 
-                                    await api
-                                        .patch(`/covas/${found.id}`, { bodyCapacity: newCap, status: newStatus })
-                                        .catch(() => {});
+                                    await patchGrave(found.id, {
+                                        bodyCapacity: newCap,
+                                        status: newStatus,
+                                    }).catch(() => {});
                                     try {
                                         window.dispatchEvent(
                                             new CustomEvent("covaCapacidadeAlterada", {

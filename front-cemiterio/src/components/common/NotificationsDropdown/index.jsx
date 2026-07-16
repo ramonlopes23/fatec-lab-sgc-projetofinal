@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaBell, FaChevronDown, FaChevronUp, FaFileContract, FaMapMarkedAlt, FaTimes } from "react-icons/fa";
 import { LuFlower2 } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
-import api from "../../../services/index.js";
+import { getContratos } from "../../../services/contratoService.js";
+import { getFalecidos } from "../../../services/falecidoService.js";
+import { getSepultamentos } from "../../../services/sepultamentoService.js";
 import { formatDateDMY, parseDateValue } from "../../../utils/date";
 import {
     Badge,
@@ -148,16 +150,16 @@ export default function NotificationsDropdown() {
         const load = async () => {
             setLoading(true);
             try {
-                const [rContratos, rSepultamentos, rFalecidos] = await Promise.all([
-                    api.get("/contratos"),
-                    api.get("/sepultamentos"),
-                    api.get("/falecidos"),
+                const [loadedContratos, loadedSepultamentos, loadedFalecidos] = await Promise.all([
+                    getContratos(),
+                    getSepultamentos(),
+                    getFalecidos(),
                 ]);
 
                 if (!mounted) return;
-                setContratos(Array.isArray(rContratos.data) ? rContratos.data : []);
-                setSepultamentos(Array.isArray(rSepultamentos.data) ? rSepultamentos.data : []);
-                setFalecidos(Array.isArray(rFalecidos.data) ? rFalecidos.data : []);
+                setContratos(Array.isArray(loadedContratos) ? loadedContratos : []);
+                setSepultamentos(Array.isArray(loadedSepultamentos) ? loadedSepultamentos : []);
+                setFalecidos(Array.isArray(loadedFalecidos) ? loadedFalecidos : []);
             } catch (err) {
                 if (!mounted) return;
                 setContratos([]);

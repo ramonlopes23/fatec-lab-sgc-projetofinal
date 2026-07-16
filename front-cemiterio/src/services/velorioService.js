@@ -8,4 +8,6 @@ export const createVelorio = async (payload) => service.create(payload);
 
 export const updateVelorio = async (id, payload) => service.update(id, payload);
 
+export const patchVelorio = async (id, payload) => service.patch(id, payload);
+
 export const deleteVelorio = async (id) => service.remove(id);

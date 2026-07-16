@@ -1,6 +1,9 @@
 import { useState } from "react";
-import api from "../../services/index.js";
 import { PROCESS_TYPES } from "../../pages/Cadastros/constants.js";
+import { createFalecido } from "../../services/falecidoService.js";
+import { getGraves, patchGrave } from "../../services/graveService.js";
+import { createSepultamento } from "../../services/sepultamentoService.js";
+import { createVelorio, patchVelorio } from "../../services/velorioService.js";
 import {
     findTaxaByCodigo,
     formatDateKey,
@@ -40,15 +43,15 @@ export default function useCadastrosSubmit({
                     data_nasc: form.data_nasc ? formatDateKey(form.data_nasc) : "",
                     dh_falec: form.dh_falec ? formatDateTimeKey(form.dh_falec) : "",
                 };
-                const response = await api.post("/falecidos", payload);
+                const createdFalecido = await createFalecido(payload);
                 showSuccess("Falecido cadastrado. Continue com o sepultamento.");
                 clearSaved();
                 setCepResp("");
                 setEnderecoResp("");
                 setBusca("");
                 setIsIndigente(false);
-                setFalecidos((prev) => [...prev, response?.data].filter(Boolean));
-                resetToSepultamento(response?.data, payload.nome_fal);
+                setFalecidos((prev) => [...prev, createdFalecido].filter(Boolean));
+                resetToSepultamento(createdFalecido, payload.nome_fal);
                 return;
             }
 
@@ -65,12 +68,11 @@ export default function useCadastrosSubmit({
                 confirmado: false,
             };
 
-            const rCheck = await api
-                .get("/covas", {
-                    params: { blockId: sepultamentoPayload.quadra_sep, number: sepultamentoPayload.num_sepultura_sep },
-                })
-                .catch(() => null);
-            const foundCheck = rCheck && Array.isArray(rCheck.data) && rCheck.data.length ? rCheck.data[0] : null;
+            const matchingGraves = await getGraves({
+                blockId: sepultamentoPayload.quadra_sep,
+                number: sepultamentoPayload.num_sepultura_sep,
+            }).catch(() => null);
+            const foundCheck = Array.isArray(matchingGraves) && matchingGraves.length ? matchingGraves[0] : null;
 
             if (!foundCheck?.id) {
                 showWarning("Sepultura nao encontrada para a quadra selecionada.");
@@ -79,7 +81,7 @@ export default function useCadastrosSubmit({
 
             const cap = Number(getSepulturaCapacity(foundCheck));
             if (cap <= 0) {
-                await api.patch(`/covas/${foundCheck.id}`, { status: "OCCUPIED", bodyCapacity: 0 }).catch(() => {});
+                await patchGrave(foundCheck.id, { status: "OCCUPIED", bodyCapacity: 0 }).catch(() => {});
                 showError("A sepultura selecionada esta lotada. Escolha outra sepultura.");
                 return;
             }
@@ -103,18 +105,16 @@ export default function useCadastrosSubmit({
                     sepultamento_id: "",
                 };
 
-                const velorioResponse = await api.post("/velorios", velorioPayload);
-                createdVelorio = velorioResponse?.data ?? null;
+                createdVelorio = (await createVelorio(velorioPayload)) ?? null;
                 if (createdVelorio?.id) {
                     sepultamentoPayload.velorio_id = createdVelorio.id;
                 }
             }
 
-            const res = await api.post("/sepultamentos", sepultamentoPayload);
-            const created = res?.data ?? null;
+            const created = (await createSepultamento(sepultamentoPayload)) ?? null;
 
             if (createdVelorio?.id && created?.id) {
-                await api.patch(`/velorios/${createdVelorio.id}`, { sepultamento_id: created.id }).catch(() => {});
+                await patchVelorio(createdVelorio.id, { sepultamento_id: created.id }).catch(() => {});
                 createdVelorio = { ...createdVelorio, sepultamento_id: created.id };
             }
 

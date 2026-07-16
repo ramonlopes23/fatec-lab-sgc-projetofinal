@@ -1,4 +1,4 @@
-import api from "../../../services/index.js";
+import { getSepultamentos } from "../../../services/sepultamentoService.js";
 import { Card, CardBody, CardHeader, DashboardWrapper } from "./styles";
 import React, { useState, useMemo, useEffect } from "react";
 
@@ -9,10 +9,10 @@ export default function SepultadosMes() {
     useEffect(() => {
         let mounted = true;
         setLoading(true);
-        api.get("/sepultamentos")
-            .then((res) => {
+        getSepultamentos()
+            .then((data) => {
                 if (!mounted) return;
-                setSepultamentos(Array.isArray(res.data) ? res.data : []);
+                setSepultamentos(Array.isArray(data) ? data : []);
             })
             .catch(() => {
                 if (!mounted) return;

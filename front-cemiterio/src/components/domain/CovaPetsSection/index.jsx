@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import api from "../../../services/index.js";
+import { createPet, deletePet, updatePet } from "../../../services/petService.js";
 import { useToastFeedback } from "../../../hooks";
 import ConfirmationDialog from "../../common/ConfirmationDialog";
 import SystemButton from "../../common/SystemButton";
@@ -142,7 +142,7 @@ export default function CovaPetsSection({
         if (!pet?.id) return;
 
         try {
-            await api.delete(`/pets/${pet.id}`);
+            await deletePet(pet.id);
             if (typeof onPetDeleted === "function") onPetDeleted(pet.id);
             showSuccess("Pet excluído com sucesso.");
             closeDeletePetDialog();
@@ -184,17 +184,17 @@ export default function CovaPetsSection({
             setSaving(true);
 
             if (editingPetId) {
-                const res = await api.put(`/pets/${editingPetId}`, {
+                const response = await updatePet(editingPetId, {
                     ...payload,
                     id: editingPetId,
                 });
 
-                const updated = res?.data ?? { ...payload, id: editingPetId };
+                const updated = response ?? { ...payload, id: editingPetId };
                 if (typeof onPetCreated === "function") onPetCreated(updated);
                 showSuccess("Dados do pet atualizados com sucesso");
             } else {
-                const res = await api.post("/pets", payload);
-                const created = res?.data ?? payload;
+                const response = await createPet(payload);
+                const created = response ?? payload;
 
                 if (typeof onPetCreated === "function") onPetCreated(created);
                 showSuccess("Pet cadastrado com sucesso");

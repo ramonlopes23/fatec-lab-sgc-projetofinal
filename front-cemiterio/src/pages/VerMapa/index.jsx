@@ -1,8 +1,13 @@
 ﻿import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useBlocks, useCreateBlocks, useCreateGraves, useToastFeedback } from "../../hooks";
 import { useCemeteryStore } from "../../stores/index.js";
-import api from "../../services/index.js";
-import { patchGraveStatus } from "../../services/graveService";
+import { getContratos } from "../../services/contratoService.js";
+import { createExumacao, deleteExumacao, getExumacoes } from "../../services/exumacaoService.js";
+import { getFalecidoById, getFalecidos } from "../../services/falecidoService.js";
+import { getGraves, patchGraveStatus } from "../../services/graveService.js";
+import { getOssarios } from "../../services/ossarioService.js";
+import { getPets } from "../../services/petService.js";
+import { getSepultamentos } from "../../services/sepultamentoService.js";
 import LoadingOverlay from "../../components/common/LoadingOverlay";
 import GridQuadras from "../../components/domain/GridQuadras";
 import PieChartSepulturas from "../../components/domain/PieChartSepulturas";
@@ -372,8 +377,7 @@ export default function VerMapa() {
                 status: "pendente",
                 confirmado: false,
             };
-            const res = await api.post("/exumacoes", payload);
-            const created = res?.data ?? null;
+            const created = (await createExumacao(payload)) ?? null;
             if (!created) throw new Error("Resposta inválida do servidor ao criar exumação");
 
             setExumacoesPending((prev) => ({ ...prev, [key]: created }));
@@ -413,7 +417,7 @@ export default function VerMapa() {
         if (!pending?.sep?.id || !pending?.ex?.id) return;
         const key = String(pending.sep.id);
         try {
-            await api.delete(`/exumacoes/${pending.ex.id}`);
+            await deleteExumacao(pending.ex.id);
             setExumacoesPending((prev) => {
                 const clone = { ...prev };
                 delete clone[key];
@@ -818,9 +822,7 @@ export default function VerMapa() {
     const loadMapData = useCallback(async () => {
         setIsMapLoading(true);
         try {
-            const [rGraves] = await Promise.all([api.get("/graves"), loadBlocks()]);
-
-            const rawGraves = rGraves?.data;
+            const [rawGraves] = await Promise.all([getGraves(), loadBlocks()]);
             const gravesData = Array.isArray(rawGraves)
                 ? rawGraves
                 : Array.isArray(rawGraves?.content)
@@ -839,24 +841,22 @@ export default function VerMapa() {
             setCovasData(normalizedCovasData);
 
             const [rSep, rExu, rPets, rOss, rFal, rContratos] = await Promise.allSettled([
-                api.get("/sepultamentos"),
-                api.get("/exumacoes"),
-                api.get("/pets"),
-                api.get("/ossarios"),
-                api.get("/falecidos"),
-                api.get("/contratos"),
+                getSepultamentos(),
+                getExumacoes(),
+                getPets(),
+                getOssarios(),
+                getFalecidos(),
+                getContratos(),
             ]);
 
-            const sepData = rSep.status === "fulfilled" && Array.isArray(rSep.value?.data) ? rSep.value.data : [];
-            const exuData = rExu.status === "fulfilled" && Array.isArray(rExu.value?.data) ? rExu.value.data : [];
-            const petsData = rPets.status === "fulfilled" && Array.isArray(rPets.value?.data) ? rPets.value.data : [];
-            const ossariosData = rOss.status === "fulfilled" && Array.isArray(rOss.value?.data) ? rOss.value.data : [];
+            const sepData = rSep.status === "fulfilled" && Array.isArray(rSep.value) ? rSep.value : [];
+            const exuData = rExu.status === "fulfilled" && Array.isArray(rExu.value) ? rExu.value : [];
+            const petsData = rPets.status === "fulfilled" && Array.isArray(rPets.value) ? rPets.value : [];
+            const ossariosData = rOss.status === "fulfilled" && Array.isArray(rOss.value) ? rOss.value : [];
             const falecidosData =
-                rFal.status === "fulfilled" && Array.isArray(rFal.value?.data)
-                    ? rFal.value.data.map(normalizeFalecido)
-                    : [];
+                rFal.status === "fulfilled" && Array.isArray(rFal.value) ? rFal.value.map(normalizeFalecido) : [];
             const contratosData =
-                rContratos.status === "fulfilled" && Array.isArray(rContratos.value?.data) ? rContratos.value.data : [];
+                rContratos.status === "fulfilled" && Array.isArray(rContratos.value) ? rContratos.value : [];
 
             setSepultamentosAll(sepData);
             setExumacoesAll(exuData);
@@ -896,8 +896,8 @@ export default function VerMapa() {
 
                     if (falId) {
                         try {
-                            const rf = await api.get(`/falecidos/${falId}`);
-                            fal = normalizeFalecido(rf.data);
+                            const loadedFalecido = await getFalecidoById(falId);
+                            fal = normalizeFalecido(loadedFalecido);
                         } catch (e) {
                             console.error("Erro ao buscar falecido", e);
                         }
@@ -1051,8 +1051,8 @@ export default function VerMapa() {
                 let fal = null;
                 if (falId) {
                     try {
-                        const rf = await api.get(`/falecidos/${falId}`);
-                        fal = normalizeFalecido(rf.data);
+                        const loadedFalecido = await getFalecidoById(falId);
+                        fal = normalizeFalecido(loadedFalecido);
                     } catch (e) {
                         console.error("Erro", e);
                     }
@@ -2040,10 +2040,12 @@ export default function VerMapa() {
                                                                             let fall = null;
                                                                             if (falId) {
                                                                                 try {
-                                                                                    const rf = await api.get(
-                                                                                        `/falecidos/${falId}`
-                                                                                    );
-                                                                                    fall = normalizeFalecido(rf.data);
+                                                                                    const loadedFalecido =
+                                                                                        await getFalecidoById(falId);
+                                                                                    fall =
+                                                                                        normalizeFalecido(
+                                                                                            loadedFalecido
+                                                                                        );
                                                                                 } catch (e) {
                                                                                     console.error("Erro ", e);
                                                                                 }
@@ -2076,10 +2078,12 @@ export default function VerMapa() {
                                                                             let fall = null;
                                                                             if (falId) {
                                                                                 try {
-                                                                                    const rf = await api.get(
-                                                                                        `/falecidos/${falId}`
-                                                                                    );
-                                                                                    fall = normalizeFalecido(rf.data);
+                                                                                    const loadedFalecido =
+                                                                                        await getFalecidoById(falId);
+                                                                                    fall =
+                                                                                        normalizeFalecido(
+                                                                                            loadedFalecido
+                                                                                        );
                                                                                 } catch (e) {
                                                                                     console.error("Erro ", e);
                                                                                 }

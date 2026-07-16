@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createGrave, getGrave } from "../../services/graveService";
+import { createGrave, getGraves } from "../../services/graveService";
 
 export function useCreateGraves({ onSuccess } = {}) {
     const [loading, setLoading] = useState(false);
@@ -46,7 +46,7 @@ export function useCreateGraves({ onSuccess } = {}) {
                 throw new Error("Estado de bloqueio inválido");
             }
 
-            const existingGraves = await getGrave();
+            const existingGraves = await getGraves();
 
             const alreadyExists =
                 Array.isArray(existingGraves) &&

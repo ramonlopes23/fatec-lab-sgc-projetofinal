@@ -5,7 +5,9 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
-import api from "../../../services/index.js";
+import { getBlocks } from "../../../services/blockService.js";
+import { getExumacoes } from "../../../services/exumacaoService.js";
+import { getSepultamentos } from "../../../services/sepultamentoService.js";
 import { useAuthStore } from "../../../stores/authStore";
 import { useCemeteryStore } from "../../../stores/cemeteryStore";
 import sgcLogo from "../../../assets/SGC.png";
@@ -568,14 +570,14 @@ export default function RelatoriosComponent() {
         const loadData = async () => {
             setIsLoading(true);
             try {
-                const [sepultamentosResponse, exumacoesResponse, quadrasResponse] = await Promise.all([
-                    api.get("/sepultamentos").catch(() => ({ data: [] })),
-                    api.get("/exumacoes").catch(() => ({ data: [] })),
-                    api.get("/quadras").catch(() => ({ data: [] })),
+                const [loadedSepultamentos, loadedExumacoes, loadedQuadras] = await Promise.all([
+                    getSepultamentos().catch(() => []),
+                    getExumacoes().catch(() => []),
+                    getBlocks().catch(() => []),
                 ]);
-                setSepultamentos(Array.isArray(sepultamentosResponse.data) ? sepultamentosResponse.data : []);
-                setExumacoes(Array.isArray(exumacoesResponse.data) ? exumacoesResponse.data : []);
-                setQuadras(Array.isArray(quadrasResponse.data) ? quadrasResponse.data.map(normalizeQuadra) : []);
+                setSepultamentos(Array.isArray(loadedSepultamentos) ? loadedSepultamentos : []);
+                setExumacoes(Array.isArray(loadedExumacoes) ? loadedExumacoes : []);
+                setQuadras(Array.isArray(loadedQuadras) ? loadedQuadras.map(normalizeQuadra) : []);
             } catch (error) {
                 console.error("Erro ao carregar relatorios", error);
                 setSepultamentos([]);

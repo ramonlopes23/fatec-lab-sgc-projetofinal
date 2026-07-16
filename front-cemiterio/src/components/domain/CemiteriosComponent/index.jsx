@@ -56,7 +56,7 @@ import {
 } from "../../common/DefaultTable";
 import { createCemeteries, getCemeteries, updateCemeteries } from "../../../services/cemeteryService.js";
 import { getBlocks } from "../../../services/blockService.js";
-import { getGrave } from "../../../services/graveService.js";
+import { getGraves } from "../../../services/graveService.js";
 import { getSepultamentos } from "../../../services/sepultamentoService.js";
 import { getExumacoes } from "../../../services/exumacaoService.js";
 import {
@@ -179,7 +179,7 @@ export default function CemiteriosComponent() {
                 await Promise.allSettled([
                     getCemeteries(),
                     getBlocks(),
-                    getGrave(),
+                    getGraves(),
                     getSepultamentos(),
                     getExumacoes(),
                 ]);

@@ -1,4 +1,4 @@
-import api from "../../services/index.js";
+import { getSepultamentos } from "../../services/sepultamentoService.js";
 import { Card, CardBody, CardHeader, DashboardWrapper, ChartWrapper, Controls, PeriodButton } from "./styles.js";
 import React, { useMemo, useEffect, useState } from "react";
 import { Bar } from "react-chartjs-2";
@@ -28,10 +28,10 @@ export default function SepultadosMedia() {
     useEffect(() => {
         let mounted = true;
         setLoading(true);
-        api.get("/sepultamentos")
-            .then((res) => {
+        getSepultamentos()
+            .then((data) => {
                 if (!mounted) return;
-                setSepultamentos(Array.isArray(res.data) ? res.data : []);
+                setSepultamentos(Array.isArray(data) ? data : []);
             })
             .catch(() => {
                 if (!mounted) return;

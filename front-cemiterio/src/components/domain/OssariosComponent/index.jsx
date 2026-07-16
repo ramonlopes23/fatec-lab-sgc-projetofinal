@@ -9,7 +9,7 @@ import {
     FaTimesCircle,
     FaTrash,
 } from "react-icons/fa";
-import api from "../../../services/index.js";
+import { createOssario, deleteOssario, getOssarios, updateOssario } from "../../../services/ossarioService.js";
 import { normalizeSearchText } from "../../../utils";
 import { useFormModal, useToastFeedback } from "../../../hooks";
 import ConfirmationDialog from "../../common/ConfirmationDialog";
@@ -169,7 +169,7 @@ export default function OssariosComponent() {
     const loadItems = useCallback(async () => {
         setIsLoading(true);
         try {
-            const { data } = await api.get("/ossarios");
+            const data = await getOssarios();
             setItems(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error("Erro ao carregar ossários", error);
@@ -280,13 +280,13 @@ export default function OssariosComponent() {
             };
 
             if (editingId) {
-                await api.put(`/ossarios/${editingId}`, {
+                await updateOssario(editingId, {
                     ...payload,
                     id: editingId,
                 });
                 showSuccess("Ossário atualizado com sucesso.");
             } else {
-                await api.post("/ossarios", payload);
+                await createOssario(payload);
                 showSuccess("Ossário cadastrado com sucesso.");
             }
 
@@ -334,7 +334,7 @@ export default function OssariosComponent() {
 
         setIsSubmitting(true);
         try {
-            await api.delete(`/ossarios/${pendingDeleteItem.id}`);
+            await deleteOssario(pendingDeleteItem.id);
             showSuccess("Ossário excluído com sucesso");
             await loadItems();
             closeDeleteDialog();

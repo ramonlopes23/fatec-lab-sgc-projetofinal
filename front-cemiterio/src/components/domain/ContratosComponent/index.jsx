@@ -68,7 +68,7 @@ import {
 } from "../../common/DefaultTable";
 import { getContratos, createContrato, updateContrato, deleteContrato } from "../../../services/contratoService.js";
 import { getBlocks } from "../../../services/blockService.js";
-import { getGrave, createGrave, updateGrave } from "../../../services/graveService.js";
+import { getGraves, createGrave, updateGrave } from "../../../services/graveService.js";
 import { getSepultamentos } from "../../../services/sepultamentoService.js";
 import { useCemeteryStore } from "../../../stores";
 import {
@@ -255,7 +255,7 @@ export default function ContratosComponent() {
             const [data, blocksData, gravesData, sepultamentosData] = await Promise.all([
                 getContratos(),
                 getBlocks().catch(() => []),
-                getGrave().catch(() => []),
+                getGraves().catch(() => []),
                 getSepultamentos().catch(() => []),
             ]);
             setTitulos(Array.isArray(data) ? data : []);

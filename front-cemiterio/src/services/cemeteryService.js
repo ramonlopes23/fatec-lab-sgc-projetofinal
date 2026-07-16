@@ -10,4 +10,4 @@ export const updateCemeteries = async (id, payload) => service.update(id, payloa
 
 export const inactiveCemeteries = async (id) => service.inactivate(id);
 
-export const patchCemeteriesStatus = async (id, status) => service.update(id, { status });
+export const patchCemeteriesStatus = async (id, status) => service.patch(id, { status });

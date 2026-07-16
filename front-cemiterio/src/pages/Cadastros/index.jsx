@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
-import api from "../../services/index.js";
+import { getContratos } from "../../services/contratoService.js";
 import ConfirmationDialog from "../../components/common/ConfirmationDialog";
 import {
     useApiInitDataCad,
@@ -191,11 +191,10 @@ export default function Cadastros() {
     useEffect(() => {
         let mounted = true;
 
-        api.get("/contratos")
-            .then((response) => {
+        getContratos()
+            .then((data) => {
                 if (!mounted) return;
-                const data = Array.isArray(response?.data) ? response.data : [];
-                setContratos(data.map(normalizeContrato));
+                setContratos(Array.isArray(data) ? data.map(normalizeContrato) : []);
             })
             .catch((error) => {
                 console.warn("Erro ao carregar contratos para sepultamento", error);
