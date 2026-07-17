@@ -1,7 +1,7 @@
 import Dashboard from "../components/domain/Dashboard";
 import Header from "../components/common/Header";
 import SidebarMenu from "../components/common/SidebarMenu";
-import { Content, LayoutContainer, PageContent, SidebarContainer, SidebarExternalToggle, GlobalStyle } from "./styles";
+import { Content, LayoutContainer, PageContent, SidebarContainer, SidebarExternalToggle } from "./styles";
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";

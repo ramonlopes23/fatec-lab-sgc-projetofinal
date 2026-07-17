@@ -1,11 +1,4 @@
 import styled, { keyframes } from "styled-components";
-import { createGlobalStyle } from "styled-components";
-
-export const GlobalStyle = createGlobalStyle`
-*{
-  font-family:"Satoshi", sans-serif;
-}
-`;
 
 const FadeInScale = keyframes`
   from{

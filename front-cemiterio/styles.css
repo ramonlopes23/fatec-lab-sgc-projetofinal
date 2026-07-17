@@ -1,5 +1,6 @@
 :root {
     --app-font-scale: 1;
+    --app-font-family: "Noto Sans Variable", sans-serif;
     --app-bg: #f8f9f9;
     --app-surface: #ffffff;
     --app-text: #191970;
@@ -12,7 +13,7 @@ button,
 input,
 select,
 textarea {
-    font-family: "Satoshi", sans-serif;
+    font-family: var(--app-font-family);
 }
 
 html {

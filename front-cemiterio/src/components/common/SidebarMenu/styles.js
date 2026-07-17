@@ -1,11 +1,5 @@
 import styled from "styled-components";
 import { NavLink } from "react-router-dom";
-import { createGlobalStyle } from "styled-components";
-
-export const GlobalStyle = createGlobalStyle`
-*{
-  font-family:"Satoshi", sans-serif;
-}`;
 
 export const LogoContainer = styled.div`
     padding: 1.15rem 1rem 1rem;
@@ -111,7 +105,6 @@ export const NavList = styled.ul`
 export const NavTitle = styled.h2`
     text-transform: uppercase;
     font-size: 0.75rem;
-    font-family: "Inter", sans-serif;
     color: #6b7280;
     margin-bottom: 0.5rem;
     margin-left: 2.5rem;

@@ -453,7 +453,7 @@ const renderPrintHtml = (payload) => {
   <title>${escapeHtml(payload.reportTitle)}</title>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; padding: 28px; font-family: "Satoshi", sans-serif; color: #1f2652; background: #f6f7fb; }
+    body { margin: 0; padding: 28px; font-family: Arial, sans-serif; color: #1f2652; background: #f6f7fb; }
     .page { background: #fff; border: 1px solid #e6e9f5; border-radius: 18px; padding: 28px; }
     header { display: flex; justify-content: space-between; gap: 24px; border-bottom: 3px solid #191970; padding-bottom: 18px; }
     .brand { display: flex; gap: 14px; align-items: center; }

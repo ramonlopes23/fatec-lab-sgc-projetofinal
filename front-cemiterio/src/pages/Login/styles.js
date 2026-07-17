@@ -6,7 +6,7 @@ export const Page = styled.div`
     display: grid;
     grid-template-columns: 1fr 1fr;
     background: #efefef;
-    font-family: "Satoshi", sans-serif;
+    font-family: var(--app-font-family);
 
     @media (max-width: 980px) {
         grid-template-columns: 1fr;
@@ -80,7 +80,7 @@ export const Title = styled.h1`
     font-weight: 800;
     letter-spacing: -0.5px;
     color: #191970;
-    font-family: "Satoshi", sans-serif;
+    font-family: var(--app-font-family);
 `;
 
 export const Field = styled.div`
@@ -93,7 +93,7 @@ export const Label = styled.label`
     color: #191970;
     font-size: 14px;
     font-weight: 600;
-    font-family: "Satoshi", sans-serif;
+    font-family: var(--app-font-family);
 `;
 
 export const Input = styled.input`
@@ -107,7 +107,7 @@ export const Input = styled.input`
     background: #f6f6f6;
     outline: none;
     box-sizing: border-box;
-    font-family: "Satoshi", sans-serif;
+    font-family: var(--app-font-family);
 
     &::placeholder {
         color: #8a8fa4;
@@ -130,7 +130,7 @@ export const Select = styled.select`
     background: #f6f6f6;
     outline: none;
     box-sizing: border-box;
-    font-family: "Satoshi", sans-serif;
+    font-family: var(--app-font-family);
 
     &:focus {
         border-color: #191970;
@@ -149,7 +149,7 @@ export const HelperLink = styled.button`
     cursor: pointer;
     text-decoration: underline;
     text-underline-offset: 2px;
-    font-family: "Satoshi", sans-serif;
+    font-family: var(--app-font-family);
 `;
 
 export const ErrorText = styled.p`
@@ -157,7 +157,7 @@ export const ErrorText = styled.p`
     color: #b11212;
     font-size: 13px;
     font-weight: 600;
-    font-family: "Satoshi", sans-serif;
+    font-family: var(--app-font-family);
 `;
 
 export const PrimaryButton = styled.button`
@@ -170,7 +170,7 @@ export const PrimaryButton = styled.button`
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
-    font-family: "Satoshi", sans-serif;
+    font-family: var(--app-font-family);
 
     &:disabled {
         opacity: 0.72;
@@ -190,5 +190,5 @@ export const SecondaryButton = styled.button`
     font-weight: 600;
     line-height: 1;
     cursor: pointer;
-    font-family: "Satoshi", sans-serif;
+    font-family: var(--app-font-family);
 `;

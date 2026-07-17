@@ -16,7 +16,6 @@ import { GrDocumentConfig } from "react-icons/gr";
 import { MdOutlineContentPasteSearch } from "react-icons/md";
 import sgclogo1 from "../../../assets/logoSGCwhite.png";
 import {
-    GlobalStyle,
     CollapsedNavLink,
     CollapsedToggle,
     ChevronIcon,
@@ -104,7 +103,6 @@ export default function SidebarMenu({ isCollapsed = false }) {
 
     return (
         <>
-            <GlobalStyle />
             <LogoContainer>
                 <LogoImage src={sgclogo1} alt="Logo Memo" $isCollapsed={isCollapsed} />
                 {!isCollapsed && <Title>SISTEMA DE GERENCIAMENTO DE CEMITÉRIOS</Title>}

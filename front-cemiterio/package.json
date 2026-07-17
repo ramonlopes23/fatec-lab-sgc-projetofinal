@@ -24,6 +24,7 @@
     "@date-io/date-fns": "^3.2.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@fontsource-variable/noto-sans": "^5.2.10",
     "@mui/material": "^7.3.2",
     "@mui/x-date-pickers": "^9.1.0",
     "axios": "^1.18.1",

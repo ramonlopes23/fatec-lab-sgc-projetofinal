@@ -8,7 +8,7 @@ export const Container = styled.div`
     height: 100vh;
     color: #191970;
     text-align: center;
-    font-family: "Satoshi", sans-serif;
+    font-family: var(--app-font-family);
 `;
 
 export const Button = styled.button`
