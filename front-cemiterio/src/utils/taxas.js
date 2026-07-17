@@ -1,4 +1,4 @@
-import { DEFAULT_TAXAS } from "../pages/Cadastros/constants";
+import { DEFAULT_TAXAS } from "../pages/Cadastros/constants.js";
 
 export const formatCurrencyBRL = (value) => {
     const amount = Number(value || 0);

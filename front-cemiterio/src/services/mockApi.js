@@ -1,4 +1,4 @@
-import seedDb from "../../db.json";
+import seedDb from "../../db.json" with { type: "json" };
 
 const clone = (value) => {
     if (typeof structuredClone === "function") {

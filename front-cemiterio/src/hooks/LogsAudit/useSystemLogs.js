@@ -28,7 +28,12 @@ const toDate = (value) => {
 };
 
 const buildStats = (logs) => {
-    const users = new Set(logs.map((item) => item.user?.name).filter(Boolean));
+    const users = new Set(
+        logs
+            .filter((item) => item.user?.isKnown)
+            .map((item) => item.user?.id || item.user?.username || item.user?.name)
+            .filter(Boolean)
+    );
     const criticalCount = logs.filter((item) => item.status !== "success").length;
     const accessFailures = logs.filter((item) => item.action === "LOGIN" && item.status === "failure").length;
     const latestTimestamp = logs.reduce((latest, item) => {
@@ -88,8 +93,14 @@ const useSystemLogs = () => {
 
         bootstrap();
 
+        const handleLogCreated = () => {
+            bootstrap();
+        };
+        window.addEventListener("systemLogCreated", handleLogCreated);
+
         return () => {
             mounted = false;
+            window.removeEventListener("systemLogCreated", handleLogCreated);
         };
     }, []);
 
@@ -168,9 +179,14 @@ const useSystemLogs = () => {
 
     const availableUsers = useMemo(
         () =>
-            Array.from(new Set(logs.map((item) => item.user?.name).filter(Boolean))).sort((left, right) =>
-                left.localeCompare(right)
-            ),
+            Array.from(
+                new Set(
+                    logs
+                        .filter((item) => item.user?.isKnown)
+                        .map((item) => item.user?.name)
+                        .filter(Boolean)
+                )
+            ).sort((left, right) => left.localeCompare(right)),
         [logs]
     );
     const availableModules = useMemo(

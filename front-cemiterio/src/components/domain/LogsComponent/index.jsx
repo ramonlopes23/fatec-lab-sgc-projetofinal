@@ -24,7 +24,12 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatDateTimeDMY } from "../../../utils/date.js";
 import { useSystemLogs } from "../../../hooks";
-import { LOG_ACTION_META, LOG_STATUS_META } from "../../../services/logsData.js";
+import {
+    LOG_ACTION_META,
+    LOG_STATUS_META,
+    LOG_UNKNOWN_ACTOR_NAME,
+    LOG_UNKNOWN_ACTOR_SOURCE_LABEL,
+} from "../../../services/logsData.js";
 import SystemButton from "../../common/SystemButton";
 import DrawerComponent, { DrawerActionRow } from "../../common/DrawerComponent";
 import EventTimeline from "../../common/EventTimeline";
@@ -119,6 +124,11 @@ const getActionMeta = (action) => LOG_ACTION_META[action] || { label: action, to
 
 const getStatusMeta = (status) => LOG_STATUS_META[status] || { label: status, tone: "warning" };
 
+const getActorName = (log) => (log?.user?.isKnown ? log.user.name : LOG_UNKNOWN_ACTOR_NAME);
+
+const getActorSourceLabel = (log) =>
+    log?.user?.sourceLabel || (log?.user?.isKnown ? "Sessão autenticada" : LOG_UNKNOWN_ACTOR_SOURCE_LABEL);
+
 const formatListValue = (value) => (value == null || value === "" ? "—" : String(value));
 
 const formatFieldLabel = (value) =>
@@ -165,8 +175,12 @@ const buildLogExportPayload = (logs = []) => ({
         codigo: log.eventCode,
         dataHora: formatDateTimeDMY(log.timestamp, "-"),
         timestamp: log.timestamp,
-        usuario: log.user?.name || "-",
-        usuarioOrigem: log.user?.sourceField || "-",
+        usuario: getActorName(log),
+        usuarioId: log.user?.id || null,
+        usuarioLogin: log.user?.username || null,
+        usuarioPerfil: log.user?.role || null,
+        usuarioIdentificado: Boolean(log.user?.isKnown),
+        usuarioOrigem: getActorSourceLabel(log),
         modulo: log.module || "-",
         acao: getActionMeta(log.action).label,
         status: getStatusMeta(log.status).label,
@@ -457,8 +471,8 @@ export default function LogsComponent() {
                                         </Td>
                                         <Td>
                                             <TdStack>
-                                                <TdTitle>{log.user?.name || "-"}</TdTitle>
-                                                <TdMeta>{log.user?.sourceField || "-"}</TdMeta>
+                                                <TdTitle>{getActorName(log)}</TdTitle>
+                                                <TdMeta>{getActorSourceLabel(log)}</TdMeta>
                                             </TdStack>
                                         </Td>
                                         <Td>
@@ -589,21 +603,37 @@ export default function LogsComponent() {
                         <SectionHeader>
                             <div>
                                 <SectionTitle>Informações gerais</SectionTitle>
-                                <SectionHint>Contexto rastreável apenas com dados presentes no db.json.</SectionHint>
+                                <SectionHint>Autoria da ação e entidade de domínio afetada.</SectionHint>
                             </div>
                         </SectionHeader>
                         <InfoGrid>
                             <InfoTile>
-                                <InfoLabel>Responsável rastreável</InfoLabel>
-                                <InfoValue>{"-"}</InfoValue>
+                                <InfoLabel>Usuário responsável</InfoLabel>
+                                <InfoValue>{getActorName(selectedLog)}</InfoValue>
                             </InfoTile>
-                            {/* <InfoTile>
-                                        <InfoLabel>Fonte do responsável</InfoLabel>
-                                        <InfoValue>{ "-"}</InfoValue>
-                                    </InfoTile> */}
+                            <InfoTile>
+                                <InfoLabel>Origem da identificação</InfoLabel>
+                                <InfoValue>{getActorSourceLabel(selectedLog)}</InfoValue>
+                            </InfoTile>
+                            <InfoTile>
+                                <InfoLabel>Identificador do usuário</InfoLabel>
+                                <InfoValue>
+                                    {selectedLog.user?.isKnown
+                                        ? selectedLog.user.id || selectedLog.user.username || "Não informado"
+                                        : "Não disponível"}
+                                </InfoValue>
+                            </InfoTile>
+                            <InfoTile>
+                                <InfoLabel>Perfil de acesso</InfoLabel>
+                                <InfoValue>
+                                    {selectedLog.user?.isKnown
+                                        ? selectedLog.user.role || "Não informado"
+                                        : "Não disponível"}
+                                </InfoValue>
+                            </InfoTile>
                             <InfoTile>
                                 <InfoLabel>Módulo</InfoLabel>
-                                <InfoValue>{"-"}</InfoValue>
+                                <InfoValue>{selectedLog.module || "-"}</InfoValue>
                             </InfoTile>
                             <InfoTile>
                                 <InfoLabel>Ação realizada</InfoLabel>

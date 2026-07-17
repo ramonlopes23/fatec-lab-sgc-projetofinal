@@ -1,4 +1,4 @@
-import database from "../../db.json";
+import database from "../../db.json" with { type: "json" };
 import { getCemiterioName } from "../utils/cemiterio.js";
 import { getContratoCemiterioName, getContratoNumeroTitulo } from "../utils/contrato.js";
 import { parseDateValue } from "../utils/date.js";
@@ -8,6 +8,8 @@ import { formatSepulturaDisplay } from "../utils/sepultura.js";
 import { formatCurrencyBRL, getTaxaLabelFromRecord, getTaxaValorFromRecord } from "../utils/taxas.js";
 
 const AUDIT_LOG_PAGE_SIZE = 7;
+const UNKNOWN_ACTOR_NAME = "Não identificado";
+const UNKNOWN_ACTOR_SOURCE_LABEL = "Registro legado";
 
 const ACTION_META = {
     CREATE: { label: "CRIAR", tone: "create" },
@@ -33,7 +35,7 @@ const COLLECTION_META = {
         route: "/registros",
         action: "CREATE",
         timestampFields: ["dh_falec"],
-        actorFields: ["nome_resp", "nome_doutor", "nome_fal"],
+        participantFields: ["nome_resp", "nome_doutor", "nome_fal"],
         additionalFields: ["cpf", "rg", "sexo", "estado_civil", "causa_mortis"],
         changeFields: [
             { field: "nome_fal", label: "Nome" },
@@ -48,7 +50,7 @@ const COLLECTION_META = {
         route: "/cadastros/sepultamento",
         action: "CREATE",
         timestampFields: ["dh_sep"],
-        actorFields: ["nome_resp", "nome_titular", "nome", "falecido"],
+        participantFields: ["nome_resp", "nome_titular", "nome", "falecido"],
         additionalFields: ["quadra_sep", "num_sepultura_sep", "taxa_label", "status", "confirmado"],
         changeFields: [
             { field: "status", label: "Status" },
@@ -64,7 +66,7 @@ const COLLECTION_META = {
         route: "/registros",
         action: "CREATE",
         timestampFields: ["data_velorio", "dh_inicio_velorio"],
-        actorFields: ["responsavel_velorio", "nome_vel", "nome_fal"],
+        participantFields: ["responsavel_velorio", "nome_vel", "nome_fal"],
         additionalFields: ["local_velorio", "tipo_velorio", "obs_velorio", "status", "confirmado"],
         changeFields: [
             { field: "local_velorio", label: "Local" },
@@ -79,7 +81,7 @@ const COLLECTION_META = {
         route: "/registros",
         action: "UPDATE",
         timestampFields: ["dh_exu"],
-        actorFields: ["coveiro", "nome_sep"],
+        participantFields: ["coveiro", "nome_sep"],
         additionalFields: ["quadra_sep", "num_sepultura_sep", "destino", "status", "confirmacao", "motivo"],
         changeFields: [
             { field: "destino", label: "Destino" },
@@ -95,7 +97,7 @@ const COLLECTION_META = {
         action: (record) =>
             record?.update_at && record?.created_at && record.update_at !== record.created_at ? "UPDATE" : "CREATE",
         timestampFields: ["update_at", "created_at"],
-        actorFields: ["nome_titular", "nome_resp", "holderName"],
+        participantFields: ["nome_titular", "nome_resp", "holderName"],
         additionalFields: ["quadra", "sepultura", "valor", "status", "vigencia_inicio", "vigencia_fim", "cemiterio"],
         changeFields: [
             { field: "status", label: "Status" },
@@ -111,7 +113,7 @@ const COLLECTION_META = {
         route: "/registros",
         action: "CREATE",
         timestampFields: ["dh_sep_pet"],
-        actorFields: ["nome_sep", "nome_pet"],
+        participantFields: ["nome_sep", "nome_pet"],
         additionalFields: ["especie", "raca", "status", "confirmado", "foi_exumado"],
         changeFields: [
             { field: "nome_pet", label: "Nome" },
@@ -216,13 +218,39 @@ const formatLogFieldValue = (field, record) => {
     return formatValue(record?.[field]);
 };
 
-const resolveActor = (record, meta) => {
-    const actor = pickFirst(record, meta.actorFields) || "Sistema";
+const resolveParticipant = (record, meta) => pickFirst(record, meta.participantFields || []);
+
+const buildUnknownActor = () => ({
+    id: null,
+    name: UNKNOWN_ACTOR_NAME,
+    username: null,
+    role: null,
+    isKnown: false,
+    sourceField: "legacy",
+    sourceLabel: UNKNOWN_ACTOR_SOURCE_LABEL,
+});
+
+const normalizeActor = (log) => {
+    const actor =
+        log?.actor && typeof log.actor === "object"
+            ? log.actor
+            : log?.user && typeof log.user === "object"
+              ? log.user
+              : null;
+    const name = pickFirst(actor, ["name", "nome", "username", "email"]);
+    const isUnknownName = normalizeText(name) === normalizeText(UNKNOWN_ACTOR_NAME);
+    const isKnown = actor?.isKnown == null ? Boolean(name) && !isUnknownName : Boolean(actor.isKnown);
+
+    if (!isKnown) return buildUnknownActor();
+
     return {
-        name: String(actor),
-        sourceField:
-            meta.actorFields.find((field) => record?.[field] != null && String(record[field]).trim() !== "") ||
-            "source",
+        id: actor?.id == null ? null : String(actor.id),
+        name: String(name),
+        username: actor?.username == null ? null : String(actor.username),
+        role: actor?.role == null ? null : String(actor.role),
+        isKnown: true,
+        sourceField: String(actor?.sourceField || (log?.actor ? "backend-session" : "stored-log")),
+        sourceLabel: String(actor?.sourceLabel || (log?.actor ? "Sessão autenticada" : "Log persistido")),
     };
 };
 
@@ -235,17 +263,19 @@ const buildEntity = (collectionName, record, meta) => ({
 });
 
 const buildDescription = (collectionName, record, meta) => {
-    const name = resolveActor(record, meta).name;
+    const participant = resolveParticipant(record, meta);
     if (collectionName === "falecidos")
-        return `Registro de falecimento vinculado a ${getFalecidoName(record) || name}.`;
+        return `Registro de falecimento vinculado a ${getFalecidoName(record) || participant || "registro sem nome"}.`;
     if (collectionName === "sepultamentos")
         return `Sepultamento registrado para ${getFalecidoName(record) || "registro sem nome"}.`;
     if (collectionName === "velorios")
         return `Velório consolidado com status ${formatValue(record?.status).toLowerCase()}.`;
     if (collectionName === "exumacoes")
         return `Exumação registrada com destino ${formatValue(record?.destino).toLowerCase()}.`;
-    if (collectionName === "contratos")
-        return `Contrato ${getContratoNumeroTitulo(record) || formatValue(record?.numero_titulo)} persistido para ${name}.`;
+    if (collectionName === "contratos") {
+        const holder = participant || "titular não identificado";
+        return `Contrato ${getContratoNumeroTitulo(record) || formatValue(record?.numero_titulo)} persistido para ${holder}.`;
+    }
     if (collectionName === "pets") return `Pet vinculado ao sepultamento ${formatValue(record?.sepultamento_id)}.`;
     return `Evento rastreável derivado da coleção ${collectionName}.`;
 };
@@ -292,7 +322,6 @@ const buildLogFromRecord = (collectionName, record, index) => {
     if (!timestamp || !isValidDate(timestamp)) return null;
 
     const action = typeof meta.action === "function" ? meta.action(record) : meta.action;
-    const actor = resolveActor(record, meta);
     const entity = buildEntity(collectionName, record, meta);
     const status = buildStatus(record, collectionName);
     const normalizedTimestamp = parseDateValue(timestamp).toISOString();
@@ -307,17 +336,14 @@ const buildLogFromRecord = (collectionName, record, index) => {
         actionLabel: ACTION_META[action]?.label || action,
         module: meta.module,
         description: buildDescription(collectionName, record, meta),
-        user: {
-            name: actor.name,
-            sourceField: actor.sourceField,
-        },
+        user: buildUnknownActor(),
         entity,
         changes: buildChanges(record, meta),
         additionalInfo: buildAdditionalInfo(record, meta),
         timeline: buildTimeline(record, meta, normalizedTimestamp),
         sourceCollection: collectionName,
         sourceRecordId: String(record?.id || "-"),
-        sourceField: actor.sourceField,
+        sourceField: "legacy",
     };
 };
 
@@ -356,10 +382,7 @@ const normalizeStoredLog = (log, index) => {
         actionLabel: ACTION_META[action]?.label || String(log?.actionLabel || action),
         module: String(log?.module || entity.label || "Registro"),
         description: String(log?.description || "Evento rastreável carregado da coleção logs."),
-        user: {
-            name: String(log?.user?.name || log?.responsavel || log?.actor || "Sistema"),
-            sourceField: String(log?.user?.sourceField || log?.responsavelField || "source"),
-        },
+        user: normalizeActor(log),
         entity,
         changes: Array.isArray(log?.changes) ? log.changes : [],
         additionalInfo: log?.additionalInfo && typeof log.additionalInfo === "object" ? log.additionalInfo : {},
@@ -399,3 +422,5 @@ export const normalizeAuditLogs = (logs = []) =>
 export const LOG_STATUS_META = STATUS_META;
 export const LOG_ACTION_META = ACTION_META;
 export const LOG_PAGE_SIZE = AUDIT_LOG_PAGE_SIZE;
+export const LOG_UNKNOWN_ACTOR_NAME = UNKNOWN_ACTOR_NAME;
+export const LOG_UNKNOWN_ACTOR_SOURCE_LABEL = UNKNOWN_ACTOR_SOURCE_LABEL;
