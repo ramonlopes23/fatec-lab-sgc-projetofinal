@@ -1,21 +1,8 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { formatDateDMY, formatDateKey, formatDateNormalized, parseDateValue } from "../../../utils/date";
-import { resolveQuadraDisplay } from "../../../utils";
+import { buildCalendarEvents, formatDateDMY, formatDateKey, groupCalendarEventsByDate } from "../../../utils";
 import { Card, Subtitle, CardHeader, CardBody, CalendarGrid, DayCell, DayButton, Btn } from "./styles";
 import DefaultModal, { DefaultModalActions } from "../DefaultModal";
 import SystemButton from "../SystemButton";
-import { getCalendarEventKey } from "./utils";
-
-const hasTimePart = (value) => /(?:T|\s)\d{2}:\d{2}/.test(String(value ?? "").trim());
-
-const formatTimeLabel = (value) => {
-    if (!hasTimePart(value)) return "";
-
-    const date = parseDateValue(value);
-    if (!date) return "";
-
-    return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-};
 
 export default function Calendar({ sepultamentos = [], quadras = [], exumacoes = [] }) {
     const hoje = new Date();
@@ -24,97 +11,12 @@ export default function Calendar({ sepultamentos = [], quadras = [], exumacoes =
     const [dataSelecionada, setDataSelecionada] = useState(null);
     const [sepultamentosDia, setSepultamentosDia] = useState([]);
 
-    const eventosFonte = useMemo(() => {
-        const normalizeSep = (s, sourceIndex) => ({
-            _type: "Sepultamento",
-            id: s.id ?? s._id,
-            sourceIndex,
-            nome: s.nome_sep,
-            rawDate: s.dh_sep,
-            quadraCandidate: s.num_quadra ?? s.quadra_sep,
-            cova: s.num_sepultura_sep,
-            status: s.status,
-            extra: {},
-        });
+    const eventosFonte = useMemo(
+        () => buildCalendarEvents({ sepultamentos, exumacoes, quadras }),
+        [sepultamentos, exumacoes, quadras]
+    );
 
-        const normalizeExu = (x, sourceIndex) => ({
-            _type: "Exumação",
-            id: x.id,
-            sourceIndex,
-            nome: x.nome_sep,
-            rawDate: x.dh_exu,
-            quadraCandidate: x.quadra_sep ?? x.num_quadra,
-            cova: x.num_sepultura_sep,
-            status: x.status ?? "",
-            extra: { motivo: x.motivo, destino: x.destino, coveiro: x.coveiro },
-        });
-
-        const allNormalized = [...(sepultamentos || []).map(normalizeSep), ...(exumacoes || []).map(normalizeExu)];
-
-        const mapped = allNormalized
-            .map((item) => {
-                const data = formatDateKey(item.rawDate);
-                const horario = formatTimeLabel(item.rawDate);
-                const dataLabel = formatDateDMY(item.rawDate, "");
-                const dataHoraLabel = formatDateNormalized(item.rawDate, dataLabel);
-
-                const quadraRef = item.quadraCandidate ?? "";
-                return {
-                    id: getCalendarEventKey(item._type, item.id, item.sourceIndex),
-                    nomeFalecido: item.nome,
-                    data,
-                    dataLabel,
-                    dataHoraLabel,
-                    horario,
-                    quadra: resolveQuadraDisplay(quadraRef, quadras, "Sem número"),
-                    cova: item.cova,
-                    status: item.status,
-                    tipo: item._type,
-                    ...item.extra,
-                };
-            })
-            .filter((e) => !!e.data)
-            .sort((a, b) => {
-                if (a.data != b.data) return String(a.data).localeCompare(String(b.data));
-
-                const ha = String(a.horario || "");
-                const hb = String(b.horario || "");
-                const timeCmp = ha.localeCompare(hb);
-                if (timeCmp !== 0) return timeCmp;
-
-                const priority = (tipo) => (tipo === "Sepultamento" ? 0 : tipo === "Exumação" ? 1 : 2);
-                const pa = priority(a.tipo);
-                const pb = priority(b.tipo);
-                if (pa !== pb) return pa - pb;
-
-                return String(a.nomeFalecido || "").localeCompare(String(b.nomeFalecido || ""));
-            });
-
-        return mapped;
-    }, [sepultamentos, exumacoes, quadras]);
-
-    const eventosPorData = useMemo(() => {
-        const map = {};
-        eventosFonte.forEach((s) => {
-            map[s.data] = map[s.data] || [];
-            map[s.data].push(s);
-        });
-
-        const priority = (tipo) => (tipo === "Sepultamento" ? 0 : tipo === "Exumação" ? 1 : 2);
-        Object.keys(map).forEach((k) => {
-            map[k].sort((a, b) => {
-                const pa = priority(a.tipo);
-                const pb = priority(b.tipo);
-                if (pa != pb) return pa - pb;
-                const ha = String(a.horario || "");
-                const hb = String(b.horario || "");
-                const timeCmp = ha.localeCompare(hb);
-                if (timeCmp !== 0) return timeCmp;
-                return String(a.nomeFalecido || "").localeCompare(String(b.nomeFalecido || ""));
-            });
-        });
-        return map;
-    }, [eventosFonte]);
+    const eventosPorData = useMemo(() => groupCalendarEventsByDate(eventosFonte), [eventosFonte]);
 
     const semanasDoMes = useMemo(() => {
         const { year, month } = anoMes;

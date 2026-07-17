@@ -1,4 +1,3 @@
-import Dashboard from "../components/domain/Dashboard";
 import Header from "../components/common/Header";
 import SidebarMenu from "../components/common/SidebarMenu";
 import { Content, LayoutContainer, PageContent, SidebarContainer, SidebarExternalToggle } from "./styles";

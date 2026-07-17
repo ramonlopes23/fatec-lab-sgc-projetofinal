@@ -3,6 +3,8 @@ export { default as useApiInitDataCad } from "./ApiInit/useApiInitDataCad.js";
 export { useBlocks } from "./Blocks/useBlocks.js";
 export { useCreateBlocks } from "./Blocks/useCreateBlocks.js";
 export { default as useCidadeBusca } from "./CidadeBusca/useCidadeBusca.js";
+export { default as useDashboardData } from "./Dashboard/useDashboardData.js";
+export { default as useOperationalInbox } from "./Dashboard/useOperationalInbox.js";
 export { useCreateCemetery } from "./Cemetery/useCreateCemetery.js";
 export { default as useFalecidoSearch } from "./FalecidoSearch/useFalecidoSearch.js";
 export { default as useFileUpload } from "./FileUpload/useFileUpload.js";
