@@ -99,7 +99,9 @@ export const EventStatus = styled.span`
     font-weight: 700;
 
     @media (max-width: 620px) {
-        display: none;
+        grid-column: 3;
+        justify-self: start;
+        margin-top: 0.15rem;
     }
 `;
 

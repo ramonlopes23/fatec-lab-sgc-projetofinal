@@ -6,6 +6,10 @@ export const DashboardWrapper = styled.section`
     margin: 0 auto;
     padding: 1rem;
     box-sizing: border-box;
+
+    @media (max-width: 620px) {
+        padding: 0.75rem;
+    }
 `;
 
 export const DashboardGrid = styled.div`
@@ -38,6 +42,10 @@ export const DashboardCardHeader = styled.header`
     min-height: 58px;
     padding: 0 1.25rem;
     border-bottom: 1px solid var(--app-border);
+
+    @media (max-width: 620px) {
+        padding: 0 1rem;
+    }
 `;
 
 export const DashboardCardTitle = styled.h2`
@@ -51,4 +59,8 @@ export const DashboardCardTitle = styled.h2`
 export const DashboardCardBody = styled.div`
     flex: 1;
     padding: 0.9rem 1.25rem 1.15rem;
+
+    @media (max-width: 620px) {
+        padding: 0.8rem 1rem 1rem;
+    }
 `;
