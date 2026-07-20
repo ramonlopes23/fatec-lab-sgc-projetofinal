@@ -6,6 +6,25 @@ export const getCalendarEventKey = (type, id, sourceIndex) =>
 
 const hasTimePart = (value) => /(?:T|\s)\d{2}:\d{2}/.test(String(value ?? "").trim());
 
+const normalizeBoolean = (value) => value === true || String(value).trim().toLowerCase() === "true";
+
+const normalizeStatus = (value) =>
+    String(value ?? "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+export const getCalendarEventStatus = (record = {}) => {
+    const status = normalizeStatus(record.status);
+
+    if (normalizeBoolean(record.confirmado) || status.includes("conclu")) {
+        return { key: "completed", label: "Concluído" };
+    }
+    if (status.includes("cancel")) return { key: "cancelled", label: "Cancelado" };
+    return { key: "scheduled", label: "Agendado" };
+};
+
 const formatTimeLabel = (value) => {
     if (!hasTimePart(value)) return "";
 
@@ -49,6 +68,7 @@ export const buildCalendarEvents = ({ sepultamentos = [], exumacoes = [], quadra
         blockReference: record.num_quadra ?? record.quadra_sep,
         graveNumber: record.num_sepultura_sep,
         status: record.status,
+        confirmed: record.confirmado,
         extra: {},
     }));
 
@@ -61,6 +81,7 @@ export const buildCalendarEvents = ({ sepultamentos = [], exumacoes = [], quadra
         blockReference: record.quadra_sep ?? record.num_quadra,
         graveNumber: record.num_sepultura_sep,
         status: record.status ?? "",
+        confirmed: record.confirmado,
         extra: { motivo: record.motivo, destino: record.destino, coveiro: record.coveiro },
     }));
 
@@ -69,6 +90,10 @@ export const buildCalendarEvents = ({ sepultamentos = [], exumacoes = [], quadra
             const dateKey = formatDateKey(event.rawDate);
             const dateLabel = formatDateDMY(event.rawDate, "");
             const block = findQuadraByReference(event.blockReference, quadras);
+            const eventStatus = getCalendarEventStatus({
+                status: event.status,
+                confirmado: event.confirmed,
+            });
 
             return {
                 id: getCalendarEventKey(event.type, event.id, event.sourceIndex),
@@ -83,6 +108,9 @@ export const buildCalendarEvents = ({ sepultamentos = [], exumacoes = [], quadra
                 quadra: resolveQuadraDisplay(event.blockReference ?? "", quadras, "Sem número"),
                 cova: event.graveNumber,
                 status: event.status,
+                confirmado: normalizeBoolean(event.confirmed),
+                statusKey: eventStatus.key,
+                statusLabel: eventStatus.label,
                 tipo: event.type,
                 ...event.extra,
             };

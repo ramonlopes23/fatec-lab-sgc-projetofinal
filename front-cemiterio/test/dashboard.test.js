@@ -95,6 +95,29 @@ test("buildDashboardMovementSeries aggregates sepultamentos and exumacoes in the
     assert.deepEqual(series.exumacoes, [0, 1, 1]);
 });
 
+test("buildDashboardMovementSeries filters records by cemetery and resolves linked exumacoes", () => {
+    const series = buildDashboardMovementSeries({
+        referenceDate: "2026-07-14T18:00",
+        days: 2,
+        selectedCemeteryId: "cem-1",
+        blocks: [
+            { id: "q-1", cemeteryId: "cem-1" },
+            { id: "q-2", cemeteryId: "cem-2" },
+        ],
+        sepultamentos: [
+            { id: "sep-1", quadra_sep: "q-1", dh_sep: "2026-07-13T08:00" },
+            { id: "sep-2", quadra_sep: "q-2", dh_sep: "2026-07-14T09:00" },
+        ],
+        exumacoes: [
+            { sepultamento_id: "sep-1", dh_exu: "2026-07-14T10:00" },
+            { quadra_sep: "q-2", dh_exu: "2026-07-14T11:00" },
+        ],
+    });
+
+    assert.deepEqual(series.sepultamentos, [1, 0]);
+    assert.deepEqual(series.exumacoes, [0, 1]);
+});
+
 test("getGraveSituationCounts returns exclusive counts for the selected cemetery", () => {
     const counts = getGraveSituationCounts({
         selectedCemeteryId: "cem-1",
@@ -108,7 +131,7 @@ test("getGraveSituationCounts returns exclusive counts for the selected cemetery
             { id: "private", blockId: "q-1", number: 3, bodyCapacity: 1, status: "AVAILABLE", areaType: "PERPETUAL" },
             {
                 id: "maintenance",
-                blockId: "q-1",
+                block: { id: "q-1" },
                 number: 4,
                 bodyCapacity: 1,
                 status: "MAINTENANCE",

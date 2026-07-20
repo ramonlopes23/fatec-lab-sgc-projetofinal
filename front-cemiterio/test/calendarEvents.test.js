@@ -1,12 +1,48 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildCalendarEvents, getCalendarEventsForDate, groupCalendarEventsByDate } from "../src/utils/calendar.js";
+import {
+    buildCalendarEvents,
+    getCalendarEventsForDate,
+    getCalendarEventStatus,
+    groupCalendarEventsByDate,
+} from "../src/utils/calendar.js";
+
+test("getCalendarEventStatus normalizes confirmation states", () => {
+    assert.deepEqual(getCalendarEventStatus({ confirmado: true, status: "Pendente" }), {
+        key: "completed",
+        label: "Concluído",
+    });
+    assert.deepEqual(getCalendarEventStatus({ confirmado: "true" }), {
+        key: "completed",
+        label: "Concluído",
+    });
+    assert.deepEqual(getCalendarEventStatus({ status: "Concluído" }), {
+        key: "completed",
+        label: "Concluído",
+    });
+    assert.deepEqual(getCalendarEventStatus({ status: "Cancelado" }), {
+        key: "cancelled",
+        label: "Cancelado",
+    });
+    assert.deepEqual(getCalendarEventStatus({ status: "Pendente" }), {
+        key: "scheduled",
+        label: "Agendado",
+    });
+    assert.deepEqual(getCalendarEventStatus(), { key: "scheduled", label: "Agendado" });
+});
 
 test("buildCalendarEvents normalizes and sorts sepultamentos and exumacoes", () => {
     const events = buildCalendarEvents({
         quadras: [{ id: "q-1", number: 2, cemeteryId: "cem-1" }],
         sepultamentos: [
-            { id: "sep-1", nome_sep: "Ana", dh_sep: "2026-07-14T08:00", quadra_sep: "q-1", num_sepultura_sep: 4 },
+            {
+                id: "sep-1",
+                nome_sep: "Ana",
+                dh_sep: "2026-07-14T08:00",
+                quadra_sep: "q-1",
+                num_sepultura_sep: 4,
+                status: "Concluído",
+            },
         ],
         exumacoes: [
             {
@@ -32,6 +68,9 @@ test("buildCalendarEvents normalizes and sorts sepultamentos and exumacoes", () 
     assert.equal(events[0].quadra, "2");
     assert.equal(events[0].blockId, "q-1");
     assert.equal(events[0].cemeteryId, "cem-1");
+    assert.equal(events[0].statusKey, "completed");
+    assert.equal(events[0].statusLabel, "Concluído");
+    assert.equal(events[1].statusKey, "scheduled");
     assert.equal(events[1].motivo, "Transferência");
 });
 

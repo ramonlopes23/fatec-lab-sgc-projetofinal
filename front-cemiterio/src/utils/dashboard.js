@@ -1,8 +1,8 @@
 import { formatDateKey, parseDateValue } from "./date.js";
 import { getFalecidoId, getFalecidoIdFromRecord, getFalecidoName, normalizeFalecido } from "./falecido.js";
 import { getCovaDisplayMeta, getVisibleBlocks } from "./mapHelpers.js";
-import { resolveQuadraDisplay } from "./quadra.js";
-import { getSepulturaCapacity, getSepulturaNumber } from "./sepultura.js";
+import { findQuadraByReference, resolveQuadraDisplay } from "./quadra.js";
+import { getSepulturaCapacity, getSepulturaNumber, getSepulturaQuadraRef } from "./sepultura.js";
 
 const normalizeBoolean = (value) => value === true || String(value).toLowerCase() === "true";
 
@@ -101,9 +101,48 @@ const startOfDay = (value) => {
     return date ? new Date(date.getFullYear(), date.getMonth(), date.getDate()) : null;
 };
 
+const getDashboardRecordCemeteryId = (record = {}, blocks = []) => {
+    const directReference =
+        record.cemeteryId ?? record.cemiterioId ?? record.cemetery_id ?? record.id_cemiterio ?? null;
+    if (directReference != null && directReference !== "") return String(directReference);
+
+    const blockReference =
+        record.blockId ??
+        record.block_id ??
+        record.quadra_sep ??
+        record.num_quadra ??
+        record.quadra_cova ??
+        record.quadra ??
+        null;
+    const block = findQuadraByReference(blockReference, blocks);
+    const cemeteryId = block?.cemeteryId ?? block?.cemiterioId ?? block?.cemetery_id ?? null;
+    return cemeteryId == null || cemeteryId === "" ? null : String(cemeteryId);
+};
+
+const filterDashboardRecordsByCemetery = (records, selectedCemeteryId, blocks, fallbackRecords = []) => {
+    const list = Array.isArray(records) ? records : [];
+    if (selectedCemeteryId == null || selectedCemeteryId === "") return list;
+
+    const selectedId = String(selectedCemeteryId);
+    return list.filter((record) => {
+        const directCemeteryId = getDashboardRecordCemeteryId(record, blocks);
+        if (directCemeteryId != null) return directCemeteryId === selectedId;
+
+        const sourceId = record.sepultamento_id ?? record.id_sepultamento ?? record.sepultamentoId ?? null;
+        if (sourceId == null || sourceId === "") return false;
+
+        const sourceRecord = fallbackRecords.find(
+            (candidate) => String(candidate?.id ?? candidate?._id ?? "") === String(sourceId)
+        );
+        return getDashboardRecordCemeteryId(sourceRecord, blocks) === selectedId;
+    });
+};
+
 export const buildDashboardMovementSeries = ({
     sepultamentos = [],
     exumacoes = [],
+    blocks = [],
+    selectedCemeteryId,
     days = 7,
     referenceDate = new Date(),
 } = {}) => {
@@ -126,13 +165,21 @@ export const buildDashboardMovementSeries = ({
         return dates.map((date) => counts.get(formatDateKey(date)) || 0);
     };
 
+    const visibleSepultamentos = filterDashboardRecordsByCemetery(sepultamentos, selectedCemeteryId, blocks);
+    const visibleExumacoes = filterDashboardRecordsByCemetery(
+        exumacoes,
+        selectedCemeteryId,
+        blocks,
+        Array.isArray(sepultamentos) ? sepultamentos : []
+    );
+
     return {
         dates,
         labels: dates.map(
             (date) => `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}`
         ),
-        sepultamentos: countByDate(sepultamentos, "dh_sep"),
-        exumacoes: countByDate(exumacoes, "dh_exu"),
+        sepultamentos: countByDate(visibleSepultamentos, "dh_sep"),
+        exumacoes: countByDate(visibleExumacoes, "dh_exu"),
     };
 };
 
@@ -148,9 +195,9 @@ export const getGraveSituationCounts = ({
     const counters = { available: 0, occupied: 0, private: 0, unavailable: 0, total: 0 };
 
     (Array.isArray(graves) ? graves : [])
-        .filter((grave) => visibleBlockIds.has(String(grave.blockId ?? grave.block ?? "")))
+        .filter((grave) => visibleBlockIds.has(getSepulturaQuadraRef(grave)))
         .forEach((grave) => {
-            const blockId = grave.blockId ?? grave.block;
+            const blockId = getSepulturaQuadraRef(grave);
             const cova = {
                 id: grave.id,
                 numero: getSepulturaNumber(grave),

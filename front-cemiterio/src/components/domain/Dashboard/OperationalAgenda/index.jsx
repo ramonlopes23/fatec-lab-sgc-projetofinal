@@ -63,7 +63,7 @@ export default function OperationalAgenda({ dashboardData = {} }) {
                                         {event.cova ? ` • Sepultura ${event.cova}` : ""}
                                     </EventLocation>
                                 </EventDetails>
-                                <EventStatus>Agendado</EventStatus>
+                                <EventStatus $status={event.statusKey}>{event.statusLabel}</EventStatus>
                             </EventRow>
                         ))}
                     </AgendaList>

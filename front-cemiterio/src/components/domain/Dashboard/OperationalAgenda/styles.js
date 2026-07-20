@@ -85,8 +85,16 @@ export const EventStatus = styled.span`
     align-self: start;
     padding: 0.28rem 0.65rem;
     border-radius: 999px;
-    background: rgba(79, 70, 229, 0.1);
-    color: #4338ca;
+    background: ${({ $status }) => {
+        if ($status === "completed") return "rgba(22, 163, 74, 0.11)";
+        if ($status === "cancelled") return "rgba(220, 38, 38, 0.1)";
+        return "rgba(79, 70, 229, 0.1)";
+    }};
+    color: ${({ $status }) => {
+        if ($status === "completed") return "#15803d";
+        if ($status === "cancelled") return "#b91c1c";
+        return "#4338ca";
+    }};
     font-size: 0.7rem;
     font-weight: 700;
 
