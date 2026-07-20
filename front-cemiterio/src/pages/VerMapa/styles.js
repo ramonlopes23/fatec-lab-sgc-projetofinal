@@ -1,19 +1,25 @@
 import styled from "styled-components";
 
 export const Container = styled.div`
-    max-width: 1100px;
-    margin: 0px auto;
-    padding: 18px;
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 1rem;
+    box-sizing: border-box;
+
+    @media (max-width: 620px) {
+        padding: 0.75rem;
+    }
 `;
 
 export const Title = styled.h2`
     margin: 0;
-    font-size: 25px;
-    text-align: center;
-    line-height: 1.15;
+    font-size: 29px;
+    text-align: left;
+    line-height: 1.05;
     font-weight: 800;
     color: #191970;
     letter-spacing: -0.02em;
@@ -21,19 +27,23 @@ export const Title = styled.h2`
 
 export const Subtitle = styled.p`
     margin: 0;
-    text-align: center;
+    text-align: left;
     font-size: 14px;
     line-height: 1.5;
     color: #6c7293;
 `;
 
 export const QuadraWrapper = styled.div`
-    border: 0px solid rgba(25, 25, 112, 0.2);
-    border-radius: 10px;
+    border: 1px solid var(--app-border);
+    border-radius: 14px;
     padding: 20px;
-    margin-top: 8px;
-    background: #fff;
+    background: var(--app-surface);
     position: relative;
+    box-shadow: 0 8px 24px rgba(25, 25, 112, 0.06);
+
+    @media (max-width: 620px) {
+        padding: 1rem;
+    }
 `;
 
 export const QuadraTitle = styled.div`
@@ -70,18 +80,16 @@ export const QuadraInfo = styled.div`
     margin-bottom: 14px;
 `;
 
-export const CovaGridToolbar = styled.div`
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin-left: auto;
-`;
-
 export const LegendWrapper = styled.div`
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 1rem;
     flex-wrap: wrap;
+    padding: 1rem;
+    border: 1px solid var(--app-border);
+    border-radius: 14px;
+    background: var(--app-surface);
+    box-shadow: 0 8px 24px rgba(25, 25, 112, 0.05);
 
     @media (max-width: 900px) {
         align-items: flex-start;
@@ -101,7 +109,7 @@ export const InfoPill = styled.span`
 
 export const CovaGrid = styled.div`
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
     gap: 12px;
     align-items: center;
 `;
@@ -121,13 +129,16 @@ export const CovaItem = styled.button`
     flex-direction: column;
     justify-content: center;
     gap: 3px;
-    width: 64px;
+    width: 100%;
+    max-width: 80px;
+    min-width: 64px;
     height: 88px;
     border-radius: 8px;
     cursor: pointer;
     box-sizing: border-box;
     position: relative;
     padding-top: 12px;
+    justify-self: center;
 
     background: ${(p) => {
         const s = String(p.$status || "").toLowerCase();
@@ -222,6 +233,12 @@ export const CovaItem = styled.button`
         border-color: #000;
         box-shadow: 0 10px 20px rgba(15, 13, 58, 0.12);
     }
+
+    &:focus-visible {
+        outline: 3px solid rgba(25, 25, 112, 0.38);
+        outline-offset: 3px;
+        box-shadow: 0 10px 20px rgba(15, 13, 58, 0.14);
+    }
 `;
 
 export const CovaNumber = styled.span`
@@ -247,6 +264,49 @@ export const LegendRow = styled.div`
     align-items: center;
     flex-wrap: wrap;
     flex: 1;
+`;
+
+export const CapacityLegend = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--app-border);
+    color: var(--app-muted);
+    font-size: 0.75rem;
+    flex-wrap: wrap;
+
+    small {
+        margin-left: auto;
+        font-size: 0.72rem;
+    }
+
+    @media (max-width: 720px) {
+        small {
+            width: 100%;
+            margin-left: 0;
+        }
+    }
+`;
+
+export const CapacityLegendLabel = styled.strong`
+    color: var(--app-text);
+    font-size: 0.78rem;
+`;
+
+export const CapacityLegendItem = styled.span`
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+`;
+
+export const CapacitySlot = styled.span`
+    width: 22px;
+    height: 6px;
+    border: 1px solid rgba(25, 25, 112, 0.22);
+    border-radius: 999px;
+    background: ${({ $filled }) => ($filled ? "#191970" : "rgba(25, 25, 112, 0.1)")};
 `;
 
 export const LegendItem = styled.div`
@@ -350,6 +410,11 @@ export const LegendButton = styled.button`
         transform: translateY(-1px);
         border-color: #27348e;
     }
+
+    &:focus-visible {
+        outline: 3px solid rgba(25, 25, 112, 0.2);
+        outline-offset: 2px;
+    }
 `;
 
 export const ActiveFilterPill = styled.button`
@@ -364,6 +429,11 @@ export const ActiveFilterPill = styled.button`
     &:hover {
         background: #eef2ff;
     }
+
+    &:focus-visible {
+        outline: 3px solid rgba(25, 25, 112, 0.2);
+        outline-offset: 2px;
+    }
 `;
 
 export const EmptyMapState = styled.div`
@@ -371,9 +441,10 @@ export const EmptyMapState = styled.div`
     display: grid;
     place-items: center;
     color: #5f637a;
-    border: 2px solid #d6d9e6;
-    border-radius: 8px;
-    background: #fafbff;
+    padding: 1rem;
+    border: 1px dashed rgba(25, 25, 112, 0.2);
+    border-radius: 10px;
+    background: rgba(25, 25, 112, 0.025);
     font-size: 14px;
 `;
 
@@ -607,20 +678,34 @@ export const SortDropdownWrapper = styled(QuadraDropdownWrapper)`
 `;
 
 export const MapToolbar = styled.div`
-    margin: 12px 0;
     display: flex;
     gap: 12px;
     align-items: center;
     flex-wrap: wrap;
+    padding: 1rem;
+    border: 1px solid var(--app-border);
+    border-radius: 14px;
+    background: var(--app-surface);
+    box-shadow: 0 8px 24px rgba(25, 25, 112, 0.05);
 `;
 
-export const ToolbarLabel = styled.label`
+export const ToolbarLabel = styled.span`
     font-weight: 600;
     color: #171770;
 `;
 
 export const DropdownIcon = styled.span`
     margin-left: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transform: rotate(${({ $isOpen }) => ($isOpen ? "180deg" : "0deg")});
+    transition: transform 0.2s ease;
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+    }
 `;
 
 export const QuadraSelectButton = styled.button`
@@ -629,13 +714,30 @@ export const QuadraSelectButton = styled.button`
     justify-content: space-between;
     gap: 8px;
     padding: 8px 16px;
-    border-radius: 6px;
+    min-height: 42px;
+    border-radius: 10px;
     border: 1px solid #d6d9e6;
     background: #fff;
     cursor: pointer;
     font-weight: 600;
     color: #191970;
     min-width: 180px;
+
+    &:hover:not(:disabled) {
+        border-color: #191970;
+        background: #f8f8ff;
+    }
+
+    &:focus-visible {
+        outline: 3px solid rgba(25, 25, 112, 0.18);
+        outline-offset: 2px;
+        border-color: #191970;
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+    }
 `;
 
 export const QuadraDropdown = styled.div`
@@ -659,6 +761,11 @@ export const QuadraDropdown = styled.div`
         opacity 0.24s cubic-bezier(0.4, 0, 0.2, 1),
         transform 0.24s cubic-bezier(0.4, 0, 0.2, 1),
         visibility 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+
+    @media (max-width: 620px) {
+        min-width: min(400px, calc(100vw - 3rem));
+        padding: 0.75rem;
+    }
 `;
 
 export const EmptyQuadraDropdownLabel = styled.p`
@@ -693,6 +800,11 @@ export const SortOptionButton = styled.button`
 
     &:hover {
         background: #f6f7ff;
+    }
+
+    &:focus-visible {
+        outline: 3px solid rgba(25, 25, 112, 0.18);
+        outline-offset: -2px;
     }
 `;
 

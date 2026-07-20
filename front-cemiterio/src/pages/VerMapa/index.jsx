@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useBlocks, useCreateBlocks, useCreateGraves, useToastFeedback } from "../../hooks";
 import { useCemeteryStore } from "../../stores/index.js";
 import { getContratos } from "../../services/contratoService.js";
@@ -58,13 +58,16 @@ import {
     QuadraHeader,
     QuadraActions,
     QuadraInfo,
-    CovaGridToolbar,
     InfoPill,
     Title,
     LegendItem,
     LegendButton,
     LegendRow,
     LegendWrapper,
+    CapacityLegend,
+    CapacityLegendItem,
+    CapacityLegendLabel,
+    CapacitySlot,
     ActiveFilterPill,
     EmptyMapState,
     Input,
@@ -1384,17 +1387,29 @@ export default function VerMapa() {
 
                     <QuadraDropdownWrapper ref={dropdownRef}>
                         <QuadraSelectButton
+                            type="button"
                             disabled={isMapLoading}
+                            aria-expanded={isQuadraDropdownOpen}
+                            aria-haspopup="dialog"
+                            aria-controls="quadra-selector-panel"
                             onClick={() => {
                                 if (isMapLoading) return;
                                 setIsQuadraDropdownOpen(!isQuadraDropdownOpen);
                             }}
                         >
                             {selectedQuadraButtonLabel}
-                            <DropdownIcon>{isQuadraDropdownOpen ? "▲" : "▼"}</DropdownIcon>
+                            <DropdownIcon $isOpen={isQuadraDropdownOpen} aria-hidden="true">
+                                <LuChevronDown size={18} />
+                            </DropdownIcon>
                         </QuadraSelectButton>
 
-                        <QuadraDropdown $isOpen={isQuadraDropdownOpen} aria-hidden={!isQuadraDropdownOpen}>
+                        <QuadraDropdown
+                            id="quadra-selector-panel"
+                            role="dialog"
+                            aria-label="Selecionar quadra"
+                            $isOpen={isQuadraDropdownOpen}
+                            aria-hidden={!isQuadraDropdownOpen}
+                        >
                             {quadrasDesc.length > 0 ? (
                                 <GridQuadras
                                     quadrasDesc={quadrasDesc}
@@ -1416,18 +1431,30 @@ export default function VerMapa() {
                         <QuadraSelectButton
                             type="button"
                             disabled={isMapLoading}
+                            aria-expanded={isSortDropdownOpen}
+                            aria-haspopup="menu"
+                            aria-controls="cova-sort-panel"
                             onClick={() => {
                                 if (isMapLoading) return;
                                 setIsSortDropdownOpen((current) => !current);
                             }}
                         >
                             {covaSortLabel}
-                            <DropdownIcon>{isSortDropdownOpen ? "▲" : "▼"}</DropdownIcon>
+                            <DropdownIcon $isOpen={isSortDropdownOpen} aria-hidden="true">
+                                <LuChevronDown size={18} />
+                            </DropdownIcon>
                         </QuadraSelectButton>
 
-                        <SortDropdown $isOpen={isSortDropdownOpen} aria-hidden={!isSortDropdownOpen}>
+                        <SortDropdown
+                            id="cova-sort-panel"
+                            role="menu"
+                            $isOpen={isSortDropdownOpen}
+                            aria-hidden={!isSortDropdownOpen}
+                        >
                             <SortOptionButton
                                 type="button"
+                                role="menuitemradio"
+                                aria-checked={covaSortMode === mapHelpers.COVA_SORT_MODES.cadastro}
                                 $active={covaSortMode === mapHelpers.COVA_SORT_MODES.cadastro}
                                 onClick={() => {
                                     setCovaSortMode(mapHelpers.COVA_SORT_MODES.cadastro);
@@ -1438,6 +1465,8 @@ export default function VerMapa() {
                             </SortOptionButton>
                             <SortOptionButton
                                 type="button"
+                                role="menuitemradio"
+                                aria-checked={covaSortMode === mapHelpers.COVA_SORT_MODES.numero}
                                 $active={covaSortMode === mapHelpers.COVA_SORT_MODES.numero}
                                 onClick={() => {
                                     setCovaSortMode(mapHelpers.COVA_SORT_MODES.numero);
@@ -1505,7 +1534,7 @@ export default function VerMapa() {
                     </QuadraHeader>
 
                     {filteredCovas.length === 0 ? (
-                        <EmptyMapState>
+                        <EmptyMapState role="status">
                             {statusFilter
                                 ? `Nenhuma sepultura encontrada para ${activeStatusLabel}.`
                                 : "Nenhuma sepultura cadastrada nesta quadra."}
@@ -1573,6 +1602,7 @@ export default function VerMapa() {
                                                 : "dark"
                                         }
                                         onClick={() => handleClickCova(cova)}
+                                        aria-label={`Abrir sepultura ${cova.numero || "sem número"}: ${displayStatus}, ${occupiedCount} de ${capacidadeTotal} vagas ocupadas${petCount > 0 ? `, ${petCount} pets vinculados` : ""}`}
                                         title={`Sepultura ${cova.numero} - ${displayStatus} (${occupiedCount}/${capacidadeTotal}${petCount > 0 ? ` | 🐾 ${petCount}` : ""})`}
                                     >
                                         <CovaNumber aria-hidden="true">{cova.numero}</CovaNumber>
@@ -1634,18 +1664,35 @@ export default function VerMapa() {
                                 Limpar filtro: {activeStatusLabel}
                             </ActiveFilterPill>
                         )}
-                    </LegendRow>
 
-                    <CovaGridToolbar>
                         <SystemButton
                             type="button"
                             tone="cancel"
                             disabled={isMapLoading}
                             onClick={() => setIsPieChartOpen(true)}
+                            sx={{
+                                ml: { xs: 0, md: "auto" },
+                                width: { xs: "100%", sm: "auto" },
+                                flexShrink: 0,
+                                whiteSpace: "nowrap",
+                            }}
                         >
                             <FaChartPie /> Distribuição de Sepulturas
                         </SystemButton>
-                    </CovaGridToolbar>
+                    </LegendRow>
+
+                    <CapacityLegend aria-label="Legenda do indicador de capacidade">
+                        <CapacityLegendLabel>Capacidade:</CapacityLegendLabel>
+                        <CapacityLegendItem>
+                            <CapacitySlot $filled />
+                            Vaga ocupada
+                        </CapacityLegendItem>
+                        <CapacityLegendItem>
+                            <CapacitySlot />
+                            Vaga disponível
+                        </CapacityLegendItem>
+                        <small>O indicador numérico mostra ocupadas/total.</small>
+                    </CapacityLegend>
                 </LegendWrapper>
 
                 <DefaultModal
