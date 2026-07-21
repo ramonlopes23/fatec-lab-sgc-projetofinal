@@ -442,7 +442,7 @@ export const EmptyMapState = styled.div`
     place-items: center;
     color: #5f637a;
     padding: 1rem;
-    border: 1px dashed rgba(25, 25, 112, 0.2);
+    border: 1px solid rgba(25, 25, 112, 0.2);
     border-radius: 10px;
     background: rgba(25, 25, 112, 0.025);
     font-size: 14px;

@@ -103,7 +103,7 @@ export const EmptyState = styled.div`
     place-items: center;
     width: 100%;
     height: 100%;
-    border: 1px dashed rgba(25, 25, 112, 0.2);
+    border: 1px solid rgba(25, 25, 112, 0.2);
     border-radius: 10px;
     background: rgba(25, 25, 112, 0.025);
     color: var(--app-muted);

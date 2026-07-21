@@ -510,7 +510,7 @@ export const UploadBox = styled.label`
     gap: 10px;
     padding: 18px;
     border-radius: 18px;
-    border: 1.5px dashed #cdd3e4;
+    border: 1.5px solid #cdd3e4;
     background: #fafbff;
     cursor: pointer;
     transition:

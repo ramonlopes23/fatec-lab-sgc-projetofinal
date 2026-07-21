@@ -58,7 +58,7 @@ const baseSx = {
     },
 
     "&:disabled": {
-        opacity: 0.65,
+        background: "#E5E5E5",
         cursor: "not-allowed",
     },
 };
