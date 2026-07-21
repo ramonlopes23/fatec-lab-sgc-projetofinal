@@ -58,6 +58,14 @@ export const NotificationsPanel = styled.div`
         opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1),
         transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
         visibility 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+
+    @media (max-width: 720px) {
+        position: fixed;
+        top: 4.25rem;
+        right: 0.75rem;
+        left: 0.75rem;
+        width: auto;
+    }
 `;
 
 export const NotificationsHeader = styled.div`

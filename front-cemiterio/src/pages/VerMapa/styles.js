@@ -1214,6 +1214,11 @@ export const ChartModalBody = styled.div`
 export const ChartArea = styled.div`
     flex: 1;
     min-width: 300px;
+
+    @media (max-width: 720px) {
+        width: 100%;
+        min-width: 0;
+    }
 `;
 
 export const ChartLegend = styled.div`
@@ -1224,6 +1229,8 @@ export const ChartLegend = styled.div`
     padding-top: 70px;
 
     @media (max-width: 720px) {
+        width: 100%;
+        min-width: 0;
         padding-top: 0;
     }
 `;

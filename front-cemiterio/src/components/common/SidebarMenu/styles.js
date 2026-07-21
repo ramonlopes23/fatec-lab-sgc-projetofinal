@@ -14,6 +14,7 @@ export const LogoContainer = styled.div`
     height: 7rem;
     box-sizing: border-box;
     box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+    overflow: hidden;
 
     &::after {
         content: "";
@@ -298,23 +299,9 @@ export const ChevronIcon = styled.span`
     align-items: center;
     justify-content: center;
     margin-left: auto;
-    transition: transform 0.3s ease;
     flex: 0 0 auto;
-
-    ${(props) =>
-        props.$direction === "left" &&
-        `
-    transform: rotate(180deg);
-  `}
-
-    ${(props) =>
-        props.$compact &&
-        `
-    position: absolute;
-    right: 0.8rem;
-    margin-left: 0;
-    opacity: 0.95;
-  `}
+    transform: rotate(${({ $isOpen }) => ($isOpen ? "90deg" : "0deg")});
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 `;
 
 export const MenuLabel = styled.span`
@@ -366,11 +353,21 @@ export const CollapsedToggle = styled(DropdownToggle)`
 `;
 
 export const CompactNestedList = styled(NestedList)`
-    display: ${({ $isVisible }) => ($isVisible ? "block" : "none")};
-    margin-left: 0;
-    padding-left: 0;
-    position: ${({ $isCollapsed }) => ($isCollapsed ? "static" : "relative")};
-    width: 100%;
+    display: block;
+    position: relative;
+    width: ${({ $isCollapsed }) => ($isCollapsed ? "100%" : "calc(100% - 0.75rem)")};
+    margin: ${({ $isCollapsed, $isOpen }) =>
+        $isOpen ? ($isCollapsed ? "0.35rem 0 0.15rem" : "0.35rem 0 0.15rem 0.75rem") : "0"};
+    padding-left: ${({ $isCollapsed }) => ($isCollapsed ? "0" : "0.75rem")};
+    box-sizing: border-box;
+    border-left: 1px solid ${({ $isCollapsed }) => ($isCollapsed ? "transparent" : "rgba(255, 255, 255, 0.18)")};
+    transition:
+        max-height 320ms cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 220ms ease,
+        transform 220ms ease,
+        visibility 220ms ease,
+        padding-left 220ms ease,
+        margin 320ms cubic-bezier(0.4, 0, 0.2, 1);
 
     ${NavItem} {
         margin-bottom: 0.25rem;

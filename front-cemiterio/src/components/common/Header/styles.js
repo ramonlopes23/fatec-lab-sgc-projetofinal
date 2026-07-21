@@ -18,7 +18,7 @@ export const HeaderContainer = styled.header`
     background-color: #ffffff;
     border-bottom: 1px solid rgba(25, 25, 112, 0.1);
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 1rem;
     padding: 0 1rem;
@@ -28,17 +28,33 @@ export const HeaderContainer = styled.header`
     left: ${({ $isSidebarOpen }) => ($isSidebarOpen ? "16rem" : "5.5rem")};
     z-index: 950;
     transition: left 0.3s ease;
+
+    @media (max-width: 900px) {
+        left: 0;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 0.5rem;
+        padding: 0 0.75rem;
+    }
 `;
 
 export const HeaderLeft = styled.div`
-    display: flex;
+    display: none;
     align-items: center;
+
+    @media (max-width: 900px) {
+        display: flex;
+    }
 `;
 
 export const HeaderCenter = styled.div`
     display: flex;
-    justify-content: center;
+    min-width: 0;
+    justify-content: flex-start;
     position: relative;
+
+    @media (max-width: 900px) {
+        justify-content: center;
+    }
 `;
 
 export const HeaderRight = styled.div`
@@ -47,6 +63,10 @@ export const HeaderRight = styled.div`
     align-items: center;
     gap: 0.75rem;
     position: relative;
+
+    @media (max-width: 620px) {
+        gap: 0.35rem;
+    }
 `;
 
 export const MenuButton = styled.button`
@@ -55,133 +75,22 @@ export const MenuButton = styled.button`
     font-size: 1.5rem;
     color: #191970;
     cursor: pointer;
-    display: flex;
+    display: none;
     align-items: center;
-`;
-
-export const CemeterySwitcher = styled.div`
-    display: flex;
     justify-content: center;
-    left: 100px;
-    align-items: center;
-    width: 100%;
-    max-width: 720px;
-    margin: 0 auto;
-    position: relative;
-`;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 10px;
 
-export const CemeteryButton = styled.button`
-    width: 100%;
-    max-width: 300px;
-    min-width: 220px;
-    min-height: 40px;
-    border: 1px solid rgba(25, 25, 112, 0.16);
-    border-radius: 12px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8f8ff 100%);
-    color: #191970;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.5rem 0.875rem;
-    font-size: 0.9rem;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 10px 24px rgba(25, 25, 112, 0.08);
-
-    svg {
-        flex-shrink: 0;
-    }
-`;
-
-export const CemeteryPanel = styled.div`
-    position: absolute;
-    top: calc(100% + 0.5rem);
-    left: 10;
-    width: 50%;
-    background: #ffffff;
-    border: 1px solid rgba(25, 25, 112, 0.12);
-    border-radius: 14px;
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.12);
-    overflow: hidden;
-    z-index: 1200;
-    opacity: ${(props) => (props.$isOpen ? 1 : 0)};
-    transform: ${(props) => (props.$isOpen ? "scale(1) translateY(0)" : "scale(0.94) translateY(-8px)")};
-    visibility: ${(props) => (props.$isOpen ? "visible" : "hidden")};
-    pointer-events: ${(props) => (props.$isOpen ? "auto" : "none")};
-    transition:
-        opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-        transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-        visibility 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-`;
-
-export const CemeteryItem = styled.button`
-    width: 100%;
-    border: 0;
-    background: #ffffff;
-    color: #1d1d3f;
-    padding: 0.75rem 0.875rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    text-align: left;
-    cursor: pointer;
-    border-bottom: 1px solid rgba(25, 25, 112, 0.08);
-
-    &:last-child {
-        border-bottom: 0;
+    &:focus-visible {
+        outline: 2px solid #191970;
+        outline-offset: 2px;
     }
 
-    &[data-selected="true"] {
-        background: rgba(25, 25, 112, 0.06);
+    @media (max-width: 900px) {
+        display: flex;
     }
-`;
-
-export const CemeteryMeta = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    min-width: 0;
-    font-size: 0.8rem;
-
-    span {
-        color: #5a5a7a;
-    }
-`;
-
-export const CemeteryName = styled.span`
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #191970;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-`;
-
-export const CemeteryStatus = styled.span`
-    flex-shrink: 0;
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 0.3rem 0.55rem;
-    border-radius: 999px;
-    color: #191970;
-    background: rgba(25, 25, 112, 0.08);
-
-    &[data-active="false"] {
-        color: #7c3b3b;
-        background: rgba(197, 85, 85, 0.12);
-    }
-`;
-
-export const CemeteryEmpty = styled.div`
-    padding: 0.8rem 0.875rem;
-    color: #5a5a7a;
-    font-size: 0.85rem;
-`;
-
-export const CemeteryError = styled(CemeteryEmpty)`
-    color: #c55;
 `;
 
 export const UserContainer = styled.div`
@@ -215,11 +124,19 @@ export const UserName = styled.span`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+
+    @media (max-width: 720px) {
+        display: none;
+    }
 `;
 
 export const UserDropdown = styled.div`
     position: relative;
     min-width: 15rem;
+
+    @media (max-width: 720px) {
+        min-width: 0;
+    }
 `;
 
 export const UserDropdownButton = styled.button`
@@ -239,6 +156,10 @@ export const UserDropdownButton = styled.button`
 
     svg:last-child {
         flex-shrink: 0;
+    }
+
+    @media (max-width: 720px) {
+        width: auto;
     }
 `;
 
@@ -262,6 +183,14 @@ export const UserDropdownMenu = styled.div`
         opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
         transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
         visibility 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    @media (max-width: 720px) {
+        position: fixed;
+        top: 68px;
+        right: 0.75rem;
+        width: min(18rem, calc(100vw - 1.5rem));
+        min-width: 0;
+    }
 `;
 
 export const UserDropdownHeader = styled.div`

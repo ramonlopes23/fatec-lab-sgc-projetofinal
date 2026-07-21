@@ -8,6 +8,7 @@ export const LayoutContainer = styled.div`
 
 export const Content = styled.div`
     flex: 1;
+    min-width: 0;
     border-left: 1px solid var(--app-border);
     display: flex;
     flex-direction: column;
@@ -19,6 +20,11 @@ export const Content = styled.div`
     height: 100vh;
     box-sizing: border-box;
     padding-top: 60px;
+
+    @media (max-width: 900px) {
+        width: 100%;
+        margin-left: 0;
+    }
 `;
 
 export const PageContent = styled.main`
@@ -27,6 +33,10 @@ export const PageContent = styled.main`
     background-color: var(--app-bg);
     color: var(--app-text);
     overflow: auto;
+
+    @media (max-width: 620px) {
+        padding: 0.75rem;
+    }
 `;
 
 export const SidebarContainer = styled.div`
@@ -43,6 +53,29 @@ export const SidebarContainer = styled.div`
     left: 0;
     transition: width 0.3s ease;
     z-index: 1000;
+
+    @media (max-width: 900px) {
+        width: min(16rem, calc(100vw - 3rem));
+        transform: ${({ $isOpen }) => ($isOpen ? "translateX(0)" : "translateX(-100%)")};
+        transition:
+            transform 0.3s ease,
+            width 0.3s ease;
+    }
+`;
+
+export const SidebarBackdrop = styled.button`
+    display: none;
+
+    @media (max-width: 900px) {
+        position: fixed;
+        inset: 0;
+        display: block;
+        padding: 0;
+        border: 0;
+        background: rgba(15, 23, 42, 0.46);
+        cursor: pointer;
+        z-index: 900;
+    }
 `;
 
 export const SidebarExternalToggle = styled.button`
@@ -69,5 +102,9 @@ export const SidebarExternalToggle = styled.button`
 
     &:hover {
         background: linear-gradient(180deg, #3a40c2 0%, #21268c 100%);
+    }
+
+    @media (max-width: 900px) {
+        display: none;
     }
 `;

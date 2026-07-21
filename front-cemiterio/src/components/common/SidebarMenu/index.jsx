@@ -37,8 +37,9 @@ import { LiaFileContractSolid } from "react-icons/lia";
 import { TbReportAnalytics } from "react-icons/tb";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { useAuthStore } from "../../../stores/authStore";
+import CemeterySwitcher from "../CemeterySwitcher";
 
-export default function SidebarMenu({ isCollapsed = false }) {
+export default function SidebarMenu({ isCollapsed = false, onExpandRequest }) {
     const [expandedItems, setExpandedItems] = useState({});
     const navigate = useNavigate();
     const logout = useAuthStore((state) => state.logout);
@@ -108,6 +109,8 @@ export default function SidebarMenu({ isCollapsed = false }) {
                 {!isCollapsed && <Title>SISTEMA DE GERENCIAMENTO DE CEMITÉRIOS</Title>}
             </LogoContainer>
 
+            <CemeterySwitcher isCollapsed={isCollapsed} onExpandRequest={onExpandRequest} />
+
             <NavContainer>
                 <NavList>
                     {menuItems.map((item) => (
@@ -121,10 +124,7 @@ export default function SidebarMenu({ isCollapsed = false }) {
                                     <MenuIconSlot>{item.icon}</MenuIconSlot>
                                     <MenuLabel $isCollapsed={isCollapsed}>{item.name}</MenuLabel>
                                     {item.children && (
-                                        <ChevronIcon
-                                            $direction={expandedItems[item.name] ? "left" : "right"}
-                                            $compact={isCollapsed}
-                                        >
+                                        <ChevronIcon $isOpen={!!expandedItems[item.name]}>
                                             <LuChevronRight size={18} />
                                         </ChevronIcon>
                                     )}
@@ -142,11 +142,7 @@ export default function SidebarMenu({ isCollapsed = false }) {
                             )}
 
                             {item.children && (
-                                <CompactNestedList
-                                    $isOpen={!!expandedItems[item.name]}
-                                    $isVisible={!!expandedItems[item.name]}
-                                    $isCollapsed={isCollapsed}
-                                >
+                                <CompactNestedList $isOpen={!!expandedItems[item.name]} $isCollapsed={isCollapsed}>
                                     {item.children.map((child) => (
                                         <NavItem key={child.name}>
                                             <CompactChildLink
