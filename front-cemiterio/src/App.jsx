@@ -1,8 +1,5 @@
 import React, { useEffect } from "react";
 import { BrowserRouter } from "react-router-dom";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { ptBR } from "date-fns/locale/pt-BR";
 import "../styles.css";
 import AppRoutes from "./routes";
 
@@ -24,14 +21,12 @@ export default function App() {
     }, []);
 
     return (
-        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
-            <BrowserRouter>
-                <div className="flex">
-                    <main className="flex-1 p-6">
-                        <AppRoutes />
-                    </main>
-                </div>
-            </BrowserRouter>
-        </LocalizationProvider>
+        <BrowserRouter>
+            <div className="flex">
+                <main className="flex-1 p-6">
+                    <AppRoutes />
+                </main>
+            </div>
+        </BrowserRouter>
     );
 }
