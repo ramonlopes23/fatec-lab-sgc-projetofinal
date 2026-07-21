@@ -14,7 +14,6 @@ import StepContent from "@mui/material/StepContent";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LuChevronDown } from "react-icons/lu";
 import { formatDateKey, formatDateTimeKey, parseDateValue } from "../../../utils/date";
 import {
@@ -31,6 +30,7 @@ import {
 } from "../../../utils";
 import { hasErrors } from "../../../utils/validation";
 import { SearchFieldWrapper, SearchResults, SearchResultItem, StepHeader, ChevronIcon } from "./styles";
+import DateTimePicker from "../../common/StableDateTimePicker";
 import SystemButton from "../../common/SystemButton";
 
 function SepultamentoProcess({
