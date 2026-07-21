@@ -21,6 +21,7 @@ function DrawerComponent({
     children,
     onClose,
     closeButton,
+    closeDisabled = false,
     closeLabel = "Fechar",
     closeOnOverlayClick = true,
     width,
@@ -47,6 +48,9 @@ function DrawerComponent({
                 $width={width}
                 $color={panelColor}
                 $shadow={panelShadow}
+                role="dialog"
+                aria-modal="true"
+                aria-label={title || subtitle || "Painel lateral"}
                 onClick={(event) => event.stopPropagation()}
             >
                 {(title || subtitle || onClose || closeButton) && (
@@ -61,7 +65,8 @@ function DrawerComponent({
                                 type="button"
                                 title={closeLabel}
                                 aria-label={closeLabel}
-                                onClick={onClose}
+                                disabled={closeDisabled}
+                                onClick={closeDisabled ? undefined : onClose}
                             >
                                 <FaTimes size={14} />
                             </DrawerCloseButton>

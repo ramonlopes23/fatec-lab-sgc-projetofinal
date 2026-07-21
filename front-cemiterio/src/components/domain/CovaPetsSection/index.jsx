@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createPet, deletePet, updatePet } from "../../../services/petService.js";
 import { useToastFeedback } from "../../../hooks";
 import ConfirmationDialog from "../../common/ConfirmationDialog";
+import DrawerComponent from "../../common/DrawerComponent";
 import SystemButton from "../../common/SystemButton";
 import SystemSelect from "../../common/SystemSelect";
-import DefaultModal, { DefaultModalActions, DefaultModalGrid } from "../../common/DefaultModal";
 import {
     BtnDelete,
     BtnUpdate,
@@ -14,18 +14,27 @@ import {
     Label,
     PetActionsRow,
     PetCard,
+    PetDetailsGrid,
+    PetDetailItem,
+    PetDetailLabel,
+    PetDetailValue,
+    PetDrawerActions,
+    PetFormGrid,
+    PetIncludeButtonWrapper,
     PetList,
     PetMeta,
     PetName,
     TabButton,
     TabsBar,
     Textarea,
+    VisuallyHidden,
 } from "./styles";
 import { MdPets } from "react-icons/md";
 import { RxUpdate } from "react-icons/rx";
 import { TiDelete } from "react-icons/ti";
 import { formatDateTimeKey, formatDateDMY, formatDateTimeDMY } from "../../../utils/date";
 import { getFalecidoIdFromRecord, getFalecidoName } from "../../../utils/falecido";
+import { isSepultamentoVigente } from "../../../utils/sepultamento";
 import { getSepulturaNumber, getSepulturaQuadraRef } from "../../../utils/sepultura";
 
 const makeInitialForm = (sep = null) => ({
@@ -40,6 +49,9 @@ const makeInitialForm = (sep = null) => ({
     sepultamento_id: sep?.id ? String(sep.id) : "",
     falecido_id: getFalecidoIdFromRecord(sep),
 });
+
+const PET_INCLUSION_DISABLED_MESSAGE = "É necessário ter ao menos um sepultamento vigente nesta sepultura.";
+
 export default function CovaPetsSection({
     selectedCova,
     sepultamentos = [],
@@ -49,22 +61,30 @@ export default function CovaPetsSection({
     children,
 }) {
     const [activeTab, setActiveTab] = useState("sepultamentos");
-    const [modalAddPetOpen, setModalAddPetOpen] = useState(false);
+    const [petDrawerOpen, setPetDrawerOpen] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [formPet, setFormPet] = useState(makeInitialForm(sepultamentos[0] ?? null));
+    const [formPet, setFormPet] = useState(() =>
+        makeInitialForm((Array.isArray(sepultamentos) ? sepultamentos : []).find(isSepultamentoVigente) ?? null)
+    );
     const [editingPetId, setEditingPetId] = useState(null);
     const [isEditingPet, setIsEditingPet] = useState(false);
     const [pendingDeletePet, setPendingDeletePet] = useState(null);
     const { showSuccess, showError, ToastElement } = useToastFeedback();
 
-    const resetPetForm = () => {
-        setFormPet(makeInitialForm(sepultamentos[0] ?? null));
-        setEditingPetId(null);
-    };
-
     const quadraKey = useMemo(() => getSepulturaQuadraRef(selectedCova), [selectedCova]);
 
     const numero = useMemo(() => getSepulturaNumber(selectedCova), [selectedCova]);
+
+    const sepultamentosVigentes = useMemo(
+        () => (Array.isArray(sepultamentos) ? sepultamentos : []).filter(isSepultamentoVigente),
+        [sepultamentos]
+    );
+    const canIncludePet = sepultamentosVigentes.length > 0;
+
+    const resetPetForm = () => {
+        setFormPet(makeInitialForm(sepultamentosVigentes[0] ?? null));
+        setEditingPetId(null);
+    };
 
     const modalPetList = useMemo(() => {
         if (!quadraKey || !numero) return [];
@@ -97,10 +117,15 @@ export default function CovaPetsSection({
         });
     };
 
-    const openPetModal = () => {
+    const openPetDrawer = () => {
+        if (!canIncludePet) {
+            showError(PET_INCLUSION_DISABLED_MESSAGE);
+            return;
+        }
+
         resetPetForm();
         setIsEditingPet(true);
-        setModalAddPetOpen(true);
+        setPetDrawerOpen(true);
     };
 
     const handleEditPetId = (pet) => {
@@ -120,11 +145,12 @@ export default function CovaPetsSection({
             sepultamento_id: pet.sepultamento_id ? String(pet.sepultamento_id) : "",
             falecido_id: pet.falecido_id ?? "",
         });
-        setModalAddPetOpen(true);
+        setPetDrawerOpen(true);
     };
 
-    const handleClosePetModal = () => {
-        setModalAddPetOpen(false);
+    const handleClosePetDrawer = () => {
+        if (saving) return;
+        setPetDrawerOpen(false);
         setIsEditingPet(false);
     };
 
@@ -162,6 +188,9 @@ export default function CovaPetsSection({
         const sep = (sepultamentos || []).find((s) => String(s.id) === String(formPet.sepultamento_id));
 
         if (!sep) return showError("Sepultamento selecionado é inválido.");
+        if (!editingPetId && !isSepultamentoVigente(sep)) {
+            return showError("O sepultamento selecionado não está vigente.");
+        }
 
         const payload = {
             nome_pet: formPet.nome_pet.trim(),
@@ -204,7 +233,7 @@ export default function CovaPetsSection({
             if (editingPetId) {
                 setIsEditingPet(false);
             } else {
-                setModalAddPetOpen(false);
+                setPetDrawerOpen(false);
                 resetPetForm();
             }
         } catch (err) {
@@ -269,9 +298,27 @@ export default function CovaPetsSection({
                     </TabButton>
                 )}
 
-                <SystemButton type="button" onClick={openPetModal}>
-                    Incluir pet
-                </SystemButton>
+                <PetIncludeButtonWrapper
+                    title={canIncludePet ? undefined : PET_INCLUSION_DISABLED_MESSAGE}
+                    tabIndex={canIncludePet ? undefined : 0}
+                    role={canIncludePet ? undefined : "group"}
+                    aria-disabled={canIncludePet ? undefined : true}
+                    aria-describedby={canIncludePet ? undefined : "pet-inclusion-disabled-message"}
+                >
+                    <SystemButton
+                        type="button"
+                        disabled={!canIncludePet}
+                        aria-describedby={canIncludePet ? undefined : "pet-inclusion-disabled-message"}
+                        onClick={openPetDrawer}
+                    >
+                        Incluir pet
+                    </SystemButton>
+                    {!canIncludePet ? (
+                        <VisuallyHidden id="pet-inclusion-disabled-message">
+                            {PET_INCLUSION_DISABLED_MESSAGE}
+                        </VisuallyHidden>
+                    ) : null}
+                </PetIncludeButtonWrapper>
             </TabsBar>
 
             {activeTab === "sepultamentos" ? (
@@ -285,10 +332,20 @@ export default function CovaPetsSection({
                             {modalPetList.map((pet, idx) => (
                                 <PetCard key={pet.id ?? `${pet.nome_pet}-${idx}`}>
                                     <PetActionsRow>
-                                        <BtnUpdate type="button" onClick={() => handleEditPetId(pet)}>
+                                        <BtnUpdate
+                                            type="button"
+                                            aria-label={`Visualizar ou editar ${pet.nome_pet || "pet"}`}
+                                            title="Visualizar ou editar pet"
+                                            onClick={() => handleEditPetId(pet)}
+                                        >
                                             <RxUpdate />
                                         </BtnUpdate>
-                                        <BtnDelete type="button" onClick={() => handleDeletePet(pet)}>
+                                        <BtnDelete
+                                            type="button"
+                                            aria-label={`Excluir ${pet.nome_pet || "pet"}`}
+                                            title="Excluir pet"
+                                            onClick={() => handleDeletePet(pet)}
+                                        >
                                             <TiDelete />
                                         </BtnDelete>
                                     </PetActionsRow>
@@ -312,108 +369,141 @@ export default function CovaPetsSection({
                 </>
             )}
 
-            <DefaultModal
-                open={modalAddPetOpen}
+            <DrawerComponent
+                open={petDrawerOpen}
                 title={editingPetId ? (isEditingPet ? "Atualizar pet" : "Detalhes do pet") : "Cadastrar Pet"}
-                width="520px"
-                fields={isViewingExistingPet ? petViewFields : []}
-                onClose={handleClosePetModal}
+                subtitle={
+                    editingPetId
+                        ? "Consulte ou atualize os dados do pet vinculado."
+                        : "Cadastre um pet e vincule-o a um sepultamento desta sepultura."
+                }
+                width="560px"
+                zIndex={2700}
+                closeOnOverlayClick={!saving}
+                closeDisabled={saving}
+                onClose={handleClosePetDrawer}
+                bodyAs="form"
+                bodyProps={{ onSubmit: submitPet, noValidate: true, "aria-busy": saving }}
             >
-                <form onSubmit={submitPet}>
-                    {!isViewingExistingPet ? (
-                        <DefaultModalGrid>
-                            <Field>
-                                <Label>Nome do pet</Label>
-                                <Input
-                                    value={formPet.nome_pet}
-                                    onChange={(ev) => handleFormPetChange("nome_pet", ev.target.value)}
-                                />
-                            </Field>
-
-                            <Field>
-                                <Label>Espécie</Label>
-                                <Input
-                                    value={formPet.especie}
-                                    onChange={(ev) => handleFormPetChange("especie", ev.target.value)}
-                                />
-                            </Field>
-
-                            <Field>
-                                <Label>Raça</Label>
-                                <Input
-                                    value={formPet.raca}
-                                    onChange={(ev) => handleFormPetChange("raca", ev.target.value)}
-                                />
-                            </Field>
-
-                            <Field>
-                                <Label>Data do óbito</Label>
-                                <Input
-                                    type="date"
-                                    value={formPet.data_obito_pet}
-                                    onChange={(ev) => handleFormPetChange("data_obito_pet", ev.target.value)}
-                                />
-                            </Field>
-
-                            <Field>
-                                <Label>Data/Hora do sepultamento</Label>
-                                <Input
-                                    type="datetime-local"
-                                    value={formPet.dh_sep_pet}
-                                    onChange={(ev) => handleFormPetChange("dh_sep_pet", ev.target.value)}
-                                />
-                            </Field>
-
-                            <Field>
-                                <Label>Vincular ao sepultamento</Label>
-                                <SystemSelect
-                                    value={formPet.sepultamento_id}
-                                    disabled={saving}
-                                    onChange={(ev) => handleFormPetChange("sepultamento_id", ev.target.value)}
-                                >
-                                    <option value="">Selecione</option>
-                                    {(sepultamentos || []).map((s) => (
-                                        <option key={s.id} value={String(s.id)}>
-                                            {getFalecidoName(s) || `Sepultamento ${s.id}`}
-                                        </option>
-                                    ))}
-                                </SystemSelect>
-                            </Field>
-
-                            <Field style={{ gridColumn: "1 / -1" }}>
-                                <Label>Observações</Label>
-                                <Textarea
-                                    value={formPet.obs_pet}
-                                    onChange={(ev) => handleFormPetChange("obs_pet", ev.target.value)}
-                                />
-                            </Field>
-                        </DefaultModalGrid>
-                    ) : null}
-
-                    <DefaultModalActions>
-                        {isViewingExistingPet ? (
-                            <SystemButton
-                                type="button"
-                                onClick={(event) => {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                    setIsEditingPet(true);
-                                }}
+                {!isViewingExistingPet ? (
+                    <PetFormGrid>
+                        <Field>
+                            <Label htmlFor="pet-name">Nome do pet</Label>
+                            <Input
+                                id="pet-name"
+                                value={formPet.nome_pet}
                                 disabled={saving}
+                                autoFocus
+                                required
+                                onChange={(ev) => handleFormPetChange("nome_pet", ev.target.value)}
+                            />
+                        </Field>
+
+                        <Field>
+                            <Label htmlFor="pet-species">Espécie</Label>
+                            <Input
+                                id="pet-species"
+                                value={formPet.especie}
+                                disabled={saving}
+                                required
+                                onChange={(ev) => handleFormPetChange("especie", ev.target.value)}
+                            />
+                        </Field>
+
+                        <Field>
+                            <Label htmlFor="pet-breed">Raça</Label>
+                            <Input
+                                id="pet-breed"
+                                value={formPet.raca}
+                                disabled={saving}
+                                onChange={(ev) => handleFormPetChange("raca", ev.target.value)}
+                            />
+                        </Field>
+
+                        <Field>
+                            <Label htmlFor="pet-death-date">Data do óbito</Label>
+                            <Input
+                                id="pet-death-date"
+                                type="date"
+                                value={formPet.data_obito_pet}
+                                disabled={saving}
+                                onChange={(ev) => handleFormPetChange("data_obito_pet", ev.target.value)}
+                            />
+                        </Field>
+
+                        <Field>
+                            <Label htmlFor="pet-burial-date">Data/Hora do sepultamento</Label>
+                            <Input
+                                id="pet-burial-date"
+                                type="datetime-local"
+                                value={formPet.dh_sep_pet}
+                                disabled={saving}
+                                onChange={(ev) => handleFormPetChange("dh_sep_pet", ev.target.value)}
+                            />
+                        </Field>
+
+                        <Field>
+                            <Label htmlFor="pet-burial-link">Vincular ao sepultamento</Label>
+                            <SystemSelect
+                                id="pet-burial-link"
+                                value={formPet.sepultamento_id}
+                                disabled={saving}
+                                required
+                                onChange={(ev) => handleFormPetChange("sepultamento_id", ev.target.value)}
                             >
-                                Editar
-                            </SystemButton>
-                        ) : (
-                            <SystemButton type="submit" disabled={saving}>
-                                {saving ? "Salvando..." : "Salvar"}
-                            </SystemButton>
-                        )}
-                        <SystemButton type="button" tone="cancel" onClick={handleClosePetModal}>
-                            {editingPetId ? "Fechar" : "Cancelar"}
+                                <option value="">Selecione</option>
+                                {(editingPetId ? sepultamentos || [] : sepultamentosVigentes).map((s) => (
+                                    <option key={s.id} value={String(s.id)}>
+                                        {getFalecidoName(s) || `Sepultamento ${s.id}`}
+                                    </option>
+                                ))}
+                            </SystemSelect>
+                        </Field>
+
+                        <Field $fullWidth>
+                            <Label htmlFor="pet-notes">Observações</Label>
+                            <Textarea
+                                id="pet-notes"
+                                value={formPet.obs_pet}
+                                disabled={saving}
+                                onChange={(ev) => handleFormPetChange("obs_pet", ev.target.value)}
+                            />
+                        </Field>
+                    </PetFormGrid>
+                ) : (
+                    <PetDetailsGrid>
+                        {petViewFields.map(([label, value]) => (
+                            <PetDetailItem key={label}>
+                                <PetDetailLabel>{label}</PetDetailLabel>
+                                <PetDetailValue>{value || "-"}</PetDetailValue>
+                            </PetDetailItem>
+                        ))}
+                    </PetDetailsGrid>
+                )}
+
+                <PetDrawerActions>
+                    {isViewingExistingPet ? (
+                        <SystemButton
+                            type="button"
+                            onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setIsEditingPet(true);
+                            }}
+                            disabled={saving}
+                        >
+                            Editar
                         </SystemButton>
-                    </DefaultModalActions>
-                </form>
-            </DefaultModal>
+                    ) : (
+                        <SystemButton type="submit" disabled={saving}>
+                            {saving ? "Salvando..." : "Salvar"}
+                        </SystemButton>
+                    )}
+                    <SystemButton type="button" tone="cancel" disabled={saving} onClick={handleClosePetDrawer}>
+                        {editingPetId ? "Fechar" : "Cancelar"}
+                    </SystemButton>
+                </PetDrawerActions>
+            </DrawerComponent>
         </>
     );
 }

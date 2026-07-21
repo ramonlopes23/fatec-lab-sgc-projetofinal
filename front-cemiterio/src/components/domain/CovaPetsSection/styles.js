@@ -18,19 +18,20 @@ export const TabButton = styled.button`
     cursor: pointer;
 `;
 
-export const AddPetButton = styled.button`
-    margin-left: auto;
-    background: #191970;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-weight: 600;
-    cursor: pointer;
-    &:hover {
-        opacity: 0.7;
-        transform: translateY(-1px);
-    }
+export const PetIncludeButtonWrapper = styled.span`
+    display: inline-flex;
+`;
+
+export const VisuallyHidden = styled.span`
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 `;
 
 export const PetList = styled.div`
@@ -72,39 +73,11 @@ export const EmptyText = styled.p`
     font-size: 13px;
 `;
 
-export const ModalOverlay = styled.div`
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10001;
-`;
-
-export const ModalCard = styled.form`
-    width: 520px;
-    max-width: 92vw;
-    background: #fff;
-    border-radius: 10px;
-    padding: 16px;
-    color: #171770;
-`;
-
-export const FormGrid = styled.div`
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-
-    @media (max-width: 760px) {
-        grid-template-columns: 1fr;
-    }
-`;
-
 export const Field = styled.div`
     display: flex;
     flex-direction: column;
     gap: 6px;
+    grid-column: ${({ $fullWidth }) => ($fullWidth ? "1 / -1" : "auto")};
 `;
 
 export const Label = styled.label`
@@ -119,6 +92,17 @@ export const Input = styled.input`
     border-radius: 10px;
     border: 1px solid #d6d9e6;
     outline: none;
+
+    &:focus {
+        border-color: #191970;
+        box-shadow: 0 0 0 3px rgba(25, 25, 112, 0.1);
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        background: #f5f6fa;
+        color: #777d96;
+    }
 `;
 
 export const Textarea = styled.textarea`
@@ -130,42 +114,80 @@ export const Textarea = styled.textarea`
     border-radius: 10px;
     border: 1px solid #d6d9e6;
     outline: none;
-`;
 
-export const ModalButtonsRow = styled.div`
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    margin-top: 12px;
-`;
-
-export const BtnCancel = styled.button`
-    border: none;
-    border-radius: 8px;
-    padding: 8px 12px;
-    background: #eceffa;
-    color: #191970;
-    font-weight: 600;
-    cursor: pointer;
-`;
-
-export const BtnSave = styled.button`
-    border: none;
-    border-radius: 8px;
-    padding: 8px 12px;
-    background: #191970;
-    color: #fff;
-    font-weight: 600;
-    cursor: pointer;
-
-    &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
+    &:focus {
+        border-color: #191970;
+        box-shadow: 0 0 0 3px rgba(25, 25, 112, 0.1);
     }
 
-    &:hover {
-        opacity: 0.7;
-        transform: translateY(-1px);
+    &:disabled {
+        cursor: not-allowed;
+        background: #f5f6fa;
+        color: #777d96;
+    }
+`;
+
+export const PetFormGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+
+    @media (max-width: 620px) {
+        grid-template-columns: 1fr;
+    }
+`;
+
+export const PetDetailsGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+
+    @media (max-width: 620px) {
+        grid-template-columns: 1fr;
+    }
+`;
+
+export const PetDetailItem = styled.div`
+    min-width: 0;
+    padding: 0.85rem;
+    border: 1px solid rgba(25, 25, 112, 0.1);
+    border-radius: 10px;
+    background: #fafbff;
+`;
+
+export const PetDetailLabel = styled.span`
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #6c7293;
+    font-size: 0.75rem;
+    font-weight: 700;
+`;
+
+export const PetDetailValue = styled.strong`
+    display: block;
+    overflow-wrap: anywhere;
+    color: #191970;
+    font-size: 0.9rem;
+    font-weight: 700;
+`;
+
+export const PetDrawerActions = styled.div`
+    position: sticky;
+    bottom: -22px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: auto;
+    padding: 1rem 0 0.1rem;
+    border-top: 1px solid rgba(25, 25, 112, 0.1);
+    background: #fff;
+
+    @media (max-width: 620px) {
+        flex-direction: column;
+
+        button {
+            width: 100%;
+        }
     }
 `;
 

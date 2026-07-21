@@ -2,6 +2,7 @@ import { formatDateKey, parseDateValue } from "./date.js";
 import { getFalecidoId, getFalecidoIdFromRecord, getFalecidoName, normalizeFalecido } from "./falecido.js";
 import { getCovaDisplayMeta, getVisibleBlocks } from "./mapHelpers.js";
 import { findQuadraByReference, resolveQuadraDisplay } from "./quadra.js";
+import { isSepultamentoVigente } from "./sepultamento.js";
 import { getSepulturaCapacity, getSepulturaNumber, getSepulturaQuadraRef } from "./sepultura.js";
 
 const normalizeBoolean = (value) => value === true || String(value).toLowerCase() === "true";
@@ -12,15 +13,7 @@ export const getOperationalProcessKey = (process = {}) =>
         process.id == null ? null : String(process.id),
     ]);
 
-export const isCompletedSepultamento = (sepultamento) => {
-    if (!sepultamento || sepultamento.foi_exumado) return false;
-    return (
-        normalizeBoolean(sepultamento.confirmado) ||
-        String(sepultamento.status ?? "")
-            .toLowerCase()
-            .includes("concl")
-    );
-};
+export const isCompletedSepultamento = isSepultamentoVigente;
 
 export const getOperationalProcessDate = (process) =>
     parseDateValue(
