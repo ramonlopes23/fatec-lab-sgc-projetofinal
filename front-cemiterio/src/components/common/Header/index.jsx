@@ -5,6 +5,7 @@ import { FiLogOut } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../../stores";
 import NotificationsDropdown from "../NotificationsDropdown";
+import CemeterySwitcher from "../CemeterySwitcher";
 import {
     HeaderCenter,
     HeaderContainer,
@@ -80,7 +81,9 @@ export default function Header({ isSidebarOpen, onMenuClick }) {
                 </MenuButton>
             </HeaderLeft>
 
-            <HeaderCenter />
+            <HeaderCenter>
+                <CemeterySwitcher />
+            </HeaderCenter>
 
             <HeaderRight ref={userDropdownRef}>
                 <NotificationsDropdown />

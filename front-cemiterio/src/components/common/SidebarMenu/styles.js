@@ -185,13 +185,13 @@ export const StyledNavLink = styled(NavLink)`
     }
 
     &:hover {
-        background-color: #326bdd;
+        background-color: #2f18b4;
         border-color: rgba(255, 255, 255, 0.12);
         transform: translateX(2px);
     }
 
     &.active {
-        background-color: #326bdd;
+        background-color: #2f18b4;
         border-color: rgba(255, 255, 255, 0.12);
         font-weight: 600;
         box-shadow: 0 10px 24px rgba(50, 107, 221, 0.28);
@@ -233,7 +233,7 @@ export const SidebarActionButton = styled.button`
     }
 
     &:hover {
-        background-color: #326bdd;
+        background-color: #2f18b4;
         border-color: rgba(255, 255, 255, 0.12);
         transform: translateX(2px);
     }
@@ -276,7 +276,7 @@ export const DropdownToggle = styled.button`
     -webkit-appearance: none;
 
     &:hover {
-        background-color: #326bdd;
+        background-color: #2f18b4;
         border-color: rgba(255, 255, 255, 0.12);
         transform: translateX(2px);
     }
@@ -284,7 +284,7 @@ export const DropdownToggle = styled.button`
     ${(props) =>
         props.isExpanded &&
         `
-    background-color: #326bdd;
+    background-color: #2f18b4;
     border-color: rgba(255, 255, 255, 0.12);
   `}
 
@@ -385,7 +385,7 @@ export const CompactChildLink = styled(StyledNavLink)`
 
     &:hover,
     &.active {
-        background-color: #326bdd;
+        background-color: #2f18b4;
         border-color: rgba(255, 255, 255, 0.12);
     }
 

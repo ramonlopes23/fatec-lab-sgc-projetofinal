@@ -2,132 +2,106 @@ import styled from "styled-components";
 
 export const CemeterySwitcherRoot = styled.div`
     position: relative;
-    flex: 0 0 auto;
-    padding: 0.6rem 0.75rem 0.35rem;
-    background: #191970;
-    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+    width: 100%;
+    max-width: 300px;
+    min-width: 0;
+    margin: 0 auto;
 `;
 
 export const CemeteryButton = styled.button`
     width: 100%;
     min-width: 0;
-    min-height: 3.15rem;
-    box-sizing: border-box;
-    padding: ${({ $isCollapsed }) => ($isCollapsed ? "0.75rem" : "0.75rem 0.95rem")};
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0.7rem;
-    background: ${({ $isCollapsed }) => ($isCollapsed ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.08)")};
-    color: #ffffff;
+    min-height: 40px;
+    border: 1px solid rgba(25, 25, 112, 0.16);
+    border-radius: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8f8ff 100%);
+    color: #191970;
     display: flex;
     align-items: center;
-    justify-content: ${({ $isCollapsed }) => ($isCollapsed ? "center" : "flex-start")};
-    gap: 0.7rem;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.875rem;
     font: inherit;
-    font-weight: 800;
+    font-size: 0.9rem;
+    font-weight: 700;
     cursor: pointer;
-    transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease,
-        transform 0.2s ease;
+    box-shadow: 0 10px 24px rgba(25, 25, 112, 0.08);
 
-    &:hover {
-        background: #326bdd;
-        border-color: rgba(255, 255, 255, 0.12);
-        transform: ${({ $isCollapsed }) => ($isCollapsed ? "none" : "translateX(2px)")};
+    svg {
+        flex: 0 0 auto;
     }
 
     &:focus-visible {
-        outline: 2px solid rgba(255, 255, 255, 0.8);
+        outline: 2px solid #191970;
         outline-offset: 2px;
     }
 `;
 
-export const CemeteryIcon = styled.span`
-    width: 1.6rem;
-    height: 1.6rem;
-    flex: 0 0 1.6rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    svg {
-        font-size: 1.1rem;
-    }
-`;
-
 export const CemeteryValue = styled.span`
-    display: ${({ $isCollapsed }) => ($isCollapsed ? "none" : "block")};
     min-width: 0;
-    flex: 1;
     overflow: hidden;
     text-align: left;
     text-overflow: ellipsis;
     white-space: nowrap;
 `;
 
-export const CemeteryChevron = styled.span`
-    display: inline-flex;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-    margin-left: auto;
-    transform: rotate(${({ $isOpen }) => ($isOpen ? "90deg" : "0deg")});
-    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-`;
-
-export const CemeteryNestedList = styled.div`
-    width: calc(100% - 0.75rem);
-    max-height: ${({ $isOpen }) => ($isOpen ? "16rem" : "0")};
-    margin: ${({ $isOpen }) => ($isOpen ? "0.4rem 0 0.15rem 0.75rem" : "0 0 0 0.75rem")};
-    padding-left: 0.75rem;
-    box-sizing: border-box;
-    border-left: 1px solid rgba(255, 255, 255, 0.18);
+export const CemeteryPanel = styled.div`
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 50%;
+    width: min(360px, calc(100vw - 2rem));
+    background: #ffffff;
+    border: 1px solid rgba(25, 25, 112, 0.12);
+    border-radius: 14px;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.12);
     overflow: hidden;
+    z-index: 1200;
     opacity: ${({ $isOpen }) => ($isOpen ? 1 : 0)};
     visibility: ${({ $isOpen }) => ($isOpen ? "visible" : "hidden")};
     pointer-events: ${({ $isOpen }) => ($isOpen ? "auto" : "none")};
-    transform: translateY(${({ $isOpen }) => ($isOpen ? "0" : "-0.35rem")});
+    transform: ${({ $isOpen }) =>
+        $isOpen ? "translateX(-50%) scale(1) translateY(0)" : "translateX(-50%) scale(0.94) translateY(-8px)"};
     transition:
-        max-height 320ms cubic-bezier(0.4, 0, 0.2, 1),
-        margin 320ms cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 220ms ease,
-        transform 220ms ease,
-        visibility 220ms ease;
+        opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    @media (max-width: 720px) {
+        position: fixed;
+        top: 4.25rem;
+        right: 0.75rem;
+        left: 0.75rem;
+        width: auto;
+        transform: ${({ $isOpen }) => ($isOpen ? "scale(1) translateY(0)" : "scale(0.94) translateY(-8px)")};
+    }
 `;
 
 export const CemeteryItem = styled.button`
     width: 100%;
-    min-width: 0;
-    min-height: 3.4rem;
-    box-sizing: border-box;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0.65rem;
-    background: rgba(255, 255, 255, 0.05);
-    color: #ffffff;
-    padding: 0.65rem 0.7rem;
+    border: 0;
+    border-bottom: 1px solid rgba(25, 25, 112, 0.08);
+    background: #ffffff;
+    color: #1d1d3f;
+    padding: 0.75rem 0.875rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.55rem;
+    gap: 0.75rem;
     text-align: left;
     cursor: pointer;
-    transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease;
 
-    & + & {
-        margin-top: 0.3rem;
+    &:last-child {
+        border-bottom: 0;
     }
 
     &:hover,
     &[data-selected="true"] {
-        background: #326bdd;
-        border-color: rgba(255, 255, 255, 0.14);
+        background: rgba(25, 25, 112, 0.06);
     }
 
     &:focus-visible {
-        outline: 2px solid rgba(255, 255, 255, 0.75);
-        outline-offset: 2px;
+        outline: 2px solid #191970;
+        outline-offset: -2px;
     }
 `;
 
@@ -136,12 +110,12 @@ export const CemeteryMeta = styled.span`
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: 0.15rem;
-    font-size: 0.72rem;
+    gap: 0.2rem;
+    font-size: 0.8rem;
 
     span {
         overflow: hidden;
-        color: rgba(255, 255, 255, 0.7);
+        color: #5a5a7a;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
@@ -149,35 +123,33 @@ export const CemeteryMeta = styled.span`
 
 export const CemeteryName = styled.strong`
     overflow: hidden;
-    color: #ffffff;
-    font-size: 0.8rem;
+    color: #191970;
+    font-size: 0.9rem;
     text-overflow: ellipsis;
     white-space: nowrap;
 `;
 
 export const CemeteryStatus = styled.span`
     flex: 0 0 auto;
-    padding: 0.25rem 0.4rem;
+    padding: 0.3rem 0.55rem;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.14);
-    color: #ffffff;
-    font-size: 0.64rem;
+    background: rgba(25, 25, 112, 0.08);
+    color: #191970;
+    font-size: 0.72rem;
     font-weight: 700;
 
     &[data-active="false"] {
-        color: #ffd4d4;
-        background: rgba(197, 85, 85, 0.24);
+        color: #7c3b3b;
+        background: rgba(197, 85, 85, 0.12);
     }
 `;
 
 export const CemeteryEmpty = styled.div`
-    padding: 0.7rem;
-    border-radius: 0.65rem;
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.72);
-    font-size: 0.75rem;
+    padding: 0.8rem 0.875rem;
+    color: #5a5a7a;
+    font-size: 0.85rem;
 `;
 
 export const CemeteryError = styled(CemeteryEmpty)`
-    color: #ffd4d4;
+    color: #c55;
 `;

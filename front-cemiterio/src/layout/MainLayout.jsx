@@ -69,7 +69,7 @@ export default function MainLayout({ children }) {
                 aria-hidden={isMobileViewport && !isSidebarOpen}
                 inert={isMobileViewport && !isSidebarOpen ? true : undefined}
             >
-                <SidebarMenu isCollapsed={!isSidebarOpen} onExpandRequest={() => setIsSidebarOpen(true)} />
+                <SidebarMenu isCollapsed={!isSidebarOpen} />
             </SidebarContainer>
             {isSidebarOpen ? (
                 <SidebarBackdrop

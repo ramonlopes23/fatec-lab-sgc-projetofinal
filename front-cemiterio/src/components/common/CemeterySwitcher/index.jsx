@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { GiGraveFlowers } from "react-icons/gi";
-import { LuChevronRight } from "react-icons/lu";
+import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { useCemeteryStore } from "../../../stores";
 import {
     formatDateDMY,
@@ -11,20 +10,18 @@ import {
 } from "../../../utils";
 import {
     CemeteryButton,
-    CemeteryChevron,
     CemeteryEmpty,
     CemeteryError,
-    CemeteryIcon,
     CemeteryItem,
     CemeteryMeta,
     CemeteryName,
-    CemeteryNestedList,
+    CemeteryPanel,
     CemeteryStatus,
     CemeterySwitcherRoot,
     CemeteryValue,
 } from "./styles";
 
-export default function CemeterySwitcher({ isCollapsed = false, onExpandRequest }) {
+export default function CemeterySwitcher() {
     const cemeteries = useCemeteryStore((state) => state.cemeteries);
     const loading = useCemeteryStore((state) => state.loading);
     const error = useCemeteryStore((state) => state.error);
@@ -33,7 +30,6 @@ export default function CemeterySwitcher({ isCollapsed = false, onExpandRequest 
     const setSelectedCemeteryId = useCemeteryStore((state) => state.setSelectedCemeteryId);
     const [isOpen, setIsOpen] = useState(false);
     const rootRef = useRef(null);
-    const openAfterExpandRef = useRef(false);
 
     useEffect(() => {
         loadCemeteries().catch((loadError) => {
@@ -49,18 +45,6 @@ export default function CemeterySwitcher({ isCollapsed = false, onExpandRequest 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
-
-    useEffect(() => {
-        if (isCollapsed) {
-            setIsOpen(false);
-            return;
-        }
-
-        if (openAfterExpandRef.current) {
-            openAfterExpandRef.current = false;
-            setIsOpen(true);
-        }
-    }, [isCollapsed]);
 
     const selectedCemetery = useMemo(
         () =>
@@ -82,44 +66,19 @@ export default function CemeterySwitcher({ isCollapsed = false, onExpandRequest 
         setIsOpen(false);
     };
 
-    const handleToggle = () => {
-        if (isCollapsed) {
-            openAfterExpandRef.current = true;
-            onExpandRequest?.();
-            return;
-        }
-
-        setIsOpen((current) => !current);
-    };
-
     return (
-        <CemeterySwitcherRoot ref={rootRef} $isCollapsed={isCollapsed}>
+        <CemeterySwitcherRoot ref={rootRef}>
             <CemeteryButton
                 type="button"
-                $isCollapsed={isCollapsed}
-                onClick={handleToggle}
-                aria-expanded={!isCollapsed && isOpen}
+                onClick={() => setIsOpen((current) => !current)}
+                aria-expanded={isOpen}
                 aria-haspopup="listbox"
-                aria-label={isCollapsed ? `Cemitério selecionado: ${selectedName}` : undefined}
-                title={isCollapsed ? selectedName : undefined}
             >
-                <CemeteryIcon>
-                    <GiGraveFlowers />
-                </CemeteryIcon>
-                <CemeteryValue $isCollapsed={isCollapsed}>{selectedName}</CemeteryValue>
-                {!isCollapsed && (
-                    <CemeteryChevron $isOpen={isOpen}>
-                        <LuChevronRight />
-                    </CemeteryChevron>
-                )}
+                <CemeteryValue>{selectedName}</CemeteryValue>
+                {isOpen ? <FaChevronUp /> : <FaChevronDown />}
             </CemeteryButton>
 
-            <CemeteryNestedList
-                $isOpen={!isCollapsed && isOpen}
-                role="listbox"
-                aria-label="Selecionar cemitério"
-                aria-hidden={isCollapsed || !isOpen}
-            >
+            <CemeteryPanel $isOpen={isOpen} role="listbox" aria-label="Selecionar cemitério" aria-hidden={!isOpen}>
                 {loading && <CemeteryEmpty>Carregando cemitérios...</CemeteryEmpty>}
                 {!loading && error && <CemeteryError>{error}</CemeteryError>}
                 {!loading && !error && cemeteries.length === 0 && (
@@ -152,7 +111,7 @@ export default function CemeterySwitcher({ isCollapsed = false, onExpandRequest 
                             </CemeteryItem>
                         );
                     })}
-            </CemeteryNestedList>
+            </CemeteryPanel>
         </CemeterySwitcherRoot>
     );
 }

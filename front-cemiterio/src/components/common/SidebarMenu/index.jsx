@@ -37,9 +37,8 @@ import { LiaFileContractSolid } from "react-icons/lia";
 import { TbReportAnalytics } from "react-icons/tb";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { useAuthStore } from "../../../stores/authStore";
-import CemeterySwitcher from "../CemeterySwitcher";
 
-export default function SidebarMenu({ isCollapsed = false, onExpandRequest }) {
+export default function SidebarMenu({ isCollapsed = false }) {
     const [expandedItems, setExpandedItems] = useState({});
     const navigate = useNavigate();
     const logout = useAuthStore((state) => state.logout);
@@ -108,8 +107,6 @@ export default function SidebarMenu({ isCollapsed = false, onExpandRequest }) {
                 <LogoImage src={sgclogo1} alt="Logo Memo" $isCollapsed={isCollapsed} />
                 {!isCollapsed && <Title>SISTEMA DE GERENCIAMENTO DE CEMITÉRIOS</Title>}
             </LogoContainer>
-
-            <CemeterySwitcher isCollapsed={isCollapsed} onExpandRequest={onExpandRequest} />
 
             <NavContainer>
                 <NavList>

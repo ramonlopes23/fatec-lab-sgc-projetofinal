@@ -18,7 +18,7 @@ export const HeaderContainer = styled.header`
     background-color: #ffffff;
     border-bottom: 1px solid rgba(25, 25, 112, 0.1);
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px) minmax(0, 1fr);
     align-items: center;
     gap: 1rem;
     padding: 0 1rem;
@@ -31,14 +31,17 @@ export const HeaderContainer = styled.header`
 
     @media (max-width: 900px) {
         left: 0;
-        grid-template-columns: auto minmax(0, 1fr) auto;
         gap: 0.5rem;
         padding: 0 0.75rem;
+    }
+
+    @media (max-width: 600px) {
+        grid-template-columns: auto minmax(0, 1fr) auto;
     }
 `;
 
 export const HeaderLeft = styled.div`
-    display: none;
+    display: flex;
     align-items: center;
 
     @media (max-width: 900px) {
@@ -48,17 +51,15 @@ export const HeaderLeft = styled.div`
 
 export const HeaderCenter = styled.div`
     display: flex;
+    width: 100%;
     min-width: 0;
-    justify-content: flex-start;
+    justify-content: center;
     position: relative;
-
-    @media (max-width: 900px) {
-        justify-content: center;
-    }
 `;
 
 export const HeaderRight = styled.div`
     display: flex;
+    min-width: 0;
     justify-content: flex-end;
     align-items: center;
     gap: 0.75rem;
@@ -125,7 +126,7 @@ export const UserName = styled.span`
     overflow: hidden;
     text-overflow: ellipsis;
 
-    @media (max-width: 720px) {
+    @media (max-width: 1100px) {
         display: none;
     }
 `;
@@ -134,7 +135,7 @@ export const UserDropdown = styled.div`
     position: relative;
     min-width: 15rem;
 
-    @media (max-width: 720px) {
+    @media (max-width: 1100px) {
         min-width: 0;
     }
 `;
