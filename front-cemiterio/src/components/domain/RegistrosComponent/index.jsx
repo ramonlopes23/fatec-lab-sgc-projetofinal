@@ -16,6 +16,7 @@ import { archiveSepultamento, getSepultamentos, patchSepultamento } from "../../
 import { useFormModal, useToastFeedback } from "../../../hooks";
 import {
     formatDateDMY,
+    buildRegistroFalecidoUpdatePayload,
     getFalecidoCpf,
     getFalecidoDeathDate,
     getFalecidoId,
@@ -28,8 +29,7 @@ import {
     normalizeQuadra,
     normalizeText,
     parseDateValue,
-    resolveCemiterioName,
-    resolveQuadraDisplay,
+    resolveRegistroLocation,
     sortNumericText,
 } from "../../../utils";
 import {
@@ -316,23 +316,15 @@ export default function RegistrosComponent() {
                     const exumacao = sepultamento
                         ? exumacoesBySepultamento.get(normalizeId(sepultamento?.id)) || null
                         : null;
-                    const cemiterio = resolveCemiterioName(
-                        sepultamento?.cemiterio ?? sepultamento?.cemiterio_nome ?? sepultamento?.cemetery ?? "",
-                        cemiteriosData,
-                        ""
-                    );
+                    const location = resolveRegistroLocation(sepultamento || {}, quadrasData, cemiteriosData);
 
                     return {
                         ...falecido,
                         sepultamento,
                         exumacao,
-                        quadra_num: resolveQuadraDisplay(
-                            sepultamento?.quadra_sep ?? sepultamento?.quadra ?? "",
-                            quadrasData,
-                            ""
-                        ),
-                        sepultura: getSepulturaNumber(sepultamento),
-                        cemiterio: cemiterio || sepultamento?.cemiterio_nome || sepultamento?.cemiterio || "",
+                        quadra_num: location.quadra,
+                        sepultura: location.sepultura,
+                        cemiterio: location.cemiterio,
                         data_obito_sep: sepultamento?.data_obito_sep || "",
                     };
                 });
@@ -510,24 +502,7 @@ export default function RegistrosComponent() {
             return;
         }
 
-        const falPayload = {
-            nome_fal: modalForm.nome_fal,
-            idade: modalForm.idade,
-            sexo: modalForm.sexo,
-            cpf: modalForm.cpf,
-            data_nasc: modalForm.data_nasc,
-            dh_falec: modalForm.data_obito,
-            filiacao_pai: modalForm.filiacao_pai,
-            filiacao_mae: modalForm.filiacao_mae,
-            profissao: modalForm.profissao,
-            estado_civil: modalForm.estado_civil,
-            nacionalidade: modalForm.nacionalidade,
-            causa_mortis: modalForm.causa_mortis,
-            nome_resp: modalForm.nome_resp,
-            tel_resp: modalForm.tel_resp,
-            endereco_resp: modalForm.endereco_resp,
-            doc_resp: modalForm.doc_resp,
-        };
+        const falPayload = buildRegistroFalecidoUpdatePayload(modalForm);
 
         try {
             setIsSubmitting(true);
@@ -536,10 +511,7 @@ export default function RegistrosComponent() {
             if (selectedRecord?.sepultamento?.id) {
                 await patchSepultamento(selectedRecord.sepultamento.id, {
                     nome_sep: modalForm.nome_fal,
-                    quadra_sep: modalForm.quadra_num,
-                    num_sepultura_sep: modalForm.sepultura,
                     data_obito_sep: modalForm.data_obito,
-                    cemiterio: modalForm.cemiterio,
                 }).catch(() => {});
             }
 
@@ -592,11 +564,11 @@ export default function RegistrosComponent() {
         ["Filiacao mae", "filiacao_mae"],
         ["Profissao", "profissao"],
         ["Estado civil", "estado_civil"],
-        ["Nacionalidade", "nacionalidade"],
+        ["Naturalidade", "naturalidade"],
         ["Causa mortis", "causa_mortis"],
-        ["Cemiterio", "cemiterio"],
-        ["Quadra", "quadra_num"],
-        ["Sepultura", "sepultura"],
+        ["Cemiterio", "cemiterio", "text", true],
+        ["Quadra", "quadra_num", "text", true],
+        ["Sepultura", "sepultura", "text", true],
         ["Responsavel", "nome_resp"],
         ["Contato do responsavel", "tel_resp"],
     ];
@@ -890,13 +862,15 @@ export default function RegistrosComponent() {
                     <form onSubmit={handleSave}>
                         {isEditing ? (
                             <DefaultModalGrid>
-                                {modalFields.map(([label, key, type]) => (
+                                {modalFields.map(([label, key, type, readOnly = false]) => (
                                     <Field key={key}>
                                         {label}
                                         <Input
                                             type={type || "text"}
                                             value={modalForm?.[key] || ""}
                                             onChange={(event) => handleChangeModal(key, event.target.value)}
+                                            readOnly={readOnly}
+                                            aria-readonly={readOnly}
                                             disabled={isSubmitting}
                                         />
                                     </Field>

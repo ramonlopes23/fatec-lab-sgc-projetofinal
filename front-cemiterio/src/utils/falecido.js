@@ -63,6 +63,9 @@ export const getFalecidoDeathDate = (falecido = {}) =>
 export const getFalecidoBirthDate = (falecido = {}) =>
     normalizeValue(falecido?.data_nasc ?? falecido?.data_nascimento ?? falecido?.dt_nascimento ?? "");
 
+export const getFalecidoNaturalidade = (falecido = {}) =>
+    normalizeValue(falecido?.naturalidade ?? falecido?.cidade_naturalidade ?? "");
+
 export const getFalecidoResponsibleName = (falecido = {}) =>
     normalizeValue(falecido?.nome_resp ?? falecido?.responsavel ?? falecido?.falecido?.nome_resp ?? "");
 
@@ -80,6 +83,7 @@ export const normalizeFalecido = (falecido = {}) => {
         filiacao_mae: getFalecidoMotherName(source),
         dh_falec: source?.dh_falec ?? getFalecidoDeathDate(source),
         data_nasc: source?.data_nasc ?? getFalecidoBirthDate(source),
+        naturalidade: getFalecidoNaturalidade(source),
         nome_resp: source?.nome_resp ?? getFalecidoResponsibleName(source),
         tel_resp: source?.tel_resp ?? getFalecidoResponsiblePhone(source),
     };

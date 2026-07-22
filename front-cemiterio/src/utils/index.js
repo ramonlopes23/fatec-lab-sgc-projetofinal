@@ -8,6 +8,7 @@ export * from "./dateBuckets.js";
 export * from "./falecido.js";
 export * from "./mapHelpers.js";
 export * from "./quadra.js";
+export * from "./registro.js";
 export * from "./sepultamento.js";
 export * from "./sepultura.js";
 export * from "./masks.js";

@@ -27,6 +27,13 @@ export const getQuadraNumber = (quadra) => {
     return getQuadraDisplayCandidates(quadra)[0] || "";
 };
 
+export const getQuadraCemiterioRef = (quadra = {}) => {
+    const cemetery = quadra?.cemetery ?? quadra?.cemiterio;
+    const nestedId = cemetery && typeof cemetery === "object" ? (cemetery.id ?? cemetery._id) : cemetery;
+
+    return normalizeQuadraValue(quadra?.cemeteryId ?? quadra?.cemiterioId ?? quadra?.cemiterio_id ?? nestedId ?? "");
+};
+
 export const normalizeQuadra = (quadra) => {
     const numero = getQuadraNumber(quadra);
 

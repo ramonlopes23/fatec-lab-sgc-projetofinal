@@ -15,6 +15,9 @@ export const getSepulturaNumber = (sepultura = {}) =>
             sepultura?.numero ??
             sepultura?.num_sepultura ??
             sepultura?.num_sepultura_sep ??
+            sepultura?.sepultura?.number ??
+            sepultura?.sepultura?.numero ??
+            sepultura?.sepultura?.num_cova ??
             sepultura?.sepultura ??
             sepultura?.cova?.num_cova ??
             sepultura?.cova?.grave?.number ??
@@ -25,6 +28,8 @@ export const getSepulturaNumber = (sepultura = {}) =>
 export const getSepulturaQuadraRef = (sepultura = {}) => {
     const block = sepultura?.block ?? sepultura?.grave?.block ?? sepultura?.cova?.grave?.block;
     const blockId = block && typeof block === "object" ? block.id : block;
+    const quadra = sepultura?.quadra ?? sepultura?.sep?.quadra;
+    const quadraId = quadra && typeof quadra === "object" ? (quadra.id ?? quadra._id) : quadra;
 
     return normalizeValue(
         sepultura?.quadra_cova ??
@@ -32,7 +37,7 @@ export const getSepulturaQuadraRef = (sepultura = {}) => {
             sepultura?.grave?.blockId ??
             sepultura?.cova?.grave?.blockId ??
             blockId ??
-            sepultura?.quadra ??
+            quadraId ??
             sepultura?.quadra_id ??
             sepultura?.quadra_sep ??
             sepultura?.cova?.quadra_cova ??
