@@ -2,7 +2,17 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useBlocks, useCreateBlocks, useCreateGraves, useToastFeedback } from "../../hooks";
 import { useCemeteryStore } from "../../stores/index.js";
 import { getContratos } from "../../services/contratoService.js";
-import { createExumacao, deleteExumacao, getExumacoes } from "../../services/exumacaoService.js";
+import { getExumacoes } from "../../services/exumacaoService.js";
+import {
+    getExumacaoCancelErrorMessage,
+    getExumacaoRequestErrorMessage,
+    getExumacaoSepultamentoId,
+    isExumacaoPending,
+} from "../../services/exumacaoProcessCore.js";
+import {
+    cancelarExumacao as executarCancelamentoExumacao,
+    solicitarExumacao,
+} from "../../services/exumacaoProcessService.js";
 import { getFalecidoById, getFalecidos } from "../../services/falecidoService.js";
 import { getGraves, patchGraveStatus } from "../../services/graveService.js";
 import { getOssarios } from "../../services/ossarioService.js";
@@ -122,45 +132,6 @@ import {
 } from "./styles";
 
 import * as mapHelpers from "../../utils/mapHelpers";
-
-const EXUMACAO_REQUIRED_FIELDS = {
-    motivo: "Motivo",
-    destino: "Destino",
-    coveiro: "Coveiro",
-};
-
-const isBlank = (value) => value === undefined || value === null || String(value).trim() === "";
-
-const getExumacaoValidationErrors = (form) => {
-    const errors = {};
-
-    if (!form?.sepultamentoId) {
-        errors.sepultamentoId = "Sepultamento inválido para iniciar a exumação.";
-    }
-
-    Object.entries(EXUMACAO_REQUIRED_FIELDS).forEach(([field, label]) => {
-        if (isBlank(form?.[field])) {
-            errors[field] = `${label} é obrigatório.`;
-        }
-    });
-
-    return errors;
-};
-
-const getExumacaoSubmitErrorMessage = (err) => {
-    const status = err?.response?.status;
-    const data = err?.response?.data;
-    const backendMessage = data?.message || data?.error || data?.detail;
-
-    if (backendMessage) return backendMessage;
-    if (status === 400) return "Revise os dados informados para cadastrar a exumação.";
-    if (status === 401 || status === 403) return "Você não tem permissão para cadastrar exumação.";
-    if (status === 404) return "Sepultamento ou destino não encontrado.";
-    if (status === 409) return "Já existe uma exumação pendente para este registro.";
-    if (status >= 500) return "Servidor indisponível ao cadastrar exumação. Tente novamente em instantes.";
-    if (err?.message) return err.message;
-    return "Erro ao cadastrar exumação.";
-};
 
 export default function VerMapa() {
     const { selectedCemeteryId, loadCemeteries } = useCemeteryStore();
@@ -357,31 +328,14 @@ export default function VerMapa() {
 
     const submitExumacao = async (e) => {
         if (e && e.preventDefault) e.preventDefault();
-        if (!exumacoesForm || !exumacoesForm.sepultamentoId) return showError("Dados inválidos");
-
-        const key = String(exumacoesForm.sepultamentoId);
-        if (exumacoesPending[key]) return showError("Já existe uma exumação pendente para este registro.");
-
-        const validationErrors = getExumacaoValidationErrors(exumacoesForm);
-        if (Object.keys(validationErrors).length > 0) {
-            setExumacoesErrors(validationErrors);
-            showError("Preencha os campos obrigatórios da exumação.");
-            return;
-        }
 
         try {
             setIsSubmittingExumacao(true);
-            const payload = {
-                ...exumacoesForm,
-                motivo: String(exumacoesForm.motivo || "").trim(),
-                destino: String(exumacoesForm.destino || "").trim(),
-                coveiro: String(exumacoesForm.coveiro || "").trim(),
-                obs_exu: String(exumacoesForm.obs_exu || "").trim(),
-                status: "pendente",
-                confirmado: false,
-            };
-            const created = (await createExumacao(payload)) ?? null;
-            if (!created) throw new Error("Resposta inválida do servidor ao criar exumação");
+            const key = String(exumacoesForm?.sepultamentoId ?? "");
+            const created = await solicitarExumacao({
+                form: exumacoesForm,
+                pendingExumacao: exumacoesPending[key] || null,
+            });
 
             setExumacoesPending((prev) => ({ ...prev, [key]: created }));
 
@@ -394,8 +348,9 @@ export default function VerMapa() {
             closeExumacaoForm();
             showSuccess("Exumação cadastrada e aguardando confirmação. ");
         } catch (err) {
+            if (err?.fieldErrors) setExumacoesErrors(err.fieldErrors);
             console.error("Erro ao enviar exumação", err);
-            showError(getExumacaoSubmitErrorMessage(err));
+            showError(getExumacaoRequestErrorMessage(err));
         } finally {
             setIsSubmittingExumacao(false);
         }
@@ -418,12 +373,14 @@ export default function VerMapa() {
     const confirmCancelExumacao = async () => {
         const pending = pendingCancelExumacao;
         if (!pending?.sep?.id || !pending?.ex?.id) return;
-        const key = String(pending.sep.id);
         try {
-            await deleteExumacao(pending.ex.id);
+            const result = await executarCancelamentoExumacao({
+                sepultamento: pending.sep,
+                exumacao: pending.ex,
+            });
             setExumacoesPending((prev) => {
                 const clone = { ...prev };
-                delete clone[key];
+                delete clone[result.sepultamentoId];
                 return clone;
             });
             try {
@@ -431,11 +388,11 @@ export default function VerMapa() {
             } catch (e) {
                 e;
             }
-            showError("Exumação cancelada. ");
+            showSuccess("Exumação cancelada.");
             closeCancelExumacaoDialog();
         } catch (err) {
             console.error("Erro ao cancelar exumação", err);
-            showError("Erro ao cancelar exumação");
+            showError(getExumacaoCancelErrorMessage(err));
         }
     };
 
@@ -870,16 +827,9 @@ export default function VerMapa() {
 
             const pendingMap = {};
             exuData.forEach((ex) => {
-                const statusRaw = String(ex.status ?? "").toLowerCase();
-                const isPending =
-                    statusRaw.includes("pend") ||
-                    ex.confirmado === false ||
-                    ex.confirmado === null ||
-                    ex.confirmado === undefined;
+                if (!isExumacaoPending(ex)) return;
 
-                if (!isPending) return;
-
-                const sepId = ex.sepultamentoId ?? null;
+                const sepId = getExumacaoSepultamentoId(ex);
                 if (sepId != null) {
                     pendingMap[String(sepId)] = ex;
                 }
@@ -1275,9 +1225,7 @@ export default function VerMapa() {
                     exumacao.createdAt,
                     exumacao.created_at
                 );
-                const statusRaw = String(exumacao.status ?? "").toLowerCase();
-                const isPending =
-                    statusRaw.includes("pend") || exumacao.confirmado === false || exumacao.confirmado == null;
+                const isPending = isExumacaoPending(exumacao);
                 events.push({
                     id: `exu-${exumacao.id ?? exumacao._id ?? `${date}-${exumacao.destino}`}`,
                     label: isPending ? "Exumação pendente" : "Exumação registrada",
