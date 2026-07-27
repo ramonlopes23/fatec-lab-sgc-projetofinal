@@ -11,8 +11,10 @@ import TextField from "@mui/material/TextField";
 import { getBlocks } from "../../../services/blockService.js";
 import { getCemeteries } from "../../../services/cemeteryService.js";
 import { getExumacoes } from "../../../services/exumacaoService.js";
-import { archiveFalecido, getFalecidos, patchFalecido } from "../../../services/falecidoService.js";
-import { archiveSepultamento, getSepultamentos, patchSepultamento } from "../../../services/sepultamentoService.js";
+import { getFalecidos, patchFalecido } from "../../../services/falecidoService.js";
+import { getRegistroArchiveErrorMessage } from "../../../services/registroProcessCore.js";
+import { arquivarRegistroFalecido } from "../../../services/registroProcessService.js";
+import { getSepultamentos, patchSepultamento } from "../../../services/sepultamentoService.js";
 import { useFormModal, useToastFeedback } from "../../../hooks";
 import {
     formatDateDMY,
@@ -538,19 +540,13 @@ export default function RegistrosComponent() {
     };
 
     const handleArchive = async (record) => {
-        if (!record) return;
-
         try {
-            if (record.sepultamento?.id) {
-                await archiveSepultamento(record.sepultamento.id);
-            } else if (record.id) {
-                await archiveFalecido(record.id);
-            }
+            await arquivarRegistroFalecido(record);
             await loadAll();
             showSuccess("Registro arquivado com sucesso");
         } catch (error) {
             console.error("Erro ao arquivar registro", error);
-            showError(error?.response?.data?.message || error?.message || "Não foi possível arquivar o registro");
+            showError(getRegistroArchiveErrorMessage(error));
         }
     };
 
