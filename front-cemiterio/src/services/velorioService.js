@@ -4,6 +4,8 @@ const service = createCrudService("velorios");
 
 export const getVelorios = async (params) => service.list(params);
 
+export const getVelorioById = async (id) => service.get(id);
+
 export const createVelorio = async (payload) => service.create(payload);
 
 export const updateVelorio = async (id, payload) => service.update(id, payload);

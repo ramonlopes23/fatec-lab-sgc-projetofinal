@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { PROCESS_TYPES } from "../../pages/Cadastros/constants.js";
 import { createFalecido } from "../../services/falecidoService.js";
-import { getGraves, patchGrave } from "../../services/graveService.js";
+import { markGraveCapacityExhausted } from "../../services/graveCapacityService.js";
+import { getGraves } from "../../services/graveService.js";
 import { createSepultamento } from "../../services/sepultamentoService.js";
 import { createVelorio, patchVelorio } from "../../services/velorioService.js";
 import {
@@ -81,7 +82,7 @@ export default function useCadastrosSubmit({
 
             const cap = Number(getSepulturaCapacity(foundCheck));
             if (cap <= 0) {
-                await patchGrave(foundCheck.id, { status: "OCCUPIED", bodyCapacity: 0 }).catch(() => {});
+                await markGraveCapacityExhausted(foundCheck.id).catch(() => {});
                 showError("A sepultura selecionada esta lotada. Escolha outra sepultura.");
                 return;
             }

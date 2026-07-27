@@ -1,16 +1,31 @@
-import { patchExumacao } from "./exumacaoService.js";
-import { getGraves, patchGrave } from "./graveService.js";
-import { createOperationalProcessConfirmer } from "./operationalProcessCore.js";
-import { getSepultamentoById, getSepultamentos, patchSepultamento } from "./sepultamentoService.js";
-import { patchVelorio } from "./velorioService.js";
+import { getExumacaoById, patchExumacao } from "./exumacaoService.js";
+import { adjustGraveCapacity } from "./graveCapacityService.js";
+import {
+    createExumacaoConfirmer,
+    createOperationalProcessDispatcher,
+    createSepultamentoConfirmer,
+    createVelorioConfirmer,
+} from "./operationalProcessCore.js";
+import { getSepultamentoById, patchSepultamento } from "./sepultamentoService.js";
+import { getVelorioById, patchVelorio } from "./velorioService.js";
 
-export const confirmOperationalProcess = createOperationalProcessConfirmer({
+const operationalDependencies = {
     patchExumacao,
-    getGraves,
-    patchGrave,
+    getExumacaoById,
+    adjustGraveCapacity,
     getSepultamentoById,
-    getSepultamentos,
     patchSepultamento,
+    getVelorioById,
     patchVelorio,
     onWarning: (message, error) => console.warn(message, error),
+};
+
+export const confirmVelorio = createVelorioConfirmer(operationalDependencies);
+export const confirmSepultamento = createSepultamentoConfirmer(operationalDependencies);
+export const confirmExumacao = createExumacaoConfirmer(operationalDependencies);
+
+export const confirmOperationalProcess = createOperationalProcessDispatcher({
+    confirmVelorio,
+    confirmSepultamento,
+    confirmExumacao,
 });

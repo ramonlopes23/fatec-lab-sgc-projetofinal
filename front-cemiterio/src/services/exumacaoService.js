@@ -4,6 +4,8 @@ const service = createCrudService("exumacoes");
 
 export const getExumacoes = async (params) => service.list(params);
 
+export const getExumacaoById = async (id) => service.get(id);
+
 export const createExumacao = async (payload) => service.create(payload);
 
 export const updateExumacao = async (id, payload) => service.update(id, payload);

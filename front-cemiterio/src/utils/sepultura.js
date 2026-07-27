@@ -96,15 +96,15 @@ export const isSepulturaAvailable = (sepultura = {}, tituloPosse = "") => {
     const backendStatus = normalizeUpper(
         sepultura?.status ?? sepultura?.grave?.status ?? sepultura?.cova?.grave?.status
     );
-    if (backendStatus === "MAINTENANCE" || backendStatus === "OCCUPIED") return false;
+    if (backendStatus === "MAINTENANCE") return false;
 
     const status = normalizeSepulturaStatus(sepultura);
     const wantsParticular = isTituloPosseSim(tituloPosse);
     const isPerpetual = isSepulturaPerpetual(sepultura);
 
-    if (wantsParticular) return isPerpetual && !["lotada", "indisponivel", "ocupada"].includes(status);
+    if (wantsParticular) return isPerpetual && !["lotada", "indisponivel"].includes(status);
     if (isPerpetual) return false;
-    return !["lotada", "indisponivel", "reservada", "ocupada"].includes(status);
+    return !["lotada", "indisponivel", "reservada"].includes(status);
 };
 
 export const normalizeSepultura = (sepultura = {}) => {
