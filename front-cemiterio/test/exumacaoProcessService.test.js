@@ -17,9 +17,17 @@ const validForm = {
     obs_exu: " ",
 };
 
+const getConfirmedSepultamento = async () => ({
+    id: "sep-1",
+    status: "Concluído",
+    confirmado: true,
+    foi_exumado: false,
+});
+
 test("solicitarExumacao trims fields and forces a pending unconfirmed process", async () => {
     let receivedPayload;
     const solicitarExumacao = createExumacaoRequester({
+        getSepultamentoById: getConfirmedSepultamento,
         createExumacao: async (payload) => {
             receivedPayload = payload;
             return { id: "exu-1", ...payload };
@@ -79,8 +87,30 @@ test("solicitarExumacao blocks a duplicate pending process before the API call",
     assert.equal(calls, 0);
 });
 
+test("solicitarExumacao blocks a burial that has not been confirmed", async () => {
+    let calls = 0;
+    const solicitarExumacao = createExumacaoRequester({
+        getSepultamentoById: async () => ({
+            id: "sep-1",
+            status: "Pendente",
+            confirmado: false,
+        }),
+        createExumacao: async () => {
+            calls += 1;
+            return { id: "exu-1" };
+        },
+    });
+
+    await assert.rejects(
+        () => solicitarExumacao({ form: validForm }),
+        (error) => error.code === "SEPULTAMENTO_NOT_CONFIRMED"
+    );
+    assert.equal(calls, 0);
+});
+
 test("solicitarExumacao rejects an invalid API response without confirming locally", async () => {
     const solicitarExumacao = createExumacaoRequester({
+        getSepultamentoById: getConfirmedSepultamento,
         createExumacao: async () => null,
     });
 
@@ -93,6 +123,7 @@ test("solicitarExumacao rejects an invalid API response without confirming local
 test("solicitarExumacao preserves backend errors for UI mapping", async () => {
     const backendError = Object.assign(new Error("Conflito"), { response: { status: 409 } });
     const solicitarExumacao = createExumacaoRequester({
+        getSepultamentoById: getConfirmedSepultamento,
         createExumacao: async () => Promise.reject(backendError),
     });
 

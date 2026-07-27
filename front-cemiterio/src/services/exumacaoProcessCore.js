@@ -1,3 +1,5 @@
+import { isSepultamentoVigente } from "../utils/sepultamento.js";
+
 const REQUIRED_FIELDS = Object.freeze({
     motivo: "Motivo",
     destino: "Destino",
@@ -58,7 +60,7 @@ const assertValidCreatedExumacao = (created) => {
 };
 
 export const createExumacaoRequester =
-    ({ createExumacao }) =>
+    ({ createExumacao, getSepultamentoById }) =>
     async ({ form, pendingExumacao = null }) => {
         if (!form?.sepultamentoId) {
             throw new ExumacaoProcessError("INVALID_SEPULTAMENTO", "Dados inválidos.", {
@@ -76,6 +78,14 @@ export const createExumacaoRequester =
                 "VALIDATION_ERROR",
                 "Preencha os campos obrigatórios da exumação.",
                 fieldErrors
+            );
+        }
+
+        const sepultamento = await getSepultamentoById(form.sepultamentoId);
+        if (!isSepultamentoVigente(sepultamento)) {
+            throw new ExumacaoProcessError(
+                "SEPULTAMENTO_NOT_CONFIRMED",
+                "A exumação só pode ser iniciada após a confirmação do sepultamento."
             );
         }
 

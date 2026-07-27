@@ -53,6 +53,7 @@ import {
     getFalecidoResponsibleName,
     getFalecidoResponsiblePhone,
     getSepulturaCapacity,
+    isSepultamentoVigente,
     normalizeFalecido,
     normalizeSepultura,
     parseDateValue,
@@ -987,7 +988,7 @@ export default function VerMapa() {
         const quadraKey = mapHelpers.resolveCovaQuadraKey(cova, cova?.sep, grave, selectedQuadraId);
         const numero = mapHelpers.resolveCovaNumber(cova, cova?.sep, grave);
         const list = (sepultamentosAll || []).filter((s) => {
-            if (s.foi_exumado) return false;
+            if (!isSepultamentoVigente(s)) return false;
             const sQuadra = mapHelpers.resolveCovaQuadraKey(null, s);
             const sNum = mapHelpers.resolveCovaNumber(null, s);
             return sQuadra === quadraKey && sNum === numero;
